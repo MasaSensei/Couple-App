@@ -1,0 +1,60 @@
+services:
+  app:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile
+    container_name: couples_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/var/www/html
+    env_file:
+      - ./backend/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - couples_network
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: couples_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: couples
+      POSTGRES_USER: couples
+      POSTGRES_PASSWORD: couples_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U couples -d couples"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - couples_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: couples_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - couples_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  couples_network:
+    driver: bridge
