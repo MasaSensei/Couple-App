@@ -1,228 +1,696 @@
-# Couple App
+# Couples App
 
-A private digital memory platform designed for couples.
+A private digital space designed for couples to connect, organize, and preserve their shared memories.
 
-Couple App is designed to provide a private space for couples to store, organize, and revisit their shared memories, with privacy and data security as core considerations.
+> 🚧 This project is currently under active development.
 
-## Project Overview
-
-Couple App is developed as a monorepo consisting of:
-
-- **Backend** — Laravel REST API and Filament admin panel
-- **Frontend** — Flutter mobile application
-- **Infrastructure** — Docker and Docker Compose
-
-## Architecture
-
-    Flutter Mobile App
-            │
-            │ REST API
-            ▼
-    Laravel Backend
-            │
-       ┌────┴────┐
-       ▼         ▼
-    PostgreSQL  Redis
-
-    Filament Admin
-            │
-            ▼
-    Laravel Backend
-            │
-            ▼
-       PostgreSQL
+---
 
 ## Tech Stack
-
-### Backend
-
-- PHP 8.5
-- Laravel
-- PostgreSQL 17
-- Redis 7
-- Laravel Sanctum
-- Filament
 
 ### Frontend
 
 - Flutter
 - Dart
+- Riverpod
+- Dio
+- GoRouter
+- Flutter Secure Storage
 
-### Infrastructure
+### Backend
 
+- Laravel
+- PHP
+- Laravel Sanctum
+- FilamentPHP
+
+### Database & Infrastructure
+
+- PostgreSQL
+- Redis
 - Docker
 - Docker Compose
 
-## Repository Structure
+---
 
-    couple-app/
-    ├── backend/              # Laravel REST API + Filament
-    ├── frontend/             # Flutter mobile application
-    ├── docker-compose.yml    # Development infrastructure
-    ├── .gitignore
-    └── README.md             # Main project documentation
+# Project Architecture
 
-## Backend
+```text
+                    ┌─────────────────────┐
+                    │    Flutter App      │
+                    │                     │
+                    │  Riverpod           │
+                    │  Dio                │
+                    │  GoRouter           │
+                    └──────────┬──────────┘
+                               │
+                         REST API / JSON
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │   Laravel Backend   │
+                    │                     │
+                    │  Controllers        │
+                    │  Services           │
+                    │  Form Requests      │
+                    │  Resources          │
+                    │  Policies           │
+                    └──────────┬──────────┘
+                               │
+                  ┌────────────┴────────────┐
+                  │                         │
+                  ▼                         ▼
+          ┌───────────────┐         ┌───────────────┐
+          │  PostgreSQL   │         │     Redis     │
+          │               │         │               │
+          │ Application   │         │ Cache / Queue │
+          │ Data          │         │               │
+          └───────────────┘         └───────────────┘
+```
 
-The backend provides the REST API used by the Flutter application.
+---
 
-Current backend features include:
+# Repository Structure
 
-- Authentication
-- User registration and login
-- User profile management
+```text
+couple-app/
+│
+├── backend/
+│   ├── app/
+│   ├── bootstrap/
+│   ├── config/
+│   ├── database/
+│   ├── docker/
+│   ├── public/
+│   ├── resources/
+│   ├── routes/
+│   ├── storage/
+│   ├── tests/
+│   ├── .env
+│   ├── .env.example
+│   ├── artisan
+│   ├── composer.json
+│   └── ...
+│
+├── frontend/
+│   ├── lib/
+│   │   ├── core/
+│   │   ├── features/
+│   │   ├── routing/
+│   │   └── main.dart
+│   ├── android/
+│   ├── ios/
+│   ├── pubspec.yaml
+│   └── ...
+│
+├── docker-compose.yml
+├── README.md
+└── .gitignore
+```
+
+---
+
+# Development Environment
+
+The project uses Docker Compose for local backend development.
+
+| Service    | Purpose             |   Port |
+| ---------- | ------------------- | -----: |
+| `app`      | Laravel API         | `8000` |
+| `postgres` | PostgreSQL database | `5432` |
+| `redis`    | Redis               | `6379` |
+
+Start the backend environment:
+
+```bash
+docker compose up -d --build
+```
+
+Check containers:
+
+```bash
+docker compose ps
+```
+
+Stop containers:
+
+```bash
+docker compose down
+```
+
+---
+
+# Backend Architecture
+
+The Laravel backend follows a pragmatic Clean Code architecture.
+
+```text
+Request
+   ↓
+Controller
+   ↓
+Service
+   ↓
+Model
+   ↓
+Database
+```
+
+Supporting responsibilities:
+
+- FormRequest → request validation
+- Resource → API response transformation
+- Policy → authorization
+- Service → business logic
+- Controller → HTTP orchestration
+
+The project intentionally avoids unnecessary abstractions such as Repositories, Interfaces, DTOs, and Use Cases unless future complexity justifies them.
+
+---
+
+# API
+
+Current API prefix:
+
+```text
+/api/v1
+```
+
+## Authentication
+
+### Register
+
+```http
+POST /api/v1/auth/register
+```
+
+### Login
+
+```http
+POST /api/v1/auth/login
+```
+
+### Logout
+
+```http
+POST /api/v1/auth/logout
+```
+
+### Current User
+
+```http
+GET /api/v1/me
+```
+
+---
+
+## Couple
+
+### Create Couple
+
+```http
+POST /api/v1/couple
+```
+
+Creates a private couple space and generates an invite code.
+
+### Get Current Couple
+
+```http
+GET /api/v1/couple
+```
+
+Returns the couple associated with the authenticated user.
+
+### Join Couple
+
+```http
+POST /api/v1/couple/join
+```
+
+Example request:
+
+```json
+{
+  "invite_code": "TBEWCRTQ"
+}
+```
+
+### Get Couple by ID
+
+```http
+GET /api/v1/couple/{coupleId}
+```
+
+Access is restricted to couple members.
+
+---
+
+# Authentication Flow
+
+Laravel Sanctum is used for API authentication.
+
+Flutter stores the authentication token using:
+
+```text
+flutter_secure_storage
+```
+
+The token is automatically attached to authenticated API requests:
+
+```http
+Authorization: Bearer <token>
+```
+
+Application startup flow:
+
+```text
+App Start
+   ↓
+Splash
+   ↓
+Check Secure Storage
+   ↓
+Token exists?
+   │
+   ├── No ──→ Login
+   │
+   └── Yes
+          ↓
+        GET /me
+          ↓
+      Authenticated
+          ↓
+         Home
+```
+
+---
+
+# Flutter Architecture
+
+The Flutter application uses a feature-based architecture.
+
+```text
+lib/
+├── core/
+│   ├── config/
+│   ├── constants/
+│   ├── error/
+│   ├── network/
+│   ├── storage/
+│   ├── theme/
+│   └── widgets/
+│
+├── features/
+│   ├── auth/
+│   │   ├── data/
+│   │   ├── presentation/
+│   │   └── providers/
+│   │
+│   ├── home/
+│   │   ├── data/
+│   │   ├── presentation/
+│   │   └── providers/
+│   │
+│   └── splash/
+│       └── presentation/
+│
+├── routing/
+│
+└── main.dart
+```
+
+### State Management
+
+Riverpod
+
+### Networking
+
+Dio
+
+### Navigation
+
+GoRouter
+
+### Secure Storage
+
+Flutter Secure Storage
+
+---
+
+# UI Direction
+
+The application follows a:
+
+**Soft Romantic × Cute × Premium**
+
+visual direction.
+
+Design principles:
+
+- Warm off-white background
+- Soft rose primary color
+- Blush secondary accents
+- Subtle lavender and peach accents
+- White rounded cards
+- Warm dark-gray typography
+- Rounded buttons
+- Minimal romantic illustrations
+- Subtle animations
+- Centralized design system
+
+The visual style intentionally avoids an overly childish or heavily pink appearance.
+
+---
+
+# Phase 1 — Backend Foundation
+
+**Status: COMPLETE**
+
+Implemented:
+
+- Laravel backend foundation
+- Docker environment
+- PostgreSQL
+- Redis
+- FilamentPHP
+- Laravel Sanctum
+- API versioning
+- Authentication API
+- User management
+- Couple database structure
 - Couple creation
-- Couple membership
-- Invite code system
-- Couple authorization
-- Laravel Sanctum authentication
-- Filament admin panel
-- API validation and error handling
-- Automated tests
+- Couple joining
+- Couple membership authorization
+- API error handling
+- Backend feature tests
+- Separate testing database
+- Centralized JSON API error responses
 
-Backend documentation:
+---
 
-    backend/README.md
+# Phase 2 — Flutter Foundation
 
-## Frontend
+**Status: COMPLETE**
 
-The Flutter application will consume the Laravel REST API and provide the mobile user interface.
+Implemented:
 
-Planned responsibilities include:
+- Flutter project
+- Android development environment
+- Feature-based project structure
+- Riverpod
+- Dio
+- GoRouter
+- Flutter Secure Storage
+- Splash screen
+- Register
+- Login
+- Logout
+- Automatic authentication
+- `GET /api/v1/me`
+- Create Couple
+- Get Couple
+- Join Couple
+- Couple state management
+- Loading states
+- Error states
+- Basic navigation
+- Flutter ↔ Laravel API integration
 
-- Authentication
-- Couple management
-- Memory management
+---
+
+# Couple System
+
+The current couple flow:
+
+```text
+User A
+  │
+  ├── Register
+  │
+  ├── Login
+  │
+  └── Create Couple
+          │
+          ▼
+      Invite Code
+          │
+          │
+          ▼
+User B ──→ Join Couple
+          │
+          ▼
+     Same Couple
+          │
+          ▼
+       2 Members
+```
+
+A couple can contain a maximum of:
+
+```text
+2 users
+```
+
+The backend already supports returning the couple members through the API.
+
+The Flutter application already has the couple data model and state management. Member presentation UI will be refined during the UI phase.
+
+---
+
+# Privacy Direction
+
+Privacy is a core requirement of the project.
+
+The application is designed around the concept of a private digital space for two users.
+
+Future private media architecture is planned around:
+
+```text
+Flutter
+   ↓
+Client-side encryption
+   ↓
+Laravel API
+   ↓
+Encrypted Object Storage
+```
+
+The backend and admin system should not be designed around access to plaintext private photos.
+
+Future storage and security requirements include:
+
+- Client-side photo encryption
+- Encrypted object storage
+- Redundant storage
+- Backup
+- Integrity verification
+- Automatic recovery
+- Versioning
+- Soft delete
+- Recovery
+
+These features are planned for future phases and are **not implemented yet**.
+
+---
+
+# Roadmap
+
+## Phase 1 — Backend Foundation
+
+```text
+████████████████████ 100%
+```
+
+**Status: Complete**
+
+---
+
+## Phase 2 — Flutter Foundation
+
+```text
+████████████████████ 100%
+```
+
+**Status: Complete**
+
+---
+
+## Phase 3 — Core Couple Experience
+
+Planned:
+
+- Improved couple Home UI
+- Couple member presentation
+- Couple profile
+- Better couple state handling
+- Improved empty states
+- Improved onboarding experience
+
+---
+
+## Future Features
+
+Planned:
+
+- Memories
+- Date planning
 - Timeline
-- Photo management
+- Photos
 - Comments
+- Photo booth
+- Themes
 - Memory book
-- Subscription-related features
+- Subscription
+- Client-side encrypted photos
+- Redundant encrypted storage
+- Backup and recovery
+- Integrity verification
+- Versioning
+- Soft delete and recovery
 
-Frontend documentation will be added as development progresses.
+---
 
-## Privacy & Security
+# Development Principles
 
-Privacy is one of the main design considerations of Couple App.
+### 1. Build Incrementally
 
-The system is designed with the following principles:
+Features are implemented phase by phase instead of building the entire application at once.
 
-- Authentication and authorization are enforced at the API level.
-- Couple data is only accessible to authorized members.
-- Administrative access is separated from normal user access.
-- Private photos are planned to use client-side encryption.
-- The backend should not be designed around unrestricted plaintext access to private photos.
-- Backup and redundancy will be considered for long-term data preservation.
+### 2. Keep the Architecture Understandable
 
-Security mechanisms may evolve as the application develops.
+Prefer simple abstractions that solve real problems.
 
-## Development Environment
+### 3. Security by Design
 
-The development environment uses Docker.
+Private data should not be exposed unnecessarily.
+
+### 4. API-First Communication
+
+Flutter communicates with the backend through the Laravel REST API.
+
+### 5. Separation of Responsibilities
+
+Validation, business logic, authorization, API transformation, and UI state have separate responsibilities.
+
+### 6. Stabilize Before Moving Forward
+
+A development phase should be tested and stabilized before starting the next major feature.
+
+---
+
+# Local Development
+
+## Start Backend
 
 From the project root:
 
-    docker compose up -d --build
+```bash
+docker compose up -d --build
+```
 
-Check running services:
+Laravel API:
 
-    docker compose ps
+```text
+http://localhost:8000
+```
 
-The main development services are:
+---
 
-    app
-    └── Laravel / PHP 8.5
+## Start Flutter
 
-    postgres
-    └── PostgreSQL 17
+From the frontend directory:
 
-    redis
-    └── Redis 7
+```bash
+cd frontend
+flutter pub get
+flutter run
+```
 
-The Laravel backend is available at:
+For Android Emulator, the Laravel API is accessed through:
 
-    http://localhost:8000
+```text
+http://10.0.2.2:8000/api/v1
+```
 
-The Filament admin panel is available at:
+`10.0.2.2` allows the Android Emulator to access the host machine's `localhost`.
 
-    http://localhost:8000/admin
+---
 
-## Testing
+# Quality Checks
 
-Backend automated tests can be executed with:
+## Flutter
 
-    docker compose exec app php artisan test
+Run:
 
-The backend uses a separate test database to prevent automated tests from modifying the development database.
+```bash
+flutter analyze
+```
 
-## Project Status
+Automated Flutter tests will be added as the project develops.
 
-### Phase 1 — Backend Foundation
+> Currently, the Flutter project does not contain a `test/` directory yet, so `flutter test` has not been introduced as part of the current validation workflow.
 
-Completed:
+---
 
-- Docker development environment
-- Laravel backend
-- PostgreSQL
-- Redis
-- Authentication
-- User API
-- Couple system
-- Couple membership
-- Authorization and Policies
-- Filament admin panel
-- API response contract
-- Validation and error handling
-- Automated testing
+## Backend
 
-### Next Development Phase
+Run the Laravel test suite:
 
-The next development phase will focus on the application's core memory functionality.
+```bash
+docker compose exec app php artisan test
+```
 
-Planned features include:
+---
 
-- Memory system
-- Timeline
-- Comments
-- Photo management
-- Private encrypted photos
-- Secure object storage
-- Backup and redundancy
-- Integrity verification
-- Recovery mechanisms
-- Memory book
-- Subscription system
+# Environment Variables
 
-## Development Principles
+Local environment files containing secrets must not be committed.
 
-The project follows a pragmatic Clean Code approach.
+Use:
 
-The backend generally follows:
+```text
+backend/.env
+```
 
-    Request
-       ↓
-    Controller
-       ↓
-    Service
-       ↓
-    Model
-       ↓
-    Database
+for local development.
 
-The architecture aims to keep responsibilities clear without introducing unnecessary abstractions or overengineering.
+The repository should contain:
 
-## Monorepo
+```text
+backend/.env.example
+```
 
-This repository contains the complete Couple App project.
+with safe example values.
 
-    couple-app/
-    ├── backend/
-    ├── frontend/
-    ├── docker-compose.yml
-    └── README.md
+Never commit:
 
-Each major component may contain its own documentation.
+```text
+.env
+```
 
-## License
+or other files containing passwords, tokens, private keys, or production credentials.
 
-This project is currently private and is not licensed for redistribution.
+---
+
+# Current Status
+
+```text
+Backend Foundation       ████████████████████ 100%
+Flutter Foundation       ████████████████████ 100%
+Authentication            ████████████████████ 100%
+Couple System             ████████████████████ 100%
+Core Couple Experience    ░░░░░░░░░░░░░░░░░░░░   0%
+Memories                  ░░░░░░░░░░░░░░░░░░░░   0%
+Private Media             ░░░░░░░░░░░░░░░░░░░░   0%
+```
+
+> The percentages represent development phases and feature progress, not production readiness.
+
+---
+
+# Project Status
+
+The project has completed its initial backend and Flutter foundations.
+
+The next development phase will focus on improving the core couple experience and UI before introducing larger features.
