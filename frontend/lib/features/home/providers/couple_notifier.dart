@@ -6,59 +6,77 @@ import 'couple_providers.dart';
 import 'couple_state.dart';
 
 class CoupleNotifier extends Notifier<CoupleState> {
-  late final CoupleRepository _coupleRepository;
+  CoupleRepository get _repository => ref.read(coupleRepositoryProvider);
 
   @override
   CoupleState build() {
-    _coupleRepository = ref.watch(coupleRepositoryProvider);
-
-    return const CoupleState.initial();
+    return const CoupleState();
   }
 
   Future<void> loadCouple() async {
-    state = const CoupleState.loading();
+    state = state.copyWith(status: CoupleStatus.loading, clearError: true);
 
     try {
-      final couple = await _coupleRepository.getCouple();
+      final couple = await _repository.getMyCouple();
 
-      state = CoupleState.loaded(couple);
+      state = CoupleState(status: CoupleStatus.loaded, couple: couple);
     } on ApiException catch (error) {
-      if (error.message == 'User does not belong to a couple.') {
-        state = const CoupleState.empty();
+      if (error.statusCode == 404 &&
+          error.message == 'User does not belong to a couple.') {
+        state = const CoupleState(status: CoupleStatus.empty);
+
         return;
       }
 
-      state = CoupleState.error(error.message);
+      state = CoupleState(
+        status: CoupleStatus.error,
+        errorMessage: error.message,
+      );
     } catch (error) {
-      state = CoupleState.error(error.toString());
+      state = CoupleState(
+        status: CoupleStatus.error,
+        errorMessage: error.toString(),
+      );
     }
   }
 
   Future<void> createCouple() async {
-    state = const CoupleState.loading();
+    state = state.copyWith(status: CoupleStatus.loading, clearError: true);
 
     try {
-      final couple = await _coupleRepository.createCouple();
+      final couple = await _repository.createCouple();
 
-      state = CoupleState.loaded(couple);
+      state = CoupleState(status: CoupleStatus.loaded, couple: couple);
     } on ApiException catch (error) {
-      state = CoupleState.error(error.message);
+      state = CoupleState(
+        status: CoupleStatus.error,
+        errorMessage: error.message,
+      );
     } catch (error) {
-      state = CoupleState.error(error.toString());
+      state = CoupleState(
+        status: CoupleStatus.error,
+        errorMessage: error.toString(),
+      );
     }
   }
 
-  Future<void> joinCouple({required String inviteCode}) async {
-    state = const CoupleState.loading();
+  Future<void> joinCouple(String inviteCode) async {
+    state = state.copyWith(status: CoupleStatus.loading, clearError: true);
 
     try {
-      final couple = await _coupleRepository.joinCouple(inviteCode: inviteCode);
+      final couple = await _repository.joinCouple(inviteCode);
 
-      state = CoupleState.loaded(couple);
+      state = CoupleState(status: CoupleStatus.loaded, couple: couple);
     } on ApiException catch (error) {
-      state = CoupleState.error(error.message);
+      state = CoupleState(
+        status: CoupleStatus.error,
+        errorMessage: error.message,
+      );
     } catch (error) {
-      state = CoupleState.error(error.toString());
+      state = CoupleState(
+        status: CoupleStatus.error,
+        errorMessage: error.toString(),
+      );
     }
   }
 }

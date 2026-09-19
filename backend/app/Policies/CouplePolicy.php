@@ -13,4 +13,14 @@ class CouplePolicy
             ->where('user_id', $user->id)
             ->exists();
     }
+
+    public function createInvitation(
+        User $user,
+        Couple $couple,
+    ): bool {
+        return $couple->members()
+            ->where('user_id', $user->id)
+            ->exists()
+            && $couple->members()->count() < 2;
+    }
 }

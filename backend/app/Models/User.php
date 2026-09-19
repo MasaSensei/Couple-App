@@ -43,4 +43,25 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->is_admin;
     }
+
+    public function sentCoupleInvitations(): HasMany
+    {
+        return $this->hasMany(
+            CoupleInvitation::class,
+            'invited_by'
+        );
+    }
+
+    public function createdDates(): HasMany
+    {
+        return $this->hasMany(
+            Date::class,
+            'created_by'
+        );
+    }
+
+    public function dateComments(): HasMany
+    {
+        return $this->hasMany(DateComment::class);
+    }
 }

@@ -11,17 +11,21 @@ class CoupleResource extends JsonResource
     {
         return [
             'id' => $this->id,
+
             'invite_code' => $this->invite_code,
-            'members' => $this->whenLoaded('members', function () {
-                return $this->members->map(function ($member) {
+
+            'members' => $this->members
+                ->map(function ($member) {
                     return [
                         'id' => $member->user->id,
                         'name' => $member->user->name,
                         'email' => $member->user->email,
                     ];
-                });
-            }),
-            'created_at' => $this->created_at,
+                })
+                ->values()
+                ->all(),
+
+            'created_at' => $this->created_at?->toISOString(),
         ];
     }
 }

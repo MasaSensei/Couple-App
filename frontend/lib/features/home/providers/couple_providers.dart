@@ -6,7 +6,7 @@ import 'couple_notifier.dart';
 import 'couple_state.dart';
 
 final coupleRepositoryProvider = Provider<CoupleRepository>((ref) {
-  return CoupleRepository(apiClient: ref.watch(apiClientProvider));
+  return CoupleRepository(ref.watch(apiClientProvider));
 });
 
 final coupleNotifierProvider = NotifierProvider<CoupleNotifier, CoupleState>(

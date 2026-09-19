@@ -18,4 +18,14 @@ class Couple extends Model
     {
         return $this->hasMany(CoupleMember::class);
     }
+
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(CoupleInvitation::class);
+    }
+
+    public function dates(): HasMany
+    {
+        return $this->hasMany(Date::class);
+    }
 }

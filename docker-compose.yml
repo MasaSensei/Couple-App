@@ -20,6 +20,32 @@ services:
     networks:
       - couples_network
 
+  app_test:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile
+    container_name: couples_app_test
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    environment:
+      APP_ENV: testing
+      APP_DEBUG: "true"
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: couples_test
+      DB_USERNAME: couples
+      DB_PASSWORD: couples_dev_password
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: array
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - couples_network
+
   postgres:
     image: postgres:17-alpine
     container_name: couples_postgres

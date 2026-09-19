@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/features/home/presentation/accept_invitation_screen.dart';
+import 'package:frontend/features/home/presentation/invite_partner_screen.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../providers/couple_providers.dart';
 import '../providers/couple_state.dart';
-import 'join_couple_screen.dart';
+import 'date_list_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -65,7 +67,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return _buildEmptyCouple();
 
       case CoupleStatus.error:
-        return _buildError(coupleState.message);
+        return _buildError(coupleState.errorMessage);
     }
   }
 
@@ -76,26 +78,103 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return _buildError('Couple data is unavailable.');
     }
 
+    final partner = couple.members.length > 1
+        ? couple.members.firstWhere(
+            (member) => member.name != userName,
+            orElse: () => couple.members.first,
+          )
+        : null;
+
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.favorite_rounded, size: 64),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            'Hello, ${userName ?? 'there'} ♡',
-            style: AppTextStyles.title,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            'Your couple space is ready.',
-            style: AppTextStyles.subtitle,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Text('${couple.members.length} member(s)', style: AppTextStyles.body),
-        ],
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.favorite_rounded, size: 64),
+
+            const SizedBox(height: AppSpacing.lg),
+
+            Text(
+              'Hello, ${userName ?? 'there'} ♡',
+              style: AppTextStyles.title,
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: AppSpacing.sm),
+
+            Text(
+              'Your couple space is ready.',
+              style: AppTextStyles.subtitle,
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: AppSpacing.xl),
+
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  children: [
+                    const Icon(Icons.people_alt_rounded, size: 32),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    Text(
+                      '${couple.members.length} member(s)',
+                      style: AppTextStyles.subtitle,
+                    ),
+
+                    if (partner != null) ...[
+                      const SizedBox(height: AppSpacing.md),
+
+                      Text(
+                        partner.name,
+                        style: AppTextStyles.title,
+                        textAlign: TextAlign.center,
+                      ),
+
+                      const SizedBox(height: AppSpacing.xs),
+
+                      Text(
+                        partner.email,
+                        style: AppTextStyles.body,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const DateListScreen()),
+                );
+              },
+              icon: const Icon(Icons.favorite_outline_rounded),
+              label: const Text('Our Dates'),
+            ),
+
+            if (couple.members.length < 2) ...[
+              const SizedBox(height: AppSpacing.lg),
+
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const InvitePartnerScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.favorite_border_rounded),
+                label: const Text('Invite your partner'),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -145,14 +224,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           OutlinedButton(
             onPressed: isLoading
                 ? null
-                : () {
-                    Navigator.of(context).push(
+                : () async {
+                    final accepted = await Navigator.of(context).push<bool>(
                       MaterialPageRoute(
-                        builder: (_) => const JoinCoupleScreen(),
+                        builder: (_) => const AcceptInvitationScreen(),
                       ),
                     );
+
+                    if (accepted == true && mounted) {
+                      await ref
+                          .read(coupleNotifierProvider.notifier)
+                          .loadCouple();
+                    }
                   },
-            child: const Text('Join a space'),
+            child: const Text('Accept invitation'),
           ),
         ],
       ),

@@ -1,53 +1,52 @@
-import 'package:dio/dio.dart';
-
 import '/features/auth/data/models/couple_model.dart';
-import '../../../../core/error/api_error_handler.dart';
+
 import '../../../../core/network/api_client.dart';
 
 class CoupleRepository {
-  const CoupleRepository({required this.apiClient});
+  CoupleRepository(this._apiClient);
 
-  final ApiClient apiClient;
+  final ApiClient _apiClient;
 
-  Future<CoupleModel> getCouple() async {
-    try {
-      final response = await apiClient.dio.get('/couple');
+  Future<CoupleModel> getMyCouple() async {
+    final response = await _apiClient.get('/couple');
 
-      final data = response.data['data'] as Map<String, dynamic>;
-      final coupleData = data['couple'] as Map<String, dynamic>;
+    final data = response.data['data'] as Map<String, dynamic>;
 
-      return CoupleModel.fromJson(coupleData);
-    } on DioException catch (error) {
-      throw ApiErrorHandler.handle(error);
-    }
+    final coupleData = data['couple'] as Map<String, dynamic>;
+
+    return CoupleModel.fromJson(coupleData);
   }
 
   Future<CoupleModel> createCouple() async {
-    try {
-      final response = await apiClient.dio.post('/couple');
+    final response = await _apiClient.post('/couple');
 
-      final data = response.data['data'] as Map<String, dynamic>;
-      final coupleData = data['couple'] as Map<String, dynamic>;
+    final data = response.data['data'] as Map<String, dynamic>;
 
-      return CoupleModel.fromJson(coupleData);
-    } on DioException catch (error) {
-      throw ApiErrorHandler.handle(error);
-    }
+    final coupleData = data['couple'] as Map<String, dynamic>;
+
+    return CoupleModel.fromJson(coupleData);
   }
 
-  Future<CoupleModel> joinCouple({required String inviteCode}) async {
-    try {
-      final response = await apiClient.dio.post(
-        '/couple/join',
-        data: {'invite_code': inviteCode},
-      );
+  Future<CoupleModel> joinCouple(String inviteCode) async {
+    final response = await _apiClient.post(
+      '/couple/join',
+      data: {'invite_code': inviteCode},
+    );
 
-      final data = response.data['data'] as Map<String, dynamic>;
-      final coupleData = data['couple'] as Map<String, dynamic>;
+    final data = response.data['data'] as Map<String, dynamic>;
 
-      return CoupleModel.fromJson(coupleData);
-    } on DioException catch (error) {
-      throw ApiErrorHandler.handle(error);
-    }
+    final coupleData = data['couple'] as Map<String, dynamic>;
+
+    return CoupleModel.fromJson(coupleData);
+  }
+
+  Future<CoupleModel> getCoupleById(int coupleId) async {
+    final response = await _apiClient.get('/couple/$coupleId');
+
+    final data = response.data['data'] as Map<String, dynamic>;
+
+    final coupleData = data['couple'] as Map<String, dynamic>;
+
+    return CoupleModel.fromJson(coupleData);
   }
 }
