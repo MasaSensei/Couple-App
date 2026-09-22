@@ -373,4 +373,64 @@ class DateApiTest extends TestCase
                 'message' => 'Completed date cannot be cancelled.',
             ]);
     }
+
+    public function test_member_cannot_create_date_without_title(): void
+    {
+        $user = User::factory()->create();
+
+        $couple = Couple::factory()->create();
+
+        $couple->members()->create([
+            'user_id' => $user->id,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson(
+            '/api/v1/dates',
+            [
+                'description' => 'A date without title.',
+                'location' => 'Jakarta',
+                'scheduled_at' => now()->addDays(7)->toISOString(),
+            ],
+        );
+
+        $response
+            ->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+            ]);
+
+        $this->assertDatabaseCount('dates', 0);
+    }
+
+    public function test_member_cannot_create_date_without_scheduled_at(): void
+    {
+        $user = User::factory()->create();
+
+        $couple = Couple::factory()->create();
+
+        $couple->members()->create([
+            'user_id' => $user->id,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson(
+            '/api/v1/dates',
+            [
+                'title' => 'Dinner together',
+                'description' => 'Our dinner.',
+                'location' => 'Jakarta',
+            ],
+        );
+
+        $response
+            ->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+            ]);
+
+        $this->assertDatabaseCount('dates', 0);
+    }
 }
