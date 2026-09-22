@@ -93,6 +93,32 @@ class CoupleInvitationService
         User $user,
         string $token,
     ): Couple {
+        $invitation = CoupleInvitation::query()
+            ->where('token', $token)
+            ->first();
+
+        if (! $invitation) {
+            throw new DomainException(
+                'Invalid invitation.'
+            );
+        }
+
+        if ($invitation->status !== 'pending') {
+            throw new DomainException(
+                'This invitation is no longer active.'
+            );
+        }
+
+        if ($invitation->expires_at->isPast()) {
+            $invitation->update([
+                'status' => 'expired',
+            ]);
+
+            throw new DomainException(
+                'This invitation has expired.'
+            );
+        }
+
         return DB::transaction(function () use ($user, $token) {
             $invitation = CoupleInvitation::query()
                 ->where('token', $token)

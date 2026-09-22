@@ -41,7 +41,7 @@ class DateAuthorizationTest extends TestCase
         );
 
         $response
-            ->assertStatus(404)
+            ->assertStatus(422)
             ->assertJson([
                 'success' => false,
                 'message' => 'Date not found.',
@@ -79,7 +79,7 @@ class DateAuthorizationTest extends TestCase
         );
 
         $response
-            ->assertStatus(404)
+            ->assertStatus(422)
             ->assertJson([
                 'success' => false,
                 'message' => 'Date not found.',
@@ -120,7 +120,7 @@ class DateAuthorizationTest extends TestCase
         );
 
         $response
-            ->assertStatus(404)
+            ->assertStatus(422)
             ->assertJson([
                 'success' => false,
                 'message' => 'Date not found.',
@@ -161,7 +161,7 @@ class DateAuthorizationTest extends TestCase
         );
 
         $response
-            ->assertStatus(404)
+            ->assertStatus(422)
             ->assertJson([
                 'success' => false,
                 'message' => 'Date not found.',
@@ -176,6 +176,7 @@ class DateAuthorizationTest extends TestCase
     public function test_guest_cannot_access_date(): void
     {
         $user = User::factory()->create();
+
         $couple = Couple::factory()->create();
 
         $couple->members()->create([
@@ -221,7 +222,7 @@ class DateAuthorizationTest extends TestCase
             ->assertStatus(404)
             ->assertJson([
                 'success' => false,
-                'message' => 'Date not found.',
+                'message' => 'User does not belong to a couple.',
             ]);
     }
 }

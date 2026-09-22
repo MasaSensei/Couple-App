@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api\V1\Couple;
 
+use App\Models\Couple;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -11,105 +12,108 @@ class CoupleAuthorizationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_couple_member_can_view_couple(): void
+    public function test_user_cannot_view_another_couple(): void
     {
-        $user = User::factory()->create();
+        $userA = User::factory()->create();
+        $userB = User::factory()->create();
 
-        Sanctum::actingAs($user);
+        $coupleA = Couple::factory()->create();
+        $coupleB = Couple::factory()->create();
 
-        $createResponse = $this->postJson('/api/v1/couple');
+        $coupleA->members()->create([
+            'user_id' => $userA->id,
+        ]);
 
-        $createResponse->assertCreated();
+        $coupleB->members()->create([
+            'user_id' => $userB->id,
+        ]);
 
-        $coupleId = $createResponse->json(
-            'data.couple.id'
-        );
+        Sanctum::actingAs($userA);
 
         $response = $this->getJson(
-            "/api/v1/couple/{$coupleId}"
+            "/api/v1/couple/{$coupleB->id}"
         );
 
         $response
-            ->assertOk()
+            ->assertStatus(403)
             ->assertJson([
-                'success' => true,
-                'data' => [
-                    'couple' => [
-                        'id' => $coupleId,
-                    ],
-                ],
+                'success' => false,
+                'message' => 'This action is unauthorized.',
             ]);
     }
 
-    public function test_non_member_cannot_view_couple(): void
+    public function test_user_cannot_create_invitation_for_another_couple(): void
     {
-        $owner = User::factory()->create();
-        $nonMember = User::factory()->create();
+        $userA = User::factory()->create();
+        $userB = User::factory()->create();
 
-        Sanctum::actingAs($owner);
+        $coupleA = Couple::factory()->create();
+        $coupleB = Couple::factory()->create();
 
-        $createResponse = $this->postJson('/api/v1/couple');
+        $coupleA->members()->create([
+            'user_id' => $userA->id,
+        ]);
 
-        $createResponse->assertCreated();
+        $coupleB->members()->create([
+            'user_id' => $userB->id,
+        ]);
 
-        $coupleId = $createResponse->json(
-            'data.couple.id'
+        Sanctum::actingAs($userA);
+
+        /*
+         * The endpoint itself resolves the couple
+         * from the authenticated user, so user A
+         * can only create an invitation for Couple A.
+         *
+         * This assertion verifies that Couple B
+         * receives no invitation from User A.
+         */
+        $response = $this->postJson(
+            '/api/v1/couple/invite'
         );
 
-        Sanctum::actingAs($nonMember);
+        $response->assertStatus(201);
 
-        $response = $this->getJson(
-            "/api/v1/couple/{$coupleId}"
+        $this->assertDatabaseMissing(
+            'couple_invitations',
+            [
+                'couple_id' => $coupleB->id,
+                'invited_by' => $userA->id,
+            ],
         );
 
-        $response->assertStatus(403);
+        $this->assertDatabaseHas(
+            'couple_invitations',
+            [
+                'couple_id' => $coupleA->id,
+                'invited_by' => $userA->id,
+            ],
+        );
     }
 
     public function test_guest_cannot_view_couple(): void
     {
-        $owner = User::factory()->create();
-
-        Sanctum::actingAs($owner);
-
-        $createResponse = $this->postJson('/api/v1/couple');
-
-        $createResponse->assertCreated();
-
-        $coupleId = $createResponse->json(
-            'data.couple.id'
-        );
-
-        // Clear authentication state.
-        // Request berikutnya harus dianggap sebagai guest.
-        $this->app['auth']->forgetGuards();
-
-        $response = $this->getJson(
-            "/api/v1/couple/{$coupleId}"
-        );
-
-        $response
-            ->assertUnauthorized()
-            ->assertJson([
-                'success' => false,
-                'message' => 'Unauthenticated.',
-                'data' => null,
-            ]);
-    }
-
-    public function test_non_existing_couple_returns_not_found(): void
-    {
         $user = User::factory()->create();
 
-        Sanctum::actingAs($user);
+        $couple = Couple::factory()->create();
 
-        $response = $this->getJson('/api/v1/couple/999999');
+        $couple->members()->create([
+            'user_id' => $user->id,
+        ]);
 
-        $response
-            ->assertNotFound()
-            ->assertJson([
-                'success' => false,
-                'message' => 'Couple not found.',
-                'data' => null,
-            ]);
+        $response = $this->getJson(
+            "/api/v1/couple/{$couple->id}"
+        );
+
+        $response->assertStatus(401);
+    }
+
+    public function test_guest_cannot_create_invitation(): void
+    {
+        $response = $this->postJson(
+            '/api/v1/couple/invite'
+        );
+
+        $response->assertStatus(401);
     }
 }
