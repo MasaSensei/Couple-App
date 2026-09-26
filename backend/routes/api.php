@@ -4,6 +4,9 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CoupleController;
 use App\Http\Controllers\Api\V1\DateController;
 use App\Http\Controllers\Api\V1\DateCommentController;
+use App\Http\Controllers\Api\V1\MemoryController;
+use App\Http\Controllers\Api\V1\MemoryPhotoController;
+use App\Http\Controllers\Api\V1\MemoryCommentController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -74,6 +77,76 @@ Route::prefix('v1')->group(function () {
         Route::post(
             '/dates/{dateId}/comments',
             [DateCommentController::class, 'store'],
+        );
+
+        Route::get(
+            '/memories/timeline',
+            [MemoryController::class, 'timeline'],
+        );
+
+        Route::get(
+            '/memories',
+            [MemoryController::class, 'index'],
+        );
+
+        Route::post(
+            '/memories',
+            [MemoryController::class, 'store'],
+        );
+
+        Route::get(
+            '/memories/{memory}',
+            [MemoryController::class, 'show'],
+        );
+
+        Route::patch(
+            '/memories/{memory}',
+            [MemoryController::class, 'update'],
+        );
+
+        Route::delete(
+            '/memories/{memory}',
+            [MemoryController::class, 'destroy'],
+        );
+
+        Route::post(
+            '/memories/{memory}/photos/upload',
+            [MemoryPhotoController::class, 'upload'],
+        );
+
+        Route::post(
+            '/memory-photos/{photo}/complete',
+            [MemoryPhotoController::class, 'complete'],
+        );
+
+        Route::delete(
+            '/memory-photos/{photo}',
+            [MemoryPhotoController::class, 'destroy'],
+        );
+
+        Route::get(
+            '/memory-photos/{photo}/content',
+            [MemoryPhotoController::class, 'content'],
+        );
+
+        Route::get(
+            '/memories/{memory}/comments',
+            [MemoryCommentController::class, 'index'],
+        );
+
+        Route::post(
+            '/memories/{memory}/comments',
+            [MemoryCommentController::class, 'store'],
+        );
+
+        Route::patch(
+            '/memory-comments/{comment}',
+            [MemoryCommentController::class, 'update'],
+        );
+
+        Route::delete(
+            '/memory-comments/{comment}',
+            [MemoryCommentController::class, 'destroy'],
         );
     });
 

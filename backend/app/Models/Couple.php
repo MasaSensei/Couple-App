@@ -28,4 +28,9 @@ class Couple extends Model
     {
         return $this->hasMany(Date::class);
     }
+
+    public function memories(): HasMany
+    {
+        return $this->hasMany(Memory::class);
+    }
 }

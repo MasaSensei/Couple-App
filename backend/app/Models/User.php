@@ -60,8 +60,28 @@ class User extends Authenticatable implements FilamentUser
         );
     }
 
+    public function createdMemories(): HasMany
+    {
+        return $this->hasMany(Memory::class, 'created_by');
+    }
+
     public function dateComments(): HasMany
     {
         return $this->hasMany(DateComment::class);
+    }
+
+    public function uploadedMemoryPhotos(): HasMany
+    {
+        return $this->hasMany(
+            MemoryPhoto::class,
+            'uploaded_by'
+        );
+    }
+
+    public function memoryComments(): HasMany
+    {
+        return $this->hasMany(
+            MemoryComment::class
+        );
     }
 }

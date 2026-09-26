@@ -5,28 +5,33 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Date extends Model
+class Memory extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     protected $fillable = [
         'couple_id',
         'created_by',
+        'date_id',
         'title',
         'description',
-        'location',
-        'scheduled_at',
-        'status',
-        'completed_at',
+        'memory_date',
+        'location_name',
+        'location_address',
+        'latitude',
+        'longitude',
     ];
 
     protected function casts(): array
     {
         return [
-            'scheduled_at' => 'datetime',
-            'completed_at' => 'datetime',
+            'memory_date' => 'date',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
         ];
     }
 
@@ -45,13 +50,20 @@ class Date extends Model
         );
     }
 
-    public function comments(): HasMany
+    public function date(): BelongsTo
     {
-        return $this->hasMany(DateComment::class);
+        return $this->belongsTo(
+            Date::class
+        );
     }
 
-    public function memories(): HasMany
+    public function photos(): HasMany
     {
-        return $this->hasMany(Memory::class);
+        return $this->hasMany(MemoryPhoto::class);
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(MemoryComment::class);
     }
 }

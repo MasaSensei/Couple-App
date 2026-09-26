@@ -1,0 +1,27 @@
+<?php
+
+namespace App\Policies;
+
+use App\Models\Memory;
+use App\Models\User;
+
+class MemoryPolicy
+{
+    public function view(User $user, Memory $memory): bool
+    {
+        return $memory->couple
+            ->members()
+            ->where('user_id', $user->id)
+            ->exists();
+    }
+
+    public function update(User $user, Memory $memory): bool
+    {
+        return $this->view($user, $memory);
+    }
+
+    public function delete(User $user, Memory $memory): bool
+    {
+        return $this->view($user, $memory);
+    }
+}
