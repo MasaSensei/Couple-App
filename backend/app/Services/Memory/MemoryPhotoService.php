@@ -7,6 +7,7 @@ use App\Models\MemoryPhoto;
 use App\Models\User;
 use App\Services\Storage\PhotoStorage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\UploadedFile;
 use RuntimeException;
 
 class MemoryPhotoService
@@ -128,5 +129,33 @@ class MemoryPhotoService
             $memory->id,
             (string) str()->uuid(),
         );
+    }
+
+    public function upload(
+        User $user,
+        MemoryPhoto $photo,
+        UploadedFile $file,
+    ): MemoryPhoto {
+        $photo->update([
+            'status' => 'uploading',
+        ]);
+
+        try {
+            $this->photoStorage->putObject(
+                $photo->storage_key,
+                $file,
+            );
+
+            return $photo->refresh();
+        } catch (\Throwable $exception) {
+            $photo->update([
+                'status' => 'failed',
+            ]);
+
+            throw new RuntimeException(
+                'Photo upload failed.',
+                previous: $exception,
+            );
+        }
     }
 }

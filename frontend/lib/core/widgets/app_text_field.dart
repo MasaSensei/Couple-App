@@ -12,6 +12,7 @@ class AppTextField extends StatelessWidget {
     this.keyboardType,
     this.textInputAction,
     this.prefixIcon,
+    this.maxLines = 1,
     this.validator,
   });
 
@@ -22,6 +23,7 @@ class AppTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final IconData? prefixIcon;
+  final int? maxLines;
   final String? Function(String?)? validator;
 
   @override

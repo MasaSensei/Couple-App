@@ -29,4 +29,9 @@ interface PhotoStorage
     public function deleteObject(
         string $storageKey,
     ): void;
+
+    public function putObject(
+        string $storageKey,
+        mixed $file,
+    ): array;
 }

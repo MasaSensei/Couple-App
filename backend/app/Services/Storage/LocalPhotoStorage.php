@@ -4,6 +4,7 @@ namespace App\Services\Storage;
 
 use RuntimeException;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 
 class LocalPhotoStorage implements PhotoStorage
 {
@@ -98,5 +99,43 @@ class LocalPhotoStorage implements PhotoStorage
         }
 
         return $disk->path($storageKey);
+    }
+
+    public function putObject(
+        string $storageKey,
+        mixed $file,
+    ): array {
+        if (! $file instanceof UploadedFile) {
+            throw new RuntimeException(
+                'Invalid uploaded photo.'
+            );
+        }
+
+        $disk = Storage::disk(self::DISK);
+
+        $stream = fopen($file->getRealPath(), 'rb');
+
+        if ($stream === false) {
+            throw new RuntimeException(
+                'Unable to read uploaded photo.'
+            );
+        }
+
+        try {
+            $stored = $disk->put(
+                $storageKey,
+                $stream,
+            );
+        } finally {
+            fclose($stream);
+        }
+
+        if (! $stored) {
+            throw new RuntimeException(
+                'Failed to store uploaded photo.'
+            );
+        }
+
+        return $this->getObjectMetadata($storageKey);
     }
 }

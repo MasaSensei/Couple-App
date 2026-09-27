@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
+use App\Http\Requests\Api\V1\Memory\UploadMemoryPhotoRequest;
 
 class MemoryPhotoController extends Controller
 {
@@ -113,5 +114,32 @@ class MemoryPhotoController extends Controller
                 'Cache-Control' => 'private, no-store',
             ],
         );
+    }
+
+    public function uploadBinary(
+        UploadMemoryPhotoRequest $request,
+        MemoryPhoto $photo,
+    ): JsonResponse {
+        Gate::authorize('view', $photo);
+
+        try {
+            $photo = $this->photoService->upload(
+                $request->user(),
+                $photo,
+                $request->file('photo'),
+            );
+
+            return ApiResponse::success(
+                'Photo uploaded successfully.',
+                [
+                    'photo' => new MemoryPhotoResource($photo),
+                ],
+            );
+        } catch (RuntimeException $exception) {
+            return ApiResponse::error(
+                $exception->getMessage(),
+                status: 422,
+            );
+        }
     }
 }

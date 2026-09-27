@@ -7,6 +7,8 @@ import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/register_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/splash/presentation/splash_screen.dart';
+import '../features/memories/presentation/screens/memory_list_screen.dart';
+import '../features/memories/presentation/screens/memory_form_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -22,6 +24,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const RegisterScreen(),
       ),
       GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
+      GoRoute(
+        path: '/memories',
+        builder: (context, state) {
+          return const MemoryListScreen();
+        },
+      ),
+      GoRoute(
+        path: '/memories/create',
+        builder: (context, state) {
+          return const MemoryFormScreen();
+        },
+      ),
     ],
   );
 

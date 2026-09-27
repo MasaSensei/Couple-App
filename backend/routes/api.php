@@ -115,6 +115,11 @@ Route::prefix('v1')->group(function () {
         );
 
         Route::post(
+            '/memory-photos/{photo}/upload',
+            [MemoryPhotoController::class, 'uploadBinary'],
+        );
+
+        Route::post(
             '/memory-photos/{photo}/complete',
             [MemoryPhotoController::class, 'complete'],
         );

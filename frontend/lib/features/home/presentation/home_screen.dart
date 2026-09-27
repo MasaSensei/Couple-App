@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/features/home/presentation/accept_invitation_screen.dart';
 import 'package:frontend/features/home/presentation/invite_partner_screen.dart';
+import 'package:frontend/features/memories/presentation/screens/memory_list_screen.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -156,6 +157,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               },
               icon: const Icon(Icons.favorite_outline_rounded),
               label: const Text('Our Dates'),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const MemoryListScreen()),
+                );
+              },
+              icon: const Icon(Icons.photo_album_outlined),
+              label: const Text('Our Memories'),
             ),
 
             if (couple.members.length < 2) ...[
