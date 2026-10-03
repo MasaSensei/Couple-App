@@ -95,6 +95,16 @@ Route::prefix('v1')->group(function () {
         );
 
         Route::get(
+            '/memories/{memory}/photos',
+            [MemoryPhotoController::class, 'index'],
+        );
+
+        Route::get(
+            '/memories/{memory}/comments',
+            [MemoryCommentController::class, 'index'],
+        );
+
+        Route::get(
             '/memories/{memory}',
             [MemoryController::class, 'show'],
         );
@@ -132,11 +142,6 @@ Route::prefix('v1')->group(function () {
         Route::get(
             '/memory-photos/{photo}/content',
             [MemoryPhotoController::class, 'content'],
-        );
-
-        Route::get(
-            '/memories/{memory}/comments',
-            [MemoryCommentController::class, 'index'],
         );
 
         Route::post(

@@ -13,9 +13,10 @@ import '../../providers/memory_providers.dart';
 import '../../providers/memory_state.dart';
 
 class MemoryFormScreen extends ConsumerStatefulWidget {
-  const MemoryFormScreen({this.memory, super.key});
+  const MemoryFormScreen({this.memory, this.initialData, super.key});
 
   final MemoryModel? memory;
+  final MemoryFormData? initialData;
 
   bool get isEditing => memory != null;
 
@@ -38,22 +39,26 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
     super.initState();
 
     final memory = widget.memory;
+    final initialData = widget.initialData;
 
-    _titleController = TextEditingController(text: memory?.title ?? '');
+    _titleController = TextEditingController(
+      text: memory?.title ?? initialData?.title ?? '',
+    );
 
     _descriptionController = TextEditingController(
-      text: memory?.description ?? '',
+      text: memory?.description ?? initialData?.description ?? '',
     );
 
     _locationNameController = TextEditingController(
-      text: memory?.locationName ?? '',
+      text: memory?.locationName ?? initialData?.locationName ?? '',
     );
 
     _locationAddressController = TextEditingController(
-      text: memory?.locationAddress ?? '',
+      text: memory?.locationAddress ?? initialData?.locationAddress ?? '',
     );
 
-    _memoryDate = memory?.memoryDate ?? DateTime.now();
+    _memoryDate =
+        memory?.memoryDate ?? initialData?.memoryDate ?? DateTime.now();
   }
 
   @override
@@ -249,9 +254,9 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
       memoryDate: _memoryDate,
       locationName: _nullableText(_locationNameController.text),
       locationAddress: _nullableText(_locationAddressController.text),
-      latitude: widget.memory?.latitude,
-      longitude: widget.memory?.longitude,
-      dateId: widget.memory?.dateId,
+      latitude: widget.memory?.latitude ?? widget.initialData?.latitude,
+      longitude: widget.memory?.longitude ?? widget.initialData?.longitude,
+      dateId: widget.memory?.dateId ?? widget.initialData?.dateId,
     );
 
     final notifier = ref.read(memoryNotifierProvider.notifier);

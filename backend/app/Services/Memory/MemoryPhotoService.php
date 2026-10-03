@@ -12,6 +12,7 @@ use RuntimeException;
 
 class MemoryPhotoService
 {
+
     public function __construct(
         private readonly PhotoStorage $photoStorage,
     ) {}
@@ -157,5 +158,14 @@ class MemoryPhotoService
                 previous: $exception,
             );
         }
+    }
+
+    public function listForMemory(Memory $memory)
+    {
+        return $memory->photos()
+            ->where('status', 'verified')
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
     }
 }

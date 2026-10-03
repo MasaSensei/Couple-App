@@ -23,6 +23,20 @@ class MemoryPhotoController extends Controller
         private readonly PhotoStorage $photoStorage,
     ) {}
 
+    public function index(Memory $memory): JsonResponse
+    {
+        Gate::authorize('view', $memory);
+
+        $photos = $this->photoService->listForMemory($memory);
+
+        return ApiResponse::success(
+            'Memory photos retrieved successfully.',
+            [
+                'photos' => MemoryPhotoResource::collection($photos),
+            ],
+        );
+    }
+
     public function upload(
         CreateMemoryPhotoUploadRequest $request,
         Memory $memory,
@@ -58,7 +72,7 @@ class MemoryPhotoController extends Controller
     public function complete(
         MemoryPhoto $photo,
     ): JsonResponse {
-        Gate::authorize('view', $photo);
+        Gate::authorize('complete', $photo);
 
         try {
             $photo = $this->photoService
@@ -120,7 +134,7 @@ class MemoryPhotoController extends Controller
         UploadMemoryPhotoRequest $request,
         MemoryPhoto $photo,
     ): JsonResponse {
-        Gate::authorize('view', $photo);
+        Gate::authorize('upload', $photo);
 
         try {
             $photo = $this->photoService->upload(

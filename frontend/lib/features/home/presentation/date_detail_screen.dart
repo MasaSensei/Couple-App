@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/features/memories/data/models/memory_form_data.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -7,6 +8,9 @@ import '../data/models/date_model.dart';
 import '../providers/date_providers.dart';
 import 'date_form_screen.dart';
 import 'date_comments_section.dart';
+import '../../memories/presentation/screens/memory_form_screen.dart';
+import '../../memories/data/models/memory_model.dart';
+import '../../memories/presentation/screens/memory_detail_screen.dart';
 
 class DateDetailScreen extends ConsumerStatefulWidget {
   const DateDetailScreen({super.key, required this.dateId});
@@ -377,9 +381,24 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
         );
 
       case 'completed':
-        return const Text(
-          'This date has been completed ♡',
-          textAlign: TextAlign.center,
+        return Column(
+          children: [
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () {
+                  _createMemoryFromDate(date);
+                },
+                icon: const Icon(Icons.favorite_rounded),
+                label: const Text('Save this moment'),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            const Text(
+              'This date has been completed ♡',
+              textAlign: TextAlign.center,
+            ),
+          ],
         );
 
       case 'cancelled':
@@ -393,9 +412,42 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
     }
   }
 
+  Future<void> _createMemoryFromDate(DateModel date) async {
+    final result = await Navigator.of(context).push<MemoryModel>(
+      MaterialPageRoute(
+        builder: (_) => MemoryFormScreen(
+          initialData: MemoryFormData(
+            title: date.title,
+            description: date.description,
+            memoryDate: date.scheduledAt,
+            locationName: date.location,
+            dateId: date.id,
+          ),
+        ),
+      ),
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    await Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => MemoryDetailScreen(memory: result)),
+    );
+  }
+
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    final messenger = ScaffoldMessenger.of(context);
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
   }
 
   String _formatDateTime(DateTime date) {

@@ -49,6 +49,21 @@ class ApiClient {
     }
   }
 
+  Future<Response<List<int>>> getBytes(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    try {
+      return await _dio.get<List<int>>(
+        path,
+        queryParameters: queryParameters,
+        options: Options(responseType: ResponseType.bytes),
+      );
+    } on DioException catch (error) {
+      throw ApiErrorHandler.handle(error);
+    }
+  }
+
   Future<Response<T>> post<T>(
     String path, {
     dynamic data,

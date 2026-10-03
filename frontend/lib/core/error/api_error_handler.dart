@@ -24,12 +24,6 @@ class ApiErrorHandler {
   }
 
   static String _fallbackMessage(DioException exception) {
-    print('DIO ERROR TYPE: ${exception.type}');
-    print('DIO ERROR MESSAGE: ${exception.message}');
-    print('DIO REQUEST PATH: ${exception.requestOptions.path}');
-    print('DIO REQUEST URI: ${exception.requestOptions.uri}');
-    print('DIO RESPONSE: ${exception.response}');
-
     switch (exception.type) {
       case DioExceptionType.connectionTimeout:
         return 'The request timed out. Please try again.';
