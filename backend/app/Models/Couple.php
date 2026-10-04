@@ -33,4 +33,11 @@ class Couple extends Model
     {
         return $this->hasMany(Memory::class);
     }
+
+    public function keyPackages(): HasMany
+    {
+        return $this->hasMany(
+            CoupleKeyPackage::class,
+        );
+    }
 }

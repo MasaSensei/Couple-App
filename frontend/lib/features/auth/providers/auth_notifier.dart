@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/storage/token_storage.dart';
+import '../../device/services/device_registration_service.dart';
 import '../data/repositories/auth_repository.dart';
 import 'auth_dependencies.dart';
 import 'auth_state.dart';
@@ -8,11 +9,13 @@ import 'auth_state.dart';
 class AuthNotifier extends Notifier<AuthState> {
   late final AuthRepository _authRepository;
   late final TokenStorage _tokenStorage;
+  late final DeviceRegistrationService _deviceRegistrationService;
 
   @override
   AuthState build() {
     _authRepository = ref.watch(authRepositoryProvider);
     _tokenStorage = ref.watch(tokenStorageProvider);
+    _deviceRegistrationService = ref.watch(deviceRegistrationServiceProvider);
 
     return const AuthState.initial();
   }
@@ -27,6 +30,8 @@ class AuthNotifier extends Notifier<AuthState> {
       );
 
       await _tokenStorage.saveToken(response.token);
+
+      await _deviceRegistrationService.registerCurrentDevice();
 
       state = AuthState.authenticated(response.user);
     } catch (error) {
@@ -51,6 +56,8 @@ class AuthNotifier extends Notifier<AuthState> {
       );
 
       await _tokenStorage.saveToken(response.token);
+
+      await _deviceRegistrationService.registerCurrentDevice();
 
       state = AuthState.authenticated(response.user);
     } catch (error) {

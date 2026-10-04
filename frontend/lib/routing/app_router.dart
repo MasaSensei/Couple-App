@@ -9,6 +9,7 @@ import '../features/home/presentation/home_screen.dart';
 import '../features/splash/presentation/splash_screen.dart';
 import '../features/memories/presentation/screens/memory_list_screen.dart';
 import '../features/memories/presentation/screens/memory_form_screen.dart';
+import '../features/device/data/presentation/screens/device_management_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -34,6 +35,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/memories/create',
         builder: (context, state) {
           return const MemoryFormScreen();
+        },
+      ),
+      GoRoute(
+        path: '/devices',
+        builder: (context, state) {
+          return const DeviceManagementScreen();
         },
       ),
     ],

@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\Couple\CoupleKeyPackageController;
 use App\Http\Controllers\Api\V1\CoupleController;
 use App\Http\Controllers\Api\V1\DateController;
 use App\Http\Controllers\Api\V1\DateCommentController;
+use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\MemoryController;
 use App\Http\Controllers\Api\V1\MemoryPhotoController;
 use App\Http\Controllers\Api\V1\MemoryCommentController;
@@ -24,6 +26,15 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
         Route::patch('/me', [AuthController::class, 'updateProfile']);
+
+        Route::post('/couple/key-packages', [
+            CoupleKeyPackageController::class,
+            'store',
+        ]);
+        Route::get('/couple/key-packages', [
+            CoupleKeyPackageController::class,
+            'index',
+        ]);
 
         Route::post('/couple', [CoupleController::class, 'store']);
         Route::get('/couple', [CoupleController::class, 'show']);
@@ -158,6 +169,21 @@ Route::prefix('v1')->group(function () {
             '/memory-comments/{comment}',
             [MemoryCommentController::class, 'destroy'],
         );
+
+        Route::post('/devices', [
+            DeviceController::class,
+            'store',
+        ]);
+
+        Route::get('/devices', [
+            DeviceController::class,
+            'index',
+        ]);
+
+        Route::delete('/devices/{device}', [
+            DeviceController::class,
+            'destroy',
+        ]);
     });
 
     Route::get(
