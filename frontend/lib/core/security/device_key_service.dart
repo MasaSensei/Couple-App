@@ -52,4 +52,16 @@ class DeviceKeyService {
       keyPair.destroy();
     }
   }
+
+  Future<SimpleKeyPair> loadKeyPair() async {
+    final encodedPrivateKey = await _storage.readPrivateKey();
+
+    if (encodedPrivateKey == null || encodedPrivateKey.isEmpty) {
+      throw StateError('Device private key has not been initialized.');
+    }
+
+    final privateKeyBytes = base64Url.decode(encodedPrivateKey);
+
+    return _algorithm.newKeyPairFromSeed(privateKeyBytes);
+  }
 }

@@ -23,19 +23,24 @@ class MemoryPhoto extends Model
         'height',
         'checksum',
         'encryption_version',
-        'encrypted_size',
         'status',
         'sort_order',
+        'encryption_version',
+        'encryption_algorithm',
+        'key_id',
+        'nonce',
+        'encrypted_size',
     ];
 
     protected function casts(): array
     {
         return [
-            'file_size' => 'integer',
+            'encrypted_size' => 'integer',
             'width' => 'integer',
             'height' => 'integer',
-            'encrypted_size' => 'integer',
+            'file_size' => 'integer',
             'sort_order' => 'integer',
+            'deleted_at' => 'datetime',
         ];
     }
 

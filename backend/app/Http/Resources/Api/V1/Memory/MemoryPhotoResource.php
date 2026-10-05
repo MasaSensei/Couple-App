@@ -13,23 +13,25 @@ class MemoryPhotoResource extends JsonResource
             'id' => $this->id,
             'memory_id' => $this->memory_id,
             'uploaded_by' => $this->uploaded_by,
-
-            'original_filename' =>
-            $this->original_filename,
-
+            'storage_key' => $this->storage_key,
+            'original_filename' => $this->original_filename,
             'mime_type' => $this->mime_type,
             'file_size' => $this->file_size,
             'width' => $this->width,
             'height' => $this->height,
-
-            'status' => $this->status,
+            'checksum' => $this->checksum,
             'sort_order' => $this->sort_order,
+            'status' => $this->status,
 
-            'created_at' =>
-            $this->created_at?->toISOString(),
+            'encryption_version' => $this->encryption_version,
+            'encryption_algorithm' => $this->encryption_algorithm,
+            'key_id' => $this->key_id,
+            'nonce' => $this->nonce,
+            'encrypted_size' => $this->encrypted_size,
 
-            'updated_at' =>
-            $this->updated_at?->toISOString(),
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
+            'deleted_at' => $this->deleted_at?->toISOString(),
         ];
     }
 }

@@ -1,9 +1,13 @@
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/core/security/couple/couple_key.dart';
 
 import 'package:frontend/core/security/couple/couple_key_manager.dart';
+import 'package:frontend/core/security/couple/couple_key_package_service.dart';
 import 'package:frontend/core/security/couple/couple_key_service.dart';
 import 'package:frontend/core/security/couple/couple_key_storage.dart';
+
+import 'couple_key_storage_test.dart';
 
 class FakeCoupleKeyService extends CoupleKeyService {
   FakeCoupleKeyService(this.keyBytes);
@@ -37,6 +41,17 @@ class FakeCoupleKeyStorage extends CoupleKeyStorage {
   @override
   Future<List<int>?> readSecretKeyBytes() async {
     return secretKeyBytes == null ? null : List<int>.from(secretKeyBytes!);
+  }
+}
+
+class FakeCoupleKeyPackageService extends CoupleKeyPackageService {
+  FakeCoupleKeyPackageService({required this.coupleKey});
+
+  final CoupleKey coupleKey;
+
+  @override
+  Future<CoupleKey> unwrapForCurrentDevice({required int deviceId}) async {
+    return coupleKey;
   }
 }
 
@@ -90,4 +105,83 @@ void main() {
       expect(bytes, List<int>.filled(32, 42));
     });
   });
+  test('save stores the couple key in secure storage', () async {
+    final secureStorage = FakeSecureStorage();
+
+    final storage = CoupleKeyStorage(storage: secureStorage);
+
+    final manager = CoupleKeyManager(storage: storage);
+
+    final secretKey = SecretKeyData.random(length: 32);
+
+    final coupleKey = CoupleKey(keyId: 'test-key-id', secretKey: secretKey);
+
+    await manager.save(coupleKey);
+
+    expect(await storage.readKeyId(), 'test-key-id');
+
+    final storedBytes = await storage.readSecretKeyBytes();
+
+    final originalBytes = await secretKey.extractBytes();
+
+    expect(storedBytes, originalBytes);
+  });
+
+  test('getOrRestore returns existing couple key', () async {
+    final secureStorage = FakeSecureStorage();
+
+    final storage = CoupleKeyStorage(storage: secureStorage);
+
+    final secretKey = SecretKeyData.random(length: 32);
+
+    final originalBytes = await secretKey.extractBytes();
+
+    await storage.save(keyId: 'existing-key', secretKeyBytes: originalBytes);
+
+    final manager = CoupleKeyManager(storage: storage);
+
+    final result = await manager.getOrRestore(deviceId: 123);
+
+    expect(result.keyId, 'existing-key');
+
+    final restoredBytes = await result.secretKey.extractBytes();
+
+    expect(restoredBytes, originalBytes);
+  });
+
+  test(
+    'getOrRestore restores and saves couple key when local key is missing',
+    () async {
+      final secureStorage = FakeSecureStorage();
+
+      final storage = CoupleKeyStorage(storage: secureStorage);
+
+      final secretKey = SecretKeyData.random(length: 32);
+
+      final originalBytes = await secretKey.extractBytes();
+
+      final restoredCoupleKey = CoupleKey(
+        keyId: 'server-key',
+        secretKey: secretKey,
+      );
+
+      final manager = CoupleKeyManager(
+        storage: storage,
+        packageService: FakeCoupleKeyPackageService(
+          coupleKey: restoredCoupleKey,
+        ),
+      );
+
+      final result = await manager.getOrRestore(deviceId: 123);
+
+      expect(result.keyId, 'server-key');
+
+      final storedKeyId = await storage.readKeyId();
+
+      final storedBytes = await storage.readSecretKeyBytes();
+
+      expect(storedKeyId, 'server-key');
+      expect(storedBytes, originalBytes);
+    },
+  );
 }

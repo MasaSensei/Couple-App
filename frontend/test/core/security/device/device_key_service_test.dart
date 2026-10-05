@@ -59,4 +59,21 @@ void main() {
 
     expect(await service.hasDeviceKey(), isTrue);
   });
+  test('loadKeyPair can restore the generated device key pair', () async {
+    await service.initialize();
+
+    final keyPair = await service.loadKeyPair();
+
+    try {
+      final restoredPublicKey = await keyPair.extractPublicKey();
+
+      expect(restoredPublicKey, isNotNull);
+    } finally {
+      keyPair.destroy();
+    }
+  });
+
+  test('loadKeyPair fails when device key does not exist', () async {
+    expect(service.loadKeyPair(), throwsA(isA<StateError>()));
+  });
 }
