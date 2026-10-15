@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1\Memory;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class CreateMemoryPhotoUploadRequest extends FormRequest
 {
@@ -20,12 +21,19 @@ class CreateMemoryPhotoUploadRequest extends FormRequest
                 'max:255',
             ],
 
+            // MIME type foto asli sebelum dienkripsi.
             'mime_type' => [
                 'required',
                 'string',
-                'in:image/jpeg,image/png,image/webp',
+                Rule::in([
+                    'image/jpeg',
+                    'image/png',
+                    'image/webp',
+                    'application/octet-stream',
+                ]),
             ],
 
+            // Ukuran foto asli sebelum dienkripsi.
             'file_size' => [
                 'required',
                 'integer',
@@ -48,6 +56,45 @@ class CreateMemoryPhotoUploadRequest extends FormRequest
                 'nullable',
                 'integer',
                 'min:0',
+            ],
+
+            'encryption_version' => [
+                'nullable',
+                'integer',
+                'min:1',
+            ],
+
+            'encryption_algorithm' => [
+                'nullable',
+                'string',
+                Rule::in(['AES-256-GCM']),
+            ],
+
+            'key_id' => [
+                'nullable',
+                'string',
+                'max:128',
+            ],
+
+            // Nonce AES-GCM 12 byte, dikirim dalam Base64.
+            'nonce' => [
+                'nullable',
+                'string',
+                'max:64',
+            ],
+
+            // Ukuran ciphertext dalam byte.
+            'encrypted_size' => [
+                'nullable',
+                'integer',
+                'min:1',
+            ],
+
+            // SHA-256 ciphertext dalam format heksadesimal.
+            'checksum' => [
+                'nullable',
+                'string',
+                'regex:/\A[a-f0-9]{64}\z/i',
             ],
         ];
     }

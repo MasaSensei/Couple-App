@@ -6,11 +6,35 @@ class ApiErrorHandler {
   static ApiException handle(DioException exception) {
     final response = exception.response;
     final statusCode = response?.statusCode;
+    final body = response?.data;
 
-    if (response?.data is Map<String, dynamic>) {
-      final data = response!.data as Map<String, dynamic>;
+    if (body is Map) {
+      final message = body['message'];
+      final payload = body['data'];
 
-      final message = data['message'];
+      // Laravel API response: { data: { errors: {...} } }
+      final errors = payload is Map ? payload['errors'] : body['errors'];
+
+      if (errors is Map) {
+        final details = <String>[];
+
+        errors.forEach((field, messages) {
+          if (messages is List) {
+            for (final item in messages) {
+              details.add('$field: $item');
+            }
+          } else if (messages != null) {
+            details.add('$field: $messages');
+          }
+        });
+
+        if (details.isNotEmpty) {
+          return ApiException(
+            message: details.join('\n'),
+            statusCode: statusCode,
+          );
+        }
+      }
 
       if (message is String && message.isNotEmpty) {
         return ApiException(message: message, statusCode: statusCode);

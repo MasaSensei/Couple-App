@@ -72,4 +72,15 @@ class CoupleKeyManager {
 
     return coupleKey;
   }
+
+  Future<CoupleKey?> getLocalKey() async {
+    final keyId = await _storage.readKeyId();
+    final keyBytes = await _storage.readSecretKeyBytes();
+
+    if (keyId == null || keyId.isEmpty || keyBytes == null) {
+      return null;
+    }
+
+    return CoupleKey(keyId: keyId, secretKey: SecretKey(keyBytes));
+  }
 }

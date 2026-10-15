@@ -81,7 +81,8 @@ class LocalPhotoStorage implements PhotoStorage
             'mime_type' => (new \finfo(FILEINFO_MIME_TYPE))->file(
                 $disk->path($storageKey),
             ),
-            'checksum' => md5_file(
+            'checksum' => hash_file(
+                'sha256',
                 $disk->path($storageKey),
             ),
         ];

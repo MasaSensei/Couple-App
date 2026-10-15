@@ -99,6 +99,16 @@ class UserDeviceTest extends TestCase
             'public_key' => base64_encode(random_bytes(32)),
         ]);
 
+        $keyPackage = $device->coupleKeyPackages()->create([
+            'couple_id' => \App\Models\Couple::factory()->create()->id,
+            'key_id' => (string) \Illuminate\Support\Str::uuid(),
+            'encryption_version' => 1,
+            'ephemeral_public_key' => base64_encode(random_bytes(32)),
+            'nonce' => base64_encode(random_bytes(12)),
+            'ciphertext' => base64_encode(random_bytes(48)),
+            'mac' => base64_encode(random_bytes(16)),
+        ]);
+
         $response = $this
             ->actingAs($user)
             ->deleteJson("/api/v1/devices/{$device->id}");
@@ -118,6 +128,10 @@ class UserDeviceTest extends TestCase
         $device->refresh();
 
         $this->assertNotNull($device->revoked_at);
+
+        $keyPackage->refresh();
+
+        $this->assertNotNull($keyPackage->revoked_at);
     }
 
     public function test_user_cannot_revoke_another_users_device(): void

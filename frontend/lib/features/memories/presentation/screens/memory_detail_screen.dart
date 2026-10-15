@@ -102,21 +102,26 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                       ),
                     ),
 
-                    error: (error, stackTrace) => Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Text(
-                        'Gagal memuat foto.',
-                        style: AppTextStyles.body.copyWith(
-                          color: Theme.of(context).colorScheme.error,
+                    error: (error, stackTrace) {
+                      debugPrint('Memory photos error: $error');
+                      debugPrintStack(stackTrace: stackTrace);
+
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.border),
                         ),
-                      ),
-                    ),
+                        child: Text(
+                          'Gagal memuat foto.',
+                          style: AppTextStyles.body.copyWith(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      );
+                    },
 
                     data: (photos) {
                       final verifiedPhotos = photos

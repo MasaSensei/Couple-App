@@ -45,11 +45,16 @@ class MemoryPhotoService
                     'mime_type' =>
                     $data['mime_type'],
 
-                    'file_size' =>
-                    $data['file_size'],
+                    'file_size' => $data['file_size'],
 
-                    'width' =>
-                    $data['width'] ?? null,
+                    'encryption_version' => $data['encryption_version'] ?? null,
+                    'encryption_algorithm' => $data['encryption_algorithm'] ?? null,
+                    'key_id' => $data['key_id'] ?? null,
+                    'nonce' => $data['nonce'] ?? null,
+                    'encrypted_size' => $data['encrypted_size'] ?? null,
+                    'checksum' => $data['checksum'] ?? null,
+
+                    'width' => $data['width'] ?? null,
 
                     'height' =>
                     $data['height'] ?? null,
@@ -77,21 +82,61 @@ class MemoryPhotoService
         ];
     }
 
+    public function updateEncryptionMetadata(
+        MemoryPhoto $photo,
+        array $data,
+    ): MemoryPhoto {
+        if ($photo->status !== 'pending') {
+            throw new RuntimeException(
+                'Encryption metadata can only be updated while the photo is pending.',
+            );
+        }
+
+        $photo->update([
+            'encryption_version' => $data['encryption_version'],
+            'encryption_algorithm' => $data['encryption_algorithm'],
+            'key_id' => $data['key_id'],
+            'nonce' => $data['nonce'],
+            'encrypted_size' => $data['encrypted_size'],
+            'checksum' => strtolower($data['checksum']),
+            'mac' => $data['mac'],
+        ]);
+
+        return $photo->refresh();
+    }
+
     public function complete(
         MemoryPhoto $photo,
     ): MemoryPhoto {
+
+        if (! in_array($photo->status, ['uploading'], true)) {
+            throw new RuntimeException(
+                'Photo must be uploaded before verification.',
+            );
+        }
+
         $photo->update([
             'status' => 'uploading',
         ]);
 
         try {
-            $metadata = $this->photoStorage
-                ->verifyObject(
-                    $photo->storage_key,
-                    [
-                        'file_size' => $photo->file_size,
-                    ],
-                );
+            $expectedMetadata = [];
+
+            if ($photo->encryption_version !== null) {
+                $expectedMetadata = [
+                    'encrypted_size' => $photo->encrypted_size,
+                    'checksum' => $photo->checksum,
+                ];
+            } else {
+                $expectedMetadata = [
+                    'file_size' => $photo->file_size,
+                ];
+            }
+
+            $metadata = $this->photoStorage->verifyObject(
+                $photo->storage_key,
+                $expectedMetadata,
+            );
 
             $photo->update([
                 'status' => 'verified',

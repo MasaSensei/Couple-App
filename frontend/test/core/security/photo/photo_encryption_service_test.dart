@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/core/security/couple/couple_key.dart';
 import 'package:frontend/core/security/photo/photo_encryption_metadata.dart';
 import 'package:frontend/core/security/photo/photo_encryption_service.dart';
+import 'package:frontend/core/security/couple/couple_key_wrapper.dart';
+import 'package:frontend/core/security/couple/device_couple_key_service.dart';
 
 void main() {
   test('encrypt returns ciphertext, nonce, and mac', () async {
@@ -101,6 +103,55 @@ void main() {
     expect(decrypted, plaintext);
   });
 
+  test('partner can decrypt photo using the same couple key', () async {
+    final wrapper = CoupleKeyWrapper();
+    final deviceKeyService = DeviceCoupleKeyService(wrapper: wrapper);
+    final photoService = PhotoEncryptionService();
+
+    final deviceBKeyPair = await X25519().newKeyPair();
+    final deviceBPublicKey = await deviceBKeyPair.extractPublicKey();
+
+    final originalBytes = <int>[10, 20, 30, 40, 50];
+    final coupleKey = CoupleKey(
+      keyId: 'shared-couple-key',
+      secretKey: SecretKey(originalBytes),
+    );
+
+    // Device A encrypts the photo.
+    final encryptedPhoto = await photoService.encrypt(
+      plaintext: [1, 2, 3, 4, 5],
+      coupleKey: coupleKey,
+      photoId: 'shared-photo-1',
+    );
+
+    // Device A wraps the same Couple Key for device B.
+    final package = await deviceKeyService.wrapForDevice(
+      deviceId: 2,
+      coupleKey: coupleKey,
+      devicePublicKey: deviceBPublicKey,
+    );
+
+    // Device B restores the Couple Key from its package.
+    final restoredSecretKey = await wrapper.unwrap(
+      wrappedKey: package.wrappedKey,
+      recipientKeyPair: deviceBKeyPair,
+    );
+
+    final restoredCoupleKey = CoupleKey(
+      keyId: package.wrappedKey.keyId,
+      secretKey: restoredSecretKey,
+    );
+
+    // Device B decrypts the photo.
+    final decryptedBytes = await photoService.decrypt(
+      encryptedPhoto: encryptedPhoto,
+      coupleKey: restoredCoupleKey,
+      photoId: 'shared-photo-1',
+    );
+
+    expect(decryptedBytes, [1, 2, 3, 4, 5]);
+  });
+
   test('decrypt fails when ciphertext is tampered', () async {
     final service = PhotoEncryptionService();
 
@@ -124,10 +175,10 @@ void main() {
     final tampered = EncryptedPhoto(
       metadata: PhotoEncryptionMetadata(
         keyId: encrypted.metadata.keyId,
-        encryptionVersion: encrypted.metadata.encryptionVersion + 1,
+        encryptionVersion: encrypted.metadata.encryptionVersion,
       ),
       nonce: encrypted.nonce,
-      ciphertext: encrypted.ciphertext,
+      ciphertext: tamperedCiphertext,
       mac: encrypted.mac,
       checksum: encrypted.checksum,
     );
@@ -163,11 +214,11 @@ void main() {
     final tampered = EncryptedPhoto(
       metadata: PhotoEncryptionMetadata(
         keyId: encrypted.metadata.keyId,
-        encryptionVersion: encrypted.metadata.encryptionVersion + 1,
+        encryptionVersion: encrypted.metadata.encryptionVersion,
       ),
       nonce: encrypted.nonce,
       ciphertext: encrypted.ciphertext,
-      mac: encrypted.mac,
+      mac: tamperedMac,
       checksum: encrypted.checksum,
     );
 

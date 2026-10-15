@@ -57,8 +57,6 @@ class MemoryPhotoTest extends TestCase
             ],
         );
 
-        $sessionResponse->dump();
-
         $sessionResponse
             ->assertCreated()
             ->assertJsonPath(
@@ -129,6 +127,8 @@ class MemoryPhotoTest extends TestCase
             'created_by' => $user->id,
         ]);
 
+        $nonce = base64_encode(random_bytes(12));
+
         $photo = $memory->photos()->create([
             'uploaded_by' => $user->id,
             'storage_key' => 'couples/1/memories/1/photos/test.jpg',
@@ -139,6 +139,12 @@ class MemoryPhotoTest extends TestCase
             'height' => 100,
             'sort_order' => 0,
             'status' => 'verified',
+            'encryption_version' => '1',
+            'encryption_algorithm' => 'AES-256-GCM',
+            'key_id' => 'test-key-id',
+            'nonce' => $nonce,
+            'encrypted_size' => 12345,
+            'checksum' => str_repeat('a', 64),
         ]);
 
         $this->actingAs($user);
@@ -157,8 +163,21 @@ class MemoryPhotoTest extends TestCase
                 'data.photos.0.status',
                 'verified',
             )
-            ->assertJsonMissingPath(
-                'data.photos.0.storage_key',
+            ->assertJsonPath(
+                'data.photos.0.encryption_version',
+                '1',
+            )
+            ->assertJsonPath(
+                'data.photos.0.encryption_algorithm',
+                'AES-256-GCM',
+            )
+            ->assertJsonPath(
+                'data.photos.0.key_id',
+                'test-key-id',
+            )
+            ->assertJsonPath(
+                'data.photos.0.nonce',
+                $nonce,
             );
     }
 
@@ -257,5 +276,79 @@ class MemoryPhotoTest extends TestCase
         );
 
         $response->assertForbidden();
+    }
+
+
+    public function test_user_can_upload_encrypted_memory_photo_binary(): void
+    {
+        Storage::fake('local');
+
+        $user = User::factory()->create();
+        $couple = Couple::factory()->create();
+
+        CoupleMember::create([
+            'couple_id' => $couple->id,
+            'user_id' => $user->id,
+        ]);
+
+        $memory = Memory::factory()->create([
+            'couple_id' => $couple->id,
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user);
+
+        // Buat sesi upload dengan metadata file terenkripsi.
+        $sessionResponse = $this->postJson(
+            "/api/v1/memories/{$memory->id}/photos/upload",
+            [
+                'original_filename' => 'memory.enc',
+                'mime_type' => 'application/octet-stream',
+                'file_size' => 100,
+                'width' => null,
+                'height' => null,
+            ],
+        );
+
+        $sessionResponse->dump();
+
+        $sessionResponse->assertCreated();
+
+        $photoId = $sessionResponse->json('data.photo.id');
+
+        // Kirim ciphertext, bukan gambar JPEG/PNG.
+        $ciphertext = random_bytes(100);
+        $uploadResponse = $this->post(
+            "/api/v1/memory-photos/{$photoId}/upload",
+            [
+                'encryption_mode' => 'encrypted',
+                'photo' => UploadedFile::fake()->create(
+                    'memory.enc',
+                    100,
+                    'application/octet-stream',
+                ),
+            ],
+        );
+
+        $uploadResponse->dump();
+        $uploadResponse->assertOk();
+
+        $uploadResponse->assertOk();
+
+        $uploadResponse->assertJsonPath(
+            'data.photo.status',
+            'uploading',
+        );
+
+        $photo = $memory->photos()->findOrFail($photoId);
+
+        $this->assertTrue(
+            Storage::disk('local')->exists($photo->storage_key),
+        );
+
+        $this->assertSame(
+            $ciphertext,
+            Storage::disk('local')->get($photo->storage_key),
+        );
     }
 }

@@ -227,6 +227,62 @@ class CoupleKeyPackageTest extends TestCase
             );
     }
 
+
+    public function test_partner_can_list_key_packages_from_both_devices(): void
+    {
+        $userA = User::factory()->create();
+        $userB = User::factory()->create();
+
+        $couple = Couple::factory()->create();
+
+        CoupleMember::create([
+            'couple_id' => $couple->id,
+            'user_id' => $userA->id,
+        ]);
+
+        CoupleMember::create([
+            'couple_id' => $couple->id,
+            'user_id' => $userB->id,
+        ]);
+
+        $deviceA = UserDevice::create([
+            'user_id' => $userA->id,
+            'device_identifier' => fake()->uuid(),
+            'device_name' => 'Device A',
+            'platform' => 'android',
+            'public_key' => base64_encode(random_bytes(32)),
+        ]);
+
+        $deviceB = UserDevice::create([
+            'user_id' => $userB->id,
+            'device_identifier' => fake()->uuid(),
+            'device_name' => 'Device B',
+            'platform' => 'android',
+            'public_key' => base64_encode(random_bytes(32)),
+        ]);
+
+        $packageA = CoupleKeyPackage::create([
+            'couple_id' => $couple->id,
+            'device_id' => $deviceA->id,
+            ...$this->validPayload($deviceA->id),
+        ]);
+
+        $packageB = CoupleKeyPackage::create([
+            'couple_id' => $couple->id,
+            'device_id' => $deviceB->id,
+            ...$this->validPayload($deviceB->id),
+        ]);
+
+        $response = $this->actingAs($userB)
+            ->getJson('/api/v1/couple/key-packages');
+
+        $response
+            ->assertOk()
+            ->assertJsonFragment(['id' => $packageA->id])
+            ->assertJsonFragment(['id' => $packageB->id]);
+    }
+
+
     private function validPayload(int $deviceId): array
     {
         return [

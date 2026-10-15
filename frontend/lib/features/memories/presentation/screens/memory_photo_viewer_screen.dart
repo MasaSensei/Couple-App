@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/features/memories/data/models/memory_photo_model.dart';
-import 'package:frontend/features/memories/data/repositories/memory_photo_repository.dart';
 import 'package:frontend/features/memories/providers/memory_photo_provider.dart';
 
 class MemoryPhotoViewerScreen extends ConsumerStatefulWidget {
@@ -61,7 +60,9 @@ class _MemoryPhotoViewerScreenState
               itemBuilder: (context, index) {
                 return _PhotoViewerItem(
                   photo: widget.photos[index],
-                  repository: ref.read(memoryPhotoRepositoryProvider),
+                  onLoadPhoto: () => ref
+                      .read(memoryPhotoNotifierProvider.notifier)
+                      .getDecryptedPhotoBytes(photo: widget.photos[index]),
                 );
               },
             ),
@@ -102,10 +103,10 @@ class _MemoryPhotoViewerScreenState
 }
 
 class _PhotoViewerItem extends StatefulWidget {
-  const _PhotoViewerItem({required this.photo, required this.repository});
+  const _PhotoViewerItem({required this.photo, required this.onLoadPhoto});
 
   final MemoryPhotoModel photo;
-  final MemoryPhotoRepository repository;
+  final Future<List<int>> Function() onLoadPhoto;
 
   @override
   State<_PhotoViewerItem> createState() => _PhotoViewerItemState();
@@ -131,7 +132,7 @@ class _PhotoViewerItemState extends State<_PhotoViewerItem> {
   }
 
   void _loadPhoto() {
-    _photoFuture = widget.repository.getPhotoBytes(photoId: widget.photo.id);
+    _photoFuture = widget.onLoadPhoto();
   }
 
   @override

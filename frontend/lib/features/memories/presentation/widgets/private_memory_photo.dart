@@ -26,8 +26,8 @@ class _PrivateMemoryPhotoState extends ConsumerState<PrivateMemoryPhoto> {
 
   Future<List<int>> _loadPhoto() {
     return ref
-        .read(memoryPhotoRepositoryProvider)
-        .getPhotoBytes(photoId: widget.photo.id);
+        .read(memoryPhotoNotifierProvider.notifier)
+        .getDecryptedPhotoBytes(photo: widget.photo);
   }
 
   @override

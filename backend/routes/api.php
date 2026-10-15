@@ -135,6 +135,13 @@ Route::prefix('v1')->group(function () {
             [MemoryPhotoController::class, 'upload'],
         );
 
+
+        Route::patch(
+            '/memory-photos/{photo}/encryption',
+            [MemoryPhotoController::class, 'updateEncryption'],
+        );
+
+
         Route::post(
             '/memory-photos/{photo}/upload',
             [MemoryPhotoController::class, 'uploadBinary'],

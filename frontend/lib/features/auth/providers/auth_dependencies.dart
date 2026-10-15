@@ -4,6 +4,7 @@ import 'package:frontend/features/device/services/device_registration_service.da
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/token_storage.dart';
 import '../data/repositories/auth_repository.dart';
+import '../../device/data/repositories/device_repository.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient();
@@ -20,5 +21,7 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 final deviceRegistrationServiceProvider = Provider<DeviceRegistrationService>((
   ref,
 ) {
-  return DeviceRegistrationService();
+  return DeviceRegistrationService(
+    repository: DeviceRepository(apiClient: ref.watch(apiClientProvider)),
+  );
 });

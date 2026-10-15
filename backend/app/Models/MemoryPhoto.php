@@ -12,6 +12,7 @@ class MemoryPhoto extends Model
     use HasFactory;
     use SoftDeletes;
 
+
     protected $fillable = [
         'memory_id',
         'uploaded_by',
@@ -23,14 +24,15 @@ class MemoryPhoto extends Model
         'height',
         'checksum',
         'encryption_version',
-        'status',
-        'sort_order',
-        'encryption_version',
         'encryption_algorithm',
         'key_id',
         'nonce',
+        'mac',
         'encrypted_size',
+        'status',
+        'sort_order',
     ];
+
 
     protected function casts(): array
     {

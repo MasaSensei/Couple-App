@@ -9,6 +9,7 @@ use App\Models\UserDevice;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Http\Resources\Api\V1\Devices\DeviceResource;
+use Illuminate\Support\Facades\DB;
 
 class DeviceController extends Controller
 {
@@ -63,9 +64,19 @@ class DeviceController extends Controller
             404,
         );
 
-        $device->update([
-            'revoked_at' => now(),
-        ]);
+        DB::transaction(function () use ($device): void {
+            $revokedAt = now();
+
+            $device->update([
+                'revoked_at' => $revokedAt,
+            ]);
+
+            $device->coupleKeyPackages()
+                ->whereNull('revoked_at')
+                ->update([
+                    'revoked_at' => $revokedAt,
+                ]);
+        });
 
         return ApiResponse::success(
             'Device revoked successfully.',

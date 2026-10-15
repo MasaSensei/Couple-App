@@ -22,12 +22,12 @@ class DeviceRegistrationService {
   final String _platform;
 
   Future<void> registerCurrentDevice({String? deviceName}) async {
-    final deviceId = await _identityService.getOrCreateDeviceId();
+    final deviceIdentifier = await _identityService.getOrCreateDeviceId();
 
     final publicKey = await _keyService.initialize();
 
     await _repository.registerDevice(
-      deviceIdentifier: deviceId,
+      deviceIdentifier: deviceIdentifier,
       deviceName: deviceName ?? 'My Device',
       platform: _platform,
       publicKey: publicKey,

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Gate;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Requests\Api\V1\Memory\UploadMemoryPhotoRequest;
+use App\Http\Requests\Api\V1\Memory\UpdateMemoryPhotoEncryptionRequest;
 
 class MemoryPhotoController extends Controller
 {
@@ -41,6 +42,15 @@ class MemoryPhotoController extends Controller
         CreateMemoryPhotoUploadRequest $request,
         Memory $memory,
     ): JsonResponse {
+        $file = $request->file('photo');
+
+        logger()->info('Memory photo upload debug', [
+            'has_file' => $request->hasFile('photo'),
+            'file_is_valid' => $file?->isValid(),
+            'file_size' => $file?->getSize(),
+            'file_error' => $file?->getError(),
+            'encryption_mode' => $request->input('encryption_mode'),
+        ]);
         Gate::authorize('view', $memory);
 
         try {
@@ -68,6 +78,34 @@ class MemoryPhotoController extends Controller
             );
         }
     }
+
+
+    public function updateEncryption(
+        UpdateMemoryPhotoEncryptionRequest $request,
+        MemoryPhoto $photo,
+    ): JsonResponse {
+        Gate::authorize('upload', $photo);
+
+        try {
+            $photo = $this->photoService->updateEncryptionMetadata(
+                $photo,
+                $request->validated(),
+            );
+
+            return ApiResponse::success(
+                'Photo encryption metadata updated successfully.',
+                [
+                    'photo' => new MemoryPhotoResource($photo),
+                ],
+            );
+        } catch (RuntimeException $exception) {
+            return ApiResponse::error(
+                $exception->getMessage(),
+                status: 422,
+            );
+        }
+    }
+
 
     public function complete(
         MemoryPhoto $photo,
@@ -113,22 +151,26 @@ class MemoryPhotoController extends Controller
         }
     }
 
-    public function content(
-        MemoryPhoto $photo,
-    ): Response {
+
+    public function content(MemoryPhoto $photo): Response
+    {
         Gate::authorize('view', $photo);
 
-        $path = $this->photoStorage
-            ->getObject($photo->storage_key);
+        abort_unless($photo->status === 'verified', 404);
 
-        return response()->file(
-            $path,
-            [
-                'Content-Type' => (string) $photo->mime_type,
-                'Cache-Control' => 'private, no-store',
-            ],
-        );
+        $path = $this->photoStorage->getObject($photo->storage_key);
+
+        $contentType = $photo->encryption_version !== null
+            ? 'application/octet-stream'
+            : (string) $photo->mime_type;
+
+        return response()->file($path, [
+            'Content-Type' => $contentType,
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
+
 
     public function uploadBinary(
         UploadMemoryPhotoRequest $request,
