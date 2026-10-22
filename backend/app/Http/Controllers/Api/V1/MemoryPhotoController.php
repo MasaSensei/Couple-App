@@ -42,15 +42,6 @@ class MemoryPhotoController extends Controller
         CreateMemoryPhotoUploadRequest $request,
         Memory $memory,
     ): JsonResponse {
-        $file = $request->file('photo');
-
-        logger()->info('Memory photo upload debug', [
-            'has_file' => $request->hasFile('photo'),
-            'file_is_valid' => $file?->isValid(),
-            'file_size' => $file?->getSize(),
-            'file_error' => $file?->getError(),
-            'encryption_mode' => $request->input('encryption_mode'),
-        ]);
         Gate::authorize('view', $memory);
 
         try {
@@ -160,12 +151,9 @@ class MemoryPhotoController extends Controller
 
         $path = $this->photoStorage->getObject($photo->storage_key);
 
-        $contentType = $photo->encryption_version !== null
-            ? 'application/octet-stream'
-            : (string) $photo->mime_type;
-
+        // Always ciphertext: never let a client render it as an image.
         return response()->file($path, [
-            'Content-Type' => $contentType,
+            'Content-Type' => 'application/octet-stream',
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);

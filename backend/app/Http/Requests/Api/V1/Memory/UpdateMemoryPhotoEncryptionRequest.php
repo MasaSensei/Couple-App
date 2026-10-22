@@ -30,10 +30,12 @@ class UpdateMemoryPhotoEncryptionRequest extends FormRequest
                 'string',
                 'max:128',
             ],
+            // AES-GCM nonce: 12 bytes, Base64.
             'nonce' => [
                 'required',
                 'string',
-                'max:64',
+                'size:16',
+                'regex:/\A[A-Za-z0-9+\/]{16}\z/',
             ],
             'encrypted_size' => [
                 'required',

@@ -15,12 +15,6 @@ class CreateMemoryPhotoUploadRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'original_filename' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-
             // MIME type foto asli sebelum dienkripsi.
             'mime_type' => [
                 'required',

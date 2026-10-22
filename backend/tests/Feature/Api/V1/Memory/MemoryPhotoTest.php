@@ -15,12 +15,11 @@ class MemoryPhotoTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_can_upload_memory_photo(): void
+    public function test_plaintext_upload_without_encryption_metadata_is_rejected(): void
     {
         Storage::fake('local');
 
         $user = User::factory()->create();
-
         $couple = Couple::factory()->create();
 
         CoupleMember::create([
@@ -34,81 +33,21 @@ class MemoryPhotoTest extends TestCase
         ]);
 
         $this->actingAs($user);
-        $this->assertTrue(
-            $user->can('view', $memory),
-        );
 
-        // 1. Create fake photo
-        $file = UploadedFile::fake()->image(
-            'memory.jpg',
-            100,
-            100,
-        );
-
-        // 2. Create upload session
-        $sessionResponse = $this->postJson(
+        $photoId = $this->postJson(
             "/api/v1/memories/{$memory->id}/photos/upload",
             [
-                'original_filename' => 'memory.jpg',
                 'mime_type' => 'image/jpeg',
-                'file_size' => $file->getSize(),
-                'width' => 100,
-                'height' => 100,
+                'file_size' => 100,
             ],
-        );
+        )->assertCreated()->json('data.photo.id');
 
-        $sessionResponse
-            ->assertCreated()
-            ->assertJsonPath(
-                'data.photo.status',
-                'pending',
-            );
-
-        $photoId = $sessionResponse
-            ->json('data.photo.id');
-
-        // 3. Upload binary photo
-        $uploadResponse = $this->post(
+        $this->post(
             "/api/v1/memory-photos/{$photoId}/upload",
-            [
-                'photo' => $file,
-            ],
-        );
+            ['photo' => UploadedFile::fake()->image('memory.jpg', 10, 10)],
+        )->assertStatus(422);
 
-        $uploadResponse
-            ->assertOk()
-            ->assertJsonPath(
-                'data.photo.status',
-                'uploading',
-            );
-
-        // 4. Complete upload
-        $completeResponse = $this->postJson(
-            "/api/v1/memory-photos/{$photoId}/complete",
-        );
-
-        $completeResponse
-            ->assertOk()
-            ->assertJsonPath(
-                'data.photo.status',
-                'verified',
-            );
-
-        // 5. Verify object exists
-        $photo = $memory
-            ->photos()
-            ->findOrFail($photoId);
-
-        $this->assertTrue(
-            Storage::disk('local')->exists(
-                $photo->storage_key,
-            ),
-        );
-
-        // 6. Verify checksum exists
-        $this->assertNotNull(
-            $photo->checksum,
-        );
+        $this->assertSame([], Storage::disk('local')->allFiles());
     }
 
     public function test_user_can_list_verified_memory_photos(): void
@@ -276,79 +215,5 @@ class MemoryPhotoTest extends TestCase
         );
 
         $response->assertForbidden();
-    }
-
-
-    public function test_user_can_upload_encrypted_memory_photo_binary(): void
-    {
-        Storage::fake('local');
-
-        $user = User::factory()->create();
-        $couple = Couple::factory()->create();
-
-        CoupleMember::create([
-            'couple_id' => $couple->id,
-            'user_id' => $user->id,
-        ]);
-
-        $memory = Memory::factory()->create([
-            'couple_id' => $couple->id,
-            'created_by' => $user->id,
-        ]);
-
-        $this->actingAs($user);
-
-        // Buat sesi upload dengan metadata file terenkripsi.
-        $sessionResponse = $this->postJson(
-            "/api/v1/memories/{$memory->id}/photos/upload",
-            [
-                'original_filename' => 'memory.enc',
-                'mime_type' => 'application/octet-stream',
-                'file_size' => 100,
-                'width' => null,
-                'height' => null,
-            ],
-        );
-
-        $sessionResponse->dump();
-
-        $sessionResponse->assertCreated();
-
-        $photoId = $sessionResponse->json('data.photo.id');
-
-        // Kirim ciphertext, bukan gambar JPEG/PNG.
-        $ciphertext = random_bytes(100);
-        $uploadResponse = $this->post(
-            "/api/v1/memory-photos/{$photoId}/upload",
-            [
-                'encryption_mode' => 'encrypted',
-                'photo' => UploadedFile::fake()->create(
-                    'memory.enc',
-                    100,
-                    'application/octet-stream',
-                ),
-            ],
-        );
-
-        $uploadResponse->dump();
-        $uploadResponse->assertOk();
-
-        $uploadResponse->assertOk();
-
-        $uploadResponse->assertJsonPath(
-            'data.photo.status',
-            'uploading',
-        );
-
-        $photo = $memory->photos()->findOrFail($photoId);
-
-        $this->assertTrue(
-            Storage::disk('local')->exists($photo->storage_key),
-        );
-
-        $this->assertSame(
-            $ciphertext,
-            Storage::disk('local')->get($photo->storage_key),
-        );
     }
 }

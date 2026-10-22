@@ -47,4 +47,27 @@ class CoupleKeyPackageController extends Controller
             ],
         );
     }
+
+    public function devices(
+        \Illuminate\Http\Request $request,
+    ): JsonResponse {
+        $userId = $request->user()->id;
+
+        $devices = $this->service->devicesForUser($request->user())
+            ->map(fn ($device) => [
+                'id' => $device->id,
+                'owner' => $device->user_id === $userId ? 'me' : 'partner',
+                'device_name' => $device->device_name,
+                'platform' => $device->platform,
+                'public_key' => $device->public_key,
+                'created_at' => $device->created_at?->toISOString(),
+            ]);
+
+        return ApiResponse::success(
+            'Couple devices retrieved successfully.',
+            [
+                'devices' => $devices,
+            ],
+        );
+    }
 }

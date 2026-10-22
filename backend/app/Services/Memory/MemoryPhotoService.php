@@ -39,8 +39,8 @@ class MemoryPhotoService
 
                     'storage_key' => $storageKey,
 
-                    'original_filename' =>
-                    $data['original_filename'] ?? null,
+                    // Not stored: file names can reveal private details.
+                    'original_filename' => null,
 
                     'mime_type' =>
                     $data['mime_type'],
@@ -92,6 +92,11 @@ class MemoryPhotoService
             );
         }
 
+        // The key must be one this couple has already established on its devices.
+        if (! $photo->memory->couple->keyPackages()->where('key_id', $data['key_id'])->exists()) {
+            throw new RuntimeException('Unknown encryption key.');
+        }
+
         $photo->update([
             'encryption_version' => $data['encryption_version'],
             'encryption_algorithm' => $data['encryption_algorithm'],
@@ -120,27 +125,23 @@ class MemoryPhotoService
         ]);
 
         try {
-            $expectedMetadata = [];
-
-            if ($photo->encryption_version !== null) {
-                $expectedMetadata = [
-                    'encrypted_size' => $photo->encrypted_size,
-                    'checksum' => $photo->checksum,
-                ];
-            } else {
-                $expectedMetadata = [
-                    'file_size' => $photo->file_size,
-                ];
+            if ($photo->encryption_version === null || $photo->checksum === null) {
+                throw new RuntimeException('Photo is missing encryption metadata.');
             }
 
             $metadata = $this->photoStorage->verifyObject(
                 $photo->storage_key,
-                $expectedMetadata,
+                ['file_size' => $photo->encrypted_size],
             );
+
+            // Storage integrity check (SHA-256 of ciphertext). AES-GCM
+            // authentication is still verified on the client before display.
+            if (! hash_equals($photo->checksum, (string) ($metadata['checksum'] ?? ''))) {
+                throw new RuntimeException('Photo checksum mismatch.');
+            }
 
             $photo->update([
                 'status' => 'verified',
-                'checksum' => $metadata['checksum'] ?? null,
             ]);
 
             return $photo->refresh();
@@ -182,6 +183,12 @@ class MemoryPhotoService
         MemoryPhoto $photo,
         UploadedFile $file,
     ): MemoryPhoto {
+        if ($photo->encryption_version === null) {
+            throw new RuntimeException(
+                'Encryption metadata is required before upload.',
+            );
+        }
+
         $photo->update([
             'status' => 'uploading',
         ]);

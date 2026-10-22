@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\Couple\CoupleKeyPackageController;
+use App\Http\Controllers\Api\V1\Couple\CoupleKeyRecoveryPackageController;
 use App\Http\Controllers\Api\V1\CoupleController;
 use App\Http\Controllers\Api\V1\DateController;
 use App\Http\Controllers\Api\V1\DateCommentController;
@@ -34,6 +35,18 @@ Route::prefix('v1')->group(function () {
         Route::get('/couple/key-packages', [
             CoupleKeyPackageController::class,
             'index',
+        ]);
+        Route::get('/couple/devices', [
+            CoupleKeyPackageController::class,
+            'devices',
+        ]);
+        Route::get('/couple/recovery-package', [
+            CoupleKeyRecoveryPackageController::class,
+            'show',
+        ]);
+        Route::put('/couple/recovery-package', [
+            CoupleKeyRecoveryPackageController::class,
+            'update',
         ]);
 
         Route::post('/couple', [CoupleController::class, 'store']);
