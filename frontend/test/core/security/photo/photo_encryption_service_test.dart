@@ -2,6 +2,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:frontend/core/security/couple/couple_key.dart';
+import 'package:frontend/core/security/couple/couple_key_recovery_service.dart';
 import 'package:frontend/core/security/photo/photo_encryption_metadata.dart';
 import 'package:frontend/core/security/photo/photo_encryption_service.dart';
 import 'package:frontend/core/security/couple/couple_key_wrapper.dart';
@@ -483,5 +484,46 @@ void main() {
       encrypted.metadata.encryptionVersion,
       PhotoEncryptionService.encryptionVersion,
     );
+  });
+
+  test('recovered Couple Key can decrypt an existing photo', () async {
+    final photoService = PhotoEncryptionService();
+    final recoveryService = CoupleKeyRecoveryService();
+
+    final originalBytes = <int>[1, 2, 3, 4, 5];
+    final coupleKey = CoupleKey(
+      keyId: 'recovery-test-key',
+      secretKey: SecretKey(List<int>.generate(32, (i) => i)),
+    );
+
+    // Encrypt the photo using the original Couple Key.
+    final encryptedPhoto = await photoService.encrypt(
+      plaintext: originalBytes,
+      coupleKey: coupleKey,
+      photoId: 'recovery-test-photo',
+    );
+
+    // Create a recovery payload.
+    final recoveryKey = await recoveryService.generateRecoveryKey();
+    final payload = await recoveryService.createRecoveryPayload(
+      coupleKey: coupleKey,
+      recoveryKey: recoveryKey,
+    );
+
+    // Restore the same Couple Key from the recovery payload.
+    final recoveredCoupleKey = await recoveryService.restoreFromRecoveryPayload(
+      payload: payload,
+      recoveryKey: recoveryKey,
+    );
+
+    // Decrypt the previously encrypted photo.
+    final decryptedBytes = await photoService.decrypt(
+      encryptedPhoto: encryptedPhoto,
+      coupleKey: recoveredCoupleKey,
+      photoId: 'recovery-test-photo',
+    );
+
+    expect(recoveredCoupleKey.keyId, coupleKey.keyId);
+    expect(decryptedBytes, originalBytes);
   });
 }
