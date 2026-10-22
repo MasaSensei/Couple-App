@@ -96,6 +96,61 @@ class CoupleKeyRecoveryService {
     }
   }
 
+  static const String _base32Alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+
+  /// Formats the Recovery Key as RFC 4648 Base32 in dash-separated groups of 4,
+  /// e.g. `ABCD-EFGH-...` (52 characters for 32 bytes).
+  String formatRecoveryKey(List<int> recoveryKey) {
+    _validateRecoveryKey(recoveryKey);
+
+    final chars = StringBuffer();
+    var buffer = 0;
+    var bits = 0;
+    for (final byte in recoveryKey) {
+      buffer = (buffer << 8) | byte;
+      bits += 8;
+      while (bits >= 5) {
+        bits -= 5;
+        chars.write(_base32Alphabet[(buffer >> bits) & 31]);
+      }
+    }
+    if (bits > 0) {
+      chars.write(_base32Alphabet[(buffer << (5 - bits)) & 31]);
+    }
+
+    final encoded = chars.toString();
+    return [
+      for (var i = 0; i < encoded.length; i += 4)
+        encoded.substring(i, i + 4 > encoded.length ? encoded.length : i + 4),
+    ].join('-');
+  }
+
+  /// Parses user-typed Recovery Key text. Case, spaces and dashes are ignored.
+  List<int> parseRecoveryKey(String input) {
+    final normalized = input.toUpperCase().replaceAll(RegExp(r'[\s-]'), '');
+
+    final bytes = <int>[];
+    var buffer = 0;
+    var bits = 0;
+    for (final char in normalized.split('')) {
+      final value = _base32Alphabet.indexOf(char);
+      if (value < 0) {
+        throw const FormatException('Recovery Key contains invalid characters.');
+      }
+      buffer = ((buffer << 5) | value) & 0xFFF;
+      bits += 5;
+      if (bits >= 8) {
+        bits -= 8;
+        bytes.add((buffer >> bits) & 0xFF);
+      }
+    }
+
+    if (bytes.length != recoveryKeyLength) {
+      throw const FormatException('Recovery Key has an invalid length.');
+    }
+    return bytes;
+  }
+
   void _validateRecoveryKey(List<int> recoveryKey) {
     if (recoveryKey.length != recoveryKeyLength ||
         recoveryKey.any((byte) => byte < 0 || byte > 255)) {

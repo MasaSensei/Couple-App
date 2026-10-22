@@ -84,6 +84,63 @@ void main() {
     );
   });
 
+  test('formats Recovery Key as grouped Base32 and parses it back', () {
+    final formatted = recoveryService.formatRecoveryKey(recoveryKey);
+
+    expect(formatted, matches(RegExp(r'^([A-Z2-7]{4}-){12}[A-Z2-7]{4}$')));
+    expect(recoveryService.parseRecoveryKey(formatted), recoveryKey);
+  });
+
+  test('parses Recovery Key regardless of case, spaces and dashes', () {
+    final formatted = recoveryService.formatRecoveryKey(recoveryKey);
+    final typed = formatted.toLowerCase().replaceAll('-', ' ');
+
+    expect(recoveryService.parseRecoveryKey(typed), recoveryKey);
+  });
+
+  test('formats a known Recovery Key deterministically', () {
+    final zeros = List<int>.filled(32, 0);
+
+    expect(
+      recoveryService.formatRecoveryKey(zeros),
+      List.filled(13, 'AAAA').join('-'),
+    );
+  });
+
+  test('rejects Recovery Key text with invalid characters or length', () {
+    final formatted = recoveryService.formatRecoveryKey(recoveryKey);
+
+    expect(
+      () => recoveryService.parseRecoveryKey(formatted.replaceFirst(
+        RegExp(r'[A-Z2-7]'),
+        '1',
+      )),
+      throwsFormatException,
+    );
+    expect(
+      () => recoveryService.parseRecoveryKey(formatted.substring(0, 20)),
+      throwsFormatException,
+    );
+    expect(
+      () => recoveryService.parseRecoveryKey('${formatted}AB'),
+      throwsFormatException,
+    );
+  });
+
+  test('restores the Couple Key from typed Recovery Key text', () async {
+    final typed = recoveryService.formatRecoveryKey(recoveryKey);
+
+    final restored = await recoveryService.restoreFromRecoveryPayload(
+      payload: payload,
+      recoveryKey: recoveryService.parseRecoveryKey(typed),
+    );
+
+    expect(
+      await restored.secretKey.extractBytes(),
+      await originalKey.secretKey.extractBytes(),
+    );
+  });
+
   test('rejects an unsupported recovery format version', () async {
     final invalidPayload = Map<String, dynamic>.from(payload);
     invalidPayload['format_version'] = 999;
