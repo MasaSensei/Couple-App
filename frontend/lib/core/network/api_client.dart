@@ -80,6 +80,14 @@ class ApiClient {
     }
   }
 
+  Future<Response<T>> put<T>(String path, {dynamic data}) async {
+    try {
+      return await _dio.put<T>(path, data: data);
+    } on DioException catch (error) {
+      throw ApiErrorHandler.handle(error);
+    }
+  }
+
   Future<Response<T>> patch<T>(
     String path, {
     dynamic data,

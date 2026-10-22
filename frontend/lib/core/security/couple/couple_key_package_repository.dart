@@ -1,4 +1,6 @@
+import '../../../core/error/api_exception.dart';
 import '../../../core/network/api_client.dart';
+import 'couple_device.dart';
 import 'couple_key_package.dart';
 
 class CoupleKeyPackageRepository {
@@ -51,5 +53,47 @@ class CoupleKeyPackageRepository {
         'mac': mac,
       },
     );
+  }
+
+  Future<List<CoupleDevice>> getCoupleDevices() async {
+    final response = await _apiClient.get<Map<String, dynamic>>(
+      '/couple/devices',
+    );
+
+    final devices = response.data?['data']?['devices'];
+
+    if (devices is! List) {
+      throw const FormatException('Invalid couple devices response.');
+    }
+
+    return devices
+        .whereType<Map<String, dynamic>>()
+        .map(CoupleDevice.fromJson)
+        .toList();
+  }
+
+  /// Returns null when the user has not set up a Recovery Key yet.
+  Future<Map<String, dynamic>?> getRecoveryPackage() async {
+    try {
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        '/couple/recovery-package',
+      );
+
+      final package = response.data?['data']?['package'];
+
+      if (package is! Map<String, dynamic>) {
+        throw const FormatException('Invalid recovery package response.');
+      }
+
+      return package;
+    } on ApiException catch (error) {
+      if (error.statusCode == 404) return null;
+      rethrow;
+    }
+  }
+
+  /// [payload] is already encrypted with the Recovery Key on this device.
+  Future<void> putRecoveryPackage(Map<String, dynamic> payload) async {
+    await _apiClient.put('/couple/recovery-package', data: payload);
   }
 }

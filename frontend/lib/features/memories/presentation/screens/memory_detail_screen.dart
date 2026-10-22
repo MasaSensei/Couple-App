@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/features/memories/data/models/memory_photo_model.dart';
@@ -80,9 +82,11 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
 
               OutlinedButton.icon(
                 onPressed: () async {
-                  await ref
+                  final file = await ref
                       .read(memoryPhotoNotifierProvider.notifier)
-                      .pickAndUpload(memoryId: widget.memory.id);
+                      .pickPhoto();
+
+                  if (file != null) await _upload(file);
                 },
                 icon: const Icon(Icons.add_photo_alternate_outlined),
                 label: const Text('Tambah Foto'),
@@ -103,9 +107,6 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                     ),
 
                     error: (error, stackTrace) {
-                      debugPrint('Memory photos error: $error');
-                      debugPrintStack(stackTrace: stackTrace);
-
                       return Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -292,6 +293,24 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
     await ref
         .read(memoryPhotoNotifierProvider.notifier)
         .deletePhoto(memoryId: widget.memory.id, photoId: photoId);
+  }
+
+  Future<void> _upload(File file) async {
+    try {
+      await ref
+          .read(memoryPhotoNotifierProvider.notifier)
+          .uploadPhoto(memoryId: widget.memory.id, file: file);
+    } on PhotoUploadException catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.message),
+          duration: const Duration(seconds: 8),
+          action: SnackBarAction(label: 'Retry', onPressed: () => _upload(file)),
+        ),
+      );
+    }
   }
 
   Widget _buildLocation() {

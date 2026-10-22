@@ -1,14 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/core/security/couple/couple_key.dart';
 import 'package:frontend/core/security/couple/couple_key_manager.dart';
 import 'package:frontend/core/security/device_identity_service.dart';
 import 'package:frontend/core/security/device_repository.dart';
+import 'package:frontend/core/security/encryption_errors.dart';
 import 'package:frontend/core/security/photo/photo_encryption_service.dart';
+import 'package:frontend/core/security/photo/photo_preparation_service.dart';
 import 'package:frontend/features/auth/providers/auth_dependencies.dart';
-import 'package:frontend/features/device/providers/device_provider.dart';
 import 'package:frontend/features/memories/data/models/memory_photo_model.dart';
 import 'package:frontend/features/memories/data/repositories/memory_photo_repository.dart';
 import 'package:image_picker/image_picker.dart';
@@ -42,26 +43,41 @@ final photoEncryptionServiceProvider = Provider<PhotoEncryptionService>((ref) {
   return PhotoEncryptionService();
 });
 
+final photoPreparationServiceProvider = Provider<PhotoPreparationService>((
+  ref,
+) {
+  return const PhotoPreparationService();
+});
+
 final memoryPhotoNotifierProvider =
     NotifierProvider<MemoryPhotoNotifier, AsyncValue<List<MemoryPhotoModel>>>(
       MemoryPhotoNotifier.new,
     );
 
+/// Upload failed; [message] is safe to show the user. The picked file is untouched.
+class PhotoUploadException implements Exception {
+  const PhotoUploadException(this.message);
+
+  final String message;
+}
+
 class MemoryPhotoNotifier extends Notifier<AsyncValue<List<MemoryPhotoModel>>> {
   late MemoryPhotoRepository _repository;
-  late CoupleKeyManager _coupleKeyManager;
   late DeviceIdentityService _deviceIdentityService;
   late PhotoEncryptionService _photoEncryptionService;
+  late PhotoPreparationService _photoPreparationService;
   late CoupleKeyProvisioningService _coupleKeyProvisioningService;
 
   final ImagePicker _picker = ImagePicker();
 
+  Future<CoupleKey>? _coupleKey;
+
   @override
   AsyncValue<List<MemoryPhotoModel>> build() {
     _repository = ref.watch(memoryPhotoRepositoryProvider);
-    _coupleKeyManager = ref.watch(coupleKeyManagerProvider);
     _deviceIdentityService = ref.watch(deviceIdentityServiceProvider);
     _photoEncryptionService = ref.watch(photoEncryptionServiceProvider);
+    _photoPreparationService = ref.watch(photoPreparationServiceProvider);
     _coupleKeyProvisioningService = ref.watch(
       coupleKeyProvisioningServiceProvider,
     );
@@ -80,114 +96,135 @@ class MemoryPhotoNotifier extends Notifier<AsyncValue<List<MemoryPhotoModel>>> {
     }
   }
 
+  /// Couple Key for this device, fetched once per session.
+  /// Throws [CoupleKeyUnavailableException] when the device was not given access.
+  Future<CoupleKey> _currentCoupleKey() async {
+    final future = _coupleKey ??= () async {
+      final deviceIdentifier = await _deviceIdentityService
+          .getOrCreateDeviceId();
+
+      return _coupleKeyProvisioningService.provisionCurrentDevice(
+        deviceIdentifier: deviceIdentifier,
+      );
+    }();
+
+    try {
+      return await future;
+    } catch (_) {
+      _coupleKey = null;
+      rethrow;
+    }
+  }
+
+  /// Forget the cached key, e.g. after the user restored access.
+  void resetKeyCache() => _coupleKey = null;
+
+  /// Decrypted, authenticated photo bytes. Throws
+  /// [CoupleKeyUnavailableException] or [PhotoVerificationException].
   Future<List<int>> getDecryptedPhotoBytes({
     required MemoryPhotoModel photo,
   }) async {
-    if (photo.encryptionVersion == null) {
-      throw StateError('This photo is not encrypted.');
-    }
-
-    final deviceIdentifier = await _deviceIdentityService.getOrCreateDeviceId();
-
-    final devices = await ref.read(devicesProvider.future);
-
-    final matchingDevices = devices.where(
-      (device) =>
-          device.deviceIdentifier == deviceIdentifier &&
-          device.revokedAt == null,
-    );
-
-    if (matchingDevices.length != 1) {
-      throw StateError('Current device is not registered uniquely.');
-    }
-
-    final coupleKey = await _coupleKeyManager.getOrRestore(
-      deviceId: matchingDevices.single.id,
-    );
-
     return _repository.getDecryptedPhotoBytes(
       photo: photo,
-      coupleKey: coupleKey,
+      coupleKey: await _currentCoupleKey(),
       encryptionService: _photoEncryptionService,
     );
   }
 
-  Future<void> pickAndUpload({required int memoryId}) async {
+  Future<File?> pickPhoto() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
 
-    if (pickedFile == null) return;
-
-    await uploadPhoto(memoryId: memoryId, file: File(pickedFile.path));
+    return pickedFile == null ? null : File(pickedFile.path);
   }
 
+  /// prepare -> encrypt -> upload ciphertext -> server verifies checksum.
+  /// Throws [PhotoUploadException]; the original file is never modified or deleted.
   Future<void> uploadPhoto({required int memoryId, required File file}) async {
+    final previous = state;
     state = const AsyncLoading();
 
     try {
-      final originalBytes = await file.readAsBytes();
-      final deviceIdentifier = await _deviceIdentityService
-          .getOrCreateDeviceId();
+      await _upload(memoryId: memoryId, file: file);
+    } on PhotoUploadException {
+      state = previous;
+      rethrow;
+    }
 
-      final devices = await ref.read(devicesProvider.future);
+    await loadPhotos(memoryId: memoryId);
+  }
 
-      final matchingDevices = devices.where(
-        (device) =>
-            device.deviceIdentifier == deviceIdentifier &&
-            device.revokedAt == null,
+  Future<void> _upload({required int memoryId, required File file}) async {
+    final PreparedPhoto prepared;
+    final CoupleKey coupleKey;
+
+    try {
+      prepared = await _photoPreparationService.prepare(
+        await file.readAsBytes(),
       );
+    } catch (_) {
+      throw const PhotoUploadException(EncryptionMessages.encryptionFailed);
+    }
 
-      if (matchingDevices.length != 1) {
-        throw StateError(
-          'Current device is not registered uniquely. Please register this device again.',
-        );
-      }
+    try {
+      coupleKey = await _currentCoupleKey();
+    } on CoupleKeyUnavailableException {
+      throw const PhotoUploadException(EncryptionMessages.keyUnavailable);
+    } catch (_) {
+      throw const PhotoUploadException(EncryptionMessages.uploadFailed);
+    }
 
-      final coupleKey = await _coupleKeyProvisioningService
-          .provisionCurrentDevice(deviceIdentifier: deviceIdentifier);
+    final MemoryPhotoModel photo;
 
-      final photo = await _repository.createUploadSession(
+    try {
+      photo = await _repository.createUploadSession(
         memoryId: memoryId,
-        originalFilename: file.uri.pathSegments.last,
-        mimeType: _mimeTypeFromPath(file.path),
-        fileSize: originalBytes.length,
+        mimeType: PreparedPhoto.mimeType,
+        fileSize: prepared.bytes.length,
+        width: prepared.width,
+        height: prepared.height,
       );
+    } catch (_) {
+      throw const PhotoUploadException(EncryptionMessages.uploadFailed);
+    }
 
-      final encryptedPhoto = await _photoEncryptionService.encrypt(
-        plaintext: originalBytes,
+    // The photo id is bound into the key derivation and AAD.
+    final EncryptedPhoto encryptedPhoto;
+
+    try {
+      encryptedPhoto = await _photoEncryptionService.encrypt(
+        plaintext: prepared.bytes,
         coupleKey: coupleKey,
         photoId: photo.id.toString(),
       );
+    } catch (_) {
+      throw const PhotoUploadException(EncryptionMessages.encryptionFailed);
+    }
 
-      final nonce = base64Encode(encryptedPhoto.nonce);
-      final mac = base64Encode(encryptedPhoto.mac);
-      final ciphertext = encryptedPhoto.ciphertext;
-      final checksum = encryptedPhoto.checksum;
-
+    try {
       await _repository.updateEncryptionMetadata(
         photoId: photo.id,
         encryptionVersion: PhotoEncryptionService.encryptionVersion,
         encryptionAlgorithm: 'AES-256-GCM',
         keyId: coupleKey.keyId,
-        nonce: nonce,
-        mac: mac,
-        encryptedSize: ciphertext.length,
-        checksum: checksum,
+        nonce: base64Encode(encryptedPhoto.nonce),
+        mac: base64Encode(encryptedPhoto.mac),
+        encryptedSize: encryptedPhoto.ciphertext.length,
+        checksum: encryptedPhoto.checksum,
       );
 
-      final uploadedPhoto = await _repository.uploadEncryptedBinary(
+      await _repository.uploadEncryptedBinary(
         photoId: photo.id,
-        ciphertext: ciphertext,
+        ciphertext: encryptedPhoto.ciphertext,
         filename: '${photo.id}.enc',
       );
 
-      await _repository.completeUpload(photoId: uploadedPhoto.id);
+      final completed = await _repository.completeUpload(photoId: photo.id);
 
-      await loadPhotos(memoryId: memoryId);
-    } catch (error, stackTrace) {
-      debugPrint('Photo upload error: $error');
-      debugPrintStack(stackTrace: stackTrace);
-
-      state = AsyncError(error, stackTrace);
+      if (completed.status != 'verified') {
+        throw StateError('Upload was not verified.');
+      }
+    } catch (_) {
+      throw const PhotoUploadException(EncryptionMessages.uploadFailed);
     }
   }
 
@@ -200,20 +237,6 @@ class MemoryPhotoNotifier extends Notifier<AsyncValue<List<MemoryPhotoModel>>> {
       await loadPhotos(memoryId: memoryId);
     } catch (error, stackTrace) {
       state = AsyncError(error, stackTrace);
-    }
-  }
-
-  String _mimeTypeFromPath(String path) {
-    switch (path.split('.').last.toLowerCase()) {
-      case 'jpg':
-      case 'jpeg':
-        return 'image/jpeg';
-      case 'png':
-        return 'image/png';
-      case 'webp':
-        return 'image/webp';
-      default:
-        throw UnsupportedError('Unsupported image format.');
     }
   }
 }

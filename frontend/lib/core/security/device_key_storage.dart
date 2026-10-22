@@ -47,4 +47,10 @@ class DeviceKeyStorage {
   Future<String?> readDeviceId() {
     return _storage.read(key: _deviceIdKey);
   }
+
+  /// Forgets this device's identity and private key; readers treat empty values as missing.
+  Future<void> clear() async {
+    await _storage.write(key: _privateKeyKey, value: '');
+    await _storage.write(key: _deviceIdKey, value: '');
+  }
 }

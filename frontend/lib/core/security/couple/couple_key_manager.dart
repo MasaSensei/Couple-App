@@ -44,6 +44,18 @@ class CoupleKeyManager {
     return CoupleKey(keyId: keyId, secretKey: SecretKey(secretKeyBytes));
   }
 
+  /// Generates a new Couple Key without storing it.
+  Future<CoupleKey> generate() async {
+    final secretKey = await _keyService.generateKey();
+
+    return CoupleKey(
+      keyId: _uuid.v4(),
+      secretKey: SecretKey(await secretKey.extractBytes()),
+    );
+  }
+
+  Future<void> clear() => _storage.clear();
+
   Future<void> save(CoupleKey coupleKey) async {
     final secretKeyBytes = await coupleKey.secretKey.extractBytes();
 

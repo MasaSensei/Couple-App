@@ -4,6 +4,7 @@ import 'package:frontend/features/device/data/presentation/screens/device_manage
 import 'package:frontend/features/home/presentation/accept_invitation_screen.dart';
 import 'package:frontend/features/home/presentation/invite_partner_screen.dart';
 import 'package:frontend/features/memories/presentation/screens/memory_list_screen.dart';
+import 'package:frontend/features/privacy/presentation/encryption_status_banner.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -147,6 +148,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            const EncryptionStatusBanner(),
 
             const SizedBox(height: AppSpacing.md),
 

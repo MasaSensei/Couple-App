@@ -36,4 +36,10 @@ class CoupleKeyStorage {
 
     return base64Url.decode(encoded);
   }
+
+  /// Overwrites local key material; readers treat empty values as missing.
+  Future<void> clear() async {
+    await _storage.write(key: _keyIdKey, value: '');
+    await _storage.write(key: _secretKeyKey, value: '');
+  }
 }

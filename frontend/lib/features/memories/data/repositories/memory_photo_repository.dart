@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'dart:convert';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:frontend/core/network/api_client.dart';
+import 'package:frontend/core/security/encryption_errors.dart';
 
 import '../models/memory_photo_model.dart';
 
@@ -18,7 +18,6 @@ class MemoryPhotoRepository {
 
   Future<MemoryPhotoModel> createUploadSession({
     required int memoryId,
-    required String originalFilename,
     required String mimeType,
     required int fileSize,
     int? width,
@@ -34,7 +33,6 @@ class MemoryPhotoRepository {
     final response = await _apiClient.post(
       '/memories/$memoryId/photos/upload',
       data: {
-        'original_filename': originalFilename,
         'mime_type': mimeType,
         'file_size': fileSize,
         'width': ?width,
@@ -63,73 +61,58 @@ class MemoryPhotoRepository {
     return response.data ?? <int>[];
   }
 
+  /// Downloads ciphertext and decrypts it locally. Throws
+  /// [CoupleKeyUnavailableException] when [coupleKey] is not the photo's key and
+  /// [PhotoVerificationException] when integrity or authentication fails.
+  /// Unverified bytes are never returned.
   Future<List<int>> getDecryptedPhotoBytes({
     required MemoryPhotoModel photo,
     required CoupleKey coupleKey,
     required PhotoEncryptionService encryptionService,
   }) async {
-    if (photo.encryptionVersion == null ||
+    if (photo.encryptionVersion != PhotoEncryptionService.encryptionVersion ||
         photo.encryptionAlgorithm != 'AES-256-GCM' ||
         photo.keyId == null ||
         photo.nonce == null ||
         photo.mac == null ||
         photo.checksum == null) {
-      throw StateError('Photo encryption metadata is incomplete.');
+      throw const PhotoVerificationException();
     }
 
     if (photo.keyId != coupleKey.keyId) {
-      throw StateError('Photo key ID does not match the available Couple Key.');
-    }
-
-    if (photo.encryptionVersion != PhotoEncryptionService.encryptionVersion) {
-      throw UnsupportedError('Unsupported photo encryption version.');
+      throw const CoupleKeyUnavailableException();
     }
 
     final ciphertext = await getPhotoBytes(photoId: photo.id);
 
     if (photo.encryptedSize != null &&
         ciphertext.length != photo.encryptedSize) {
-      throw StateError('Encrypted photo size mismatch.');
+      throw const PhotoVerificationException();
     }
 
-    final encryptedPhoto = EncryptedPhoto(
-      metadata: PhotoEncryptionMetadata(
-        keyId: photo.keyId!,
-        encryptionVersion: photo.encryptionVersion!,
-      ),
-      nonce: base64Decode(photo.nonce!),
-      ciphertext: ciphertext,
-      mac: base64Decode(photo.mac!),
-      checksum: photo.checksum!,
-    );
-
-    return encryptionService.decrypt(
-      encryptedPhoto: encryptedPhoto,
-      coupleKey: coupleKey,
-      photoId: photo.id.toString(),
-    );
-  }
-
-  Future<MemoryPhotoModel> uploadBinary({
-    required int photoId,
-    required File file,
-  }) async {
-    final formData = FormData.fromMap({
-      'photo': await MultipartFile.fromFile(
-        file.path,
-        filename: file.uri.pathSegments.last,
-      ),
-    });
-
-    final response = await _apiClient.post(
-      '/memory-photos/$photoId/upload',
-      data: formData,
-    );
-
-    final data = response.data['data'] as Map<String, dynamic>;
-    final photo = data['photo'] as Map<String, dynamic>;
-
-    return MemoryPhotoModel.fromJson(photo);
+    try {
+      return await encryptionService.decrypt(
+        encryptedPhoto: EncryptedPhoto(
+          metadata: PhotoEncryptionMetadata(
+            keyId: photo.keyId!,
+            encryptionVersion: photo.encryptionVersion!,
+          ),
+          nonce: base64Decode(photo.nonce!),
+          ciphertext: ciphertext,
+          mac: base64Decode(photo.mac!),
+          checksum: photo.checksum!,
+        ),
+        coupleKey: coupleKey,
+        photoId: photo.id.toString(),
+      );
+    } on SecretBoxAuthenticationError {
+      throw const PhotoVerificationException();
+    } on StateError {
+      // Checksum mismatch.
+      throw const PhotoVerificationException();
+    } on FormatException {
+      throw const PhotoVerificationException();
+    }
   }
 
   Future<MemoryPhotoModel> uploadEncryptedBinary({
@@ -137,11 +120,7 @@ class MemoryPhotoRepository {
     required List<int> ciphertext,
     required String filename,
   }) async {
-    debugPrint('Ciphertext size: ${ciphertext.length} bytes');
-    debugPrint('Upload filename: $filename');
-
     final formData = FormData.fromMap({
-      'encryption_mode': 'encrypted',
       'photo': MultipartFile.fromBytes(
         ciphertext,
         filename: filename,
@@ -196,7 +175,7 @@ class MemoryPhotoRepository {
     required int encryptedSize,
     required String checksum,
   }) async {
-    final response = await _apiClient.dio.patch(
+    final response = await _apiClient.patch(
       '/memory-photos/$photoId/encryption',
       data: {
         'encryption_version': encryptionVersion,

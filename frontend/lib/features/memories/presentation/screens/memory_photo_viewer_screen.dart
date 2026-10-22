@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/features/memories/presentation/widgets/private_memory_photo.dart';
 import 'package:frontend/features/memories/data/models/memory_photo_model.dart';
 import 'package:frontend/features/memories/providers/memory_photo_provider.dart';
 
@@ -154,23 +155,7 @@ class _PhotoViewerItemState extends State<_PhotoViewerItem> {
         }
 
         if (snapshot.hasError) {
-          return const Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.broken_image_outlined,
-                  color: Colors.white,
-                  size: 48,
-                ),
-                SizedBox(height: 12),
-                Text(
-                  'Foto tidak dapat dimuat.',
-                  style: TextStyle(color: Colors.white, fontSize: 14),
-                ),
-              ],
-            ),
-          );
+          return PhotoErrorView(error: snapshot.error!, color: Colors.white);
         }
 
         final bytes = snapshot.data;
