@@ -37,7 +37,16 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Memory')),
+      appBar: AppBar(
+        title: const Text('Memory'),
+        actions: [
+          IconButton(
+            tooltip: 'Recently deleted',
+            icon: const Icon(Icons.restore_from_trash_outlined),
+            onPressed: _showRecentlyDeleted,
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -198,6 +207,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                                 ),
                               ),
 
+                              if (_protectionBadge(photo) case final badge?)
+                                Positioned(left: 8, bottom: 8, child: badge),
+
                               Positioned(
                                 top: 8,
                                 right: 8,
@@ -258,6 +270,31 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
     );
   }
 
+  /// Small hint on photos the server has not finished protecting.
+  /// Protected photos show nothing: that is the normal state.
+  Widget? _protectionBadge(MemoryPhotoModel photo) {
+    final (icon, label) = switch (photo.protectionStatus) {
+      'backing_up' || 'uploading' => (Icons.cloud_upload_outlined, 'Backing up'),
+      'restoring' => (Icons.autorenew, 'Restoring'),
+      'needs_attention' => (Icons.error_outline, 'Needs attention'),
+      _ => (null, null),
+    };
+
+    if (icon == null) return null;
+
+    return Tooltip(
+      message: label,
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: const BoxDecoration(
+          color: Colors.black54,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: Colors.white, size: 16, semanticLabel: label),
+      ),
+    );
+  }
+
   Future<void> _confirmDeletePhoto({required int photoId}) async {
     final shouldDelete = await showDialog<bool>(
       context: context,
@@ -265,8 +302,8 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
         return AlertDialog(
           title: const Text('Hapus foto?'),
           content: const Text(
-            'Foto ini akan dihapus dari memory. '
-            'Tindakan ini tidak dapat dibatalkan.',
+            'Foto ini dipindahkan ke "Baru dihapus" dan masih bisa '
+            'dipulihkan selama 30 hari.',
           ),
           actions: [
             TextButton(
@@ -290,10 +327,104 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
       return;
     }
 
-    await ref
+    final deleted = await ref
         .read(memoryPhotoNotifierProvider.notifier)
         .deletePhoto(memoryId: widget.memory.id, photoId: photoId);
+
+    if (!deleted || !mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Foto dipindahkan ke Baru dihapus.'),
+        action: SnackBarAction(
+          label: 'Urungkan',
+          onPressed: () => _restorePhoto(photoId),
+        ),
+      ),
+    );
   }
+
+  Future<void> _restorePhoto(int photoId) async {
+    final restored = await ref
+        .read(memoryPhotoNotifierProvider.notifier)
+        .restorePhoto(memoryId: widget.memory.id, photoId: photoId);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          restored ? 'Foto dipulihkan.' : 'Foto ini sudah tidak bisa dipulihkan.',
+        ),
+      ),
+    );
+  }
+
+  /// Trashed photos can't be opened (the server no longer serves them), so the
+  /// list shows dates only, with a restore button for each.
+  Future<void> _showRecentlyDeleted() async {
+    final notifier = ref.read(memoryPhotoNotifierProvider.notifier);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => FutureBuilder<List<MemoryPhotoModel>>(
+        future: notifier.loadTrash(memoryId: widget.memory.id),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const SizedBox(
+              height: 160,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final photos = snapshot.data ?? const <MemoryPhotoModel>[];
+
+          if (snapshot.hasError || photos.isEmpty) {
+            return SizedBox(
+              height: 160,
+              child: Center(
+                child: Text(
+                  snapshot.hasError
+                      ? 'Tidak bisa memuat foto yang dihapus.'
+                      : 'Tidak ada foto yang baru dihapus.',
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+            children: [
+              for (final photo in photos)
+                ListTile(
+                  leading: const Icon(Icons.photo_outlined),
+                  title: const Text('Foto'),
+                  subtitle: Text(
+                    photo.restorableUntil == null
+                        ? 'Bisa dipulihkan'
+                        : 'Bisa dipulihkan sampai '
+                              '${_formatDate(photo.restorableUntil!.toLocal())}',
+                  ),
+                  trailing: TextButton(
+                    onPressed: () {
+                      Navigator.of(sheetContext).pop();
+                      _restorePhoto(photo.id);
+                    },
+                    child: const Text('Pulihkan'),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
 
   Future<void> _upload(File file) async {
     try {

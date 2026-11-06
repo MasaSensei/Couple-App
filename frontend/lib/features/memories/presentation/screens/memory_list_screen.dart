@@ -6,6 +6,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../providers/memory_providers.dart';
 import '../../providers/memory_state.dart';
 import '../widgets/memory_card.dart';
+import '../widgets/memory_protection_card.dart';
 import 'memory_detail_screen.dart';
 
 import 'package:go_router/go_router.dart';
@@ -78,7 +79,16 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Our Memories')),
+      appBar: AppBar(
+        title: const Text('Our Memories'),
+        actions: [
+          IconButton(
+            tooltip: 'Memory protection',
+            icon: const Icon(Icons.shield_outlined),
+            onPressed: () => showMemoryProtectionSheet(context),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result = await context.push('/memories/create');

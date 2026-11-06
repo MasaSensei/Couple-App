@@ -236,15 +236,39 @@ class MemoryPhotoNotifier extends Notifier<AsyncValue<List<MemoryPhotoModel>>> {
     }
   }
 
-  Future<void> deletePhoto({
+  /// Moves a photo to the trash. Returns false if the server refused.
+  Future<bool> deletePhoto({
     required int memoryId,
     required int photoId,
   }) async {
     try {
       await _repository.deletePhoto(photoId: photoId);
       await loadPhotos(memoryId: memoryId);
+
+      return true;
     } catch (error, stackTrace) {
       state = AsyncError(error, stackTrace);
+
+      return false;
+    }
+  }
+
+  Future<List<MemoryPhotoModel>> loadTrash({required int memoryId}) {
+    return _repository.getTrash(memoryId: memoryId);
+  }
+
+  /// Brings a photo back from the trash. Returns false if it can no longer be restored.
+  Future<bool> restorePhoto({
+    required int memoryId,
+    required int photoId,
+  }) async {
+    try {
+      await _repository.restorePhoto(photoId: photoId);
+      await loadPhotos(memoryId: memoryId);
+
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 }
