@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/security/couple/couple_key.dart';
@@ -140,11 +141,25 @@ class MemoryPhotoNotifier extends Notifier<AsyncValue<List<MemoryPhotoModel>>> {
   /// prepare -> encrypt -> upload ciphertext -> server verifies checksum.
   /// Throws [PhotoUploadException]; the original file is never modified or deleted.
   Future<void> uploadPhoto({required int memoryId, required File file}) async {
+    final Uint8List bytes;
+
+    try {
+      bytes = await file.readAsBytes();
+    } catch (_) {
+      throw const PhotoUploadException(EncryptionMessages.encryptionFailed);
+    }
+
+    await uploadPhotoBytes(memoryId: memoryId, bytes: bytes);
+  }
+
+  /// Same encrypted pipeline for images created on the device (Photo Booth):
+  /// the plaintext [bytes] never leave this method unencrypted.
+  Future<void> uploadPhotoBytes({required int memoryId, required Uint8List bytes}) async {
     final previous = state;
     state = const AsyncLoading();
 
     try {
-      await _upload(memoryId: memoryId, file: file);
+      await _upload(memoryId: memoryId, bytes: bytes);
     } on PhotoUploadException {
       state = previous;
       rethrow;
@@ -153,14 +168,12 @@ class MemoryPhotoNotifier extends Notifier<AsyncValue<List<MemoryPhotoModel>>> {
     await loadPhotos(memoryId: memoryId);
   }
 
-  Future<void> _upload({required int memoryId, required File file}) async {
+  Future<void> _upload({required int memoryId, required Uint8List bytes}) async {
     final PreparedPhoto prepared;
     final CoupleKey coupleKey;
 
     try {
-      prepared = await _photoPreparationService.prepare(
-        await file.readAsBytes(),
-      );
+      prepared = await _photoPreparationService.prepare(bytes);
     } catch (_) {
       throw const PhotoUploadException(EncryptionMessages.encryptionFailed);
     }

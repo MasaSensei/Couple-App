@@ -7,11 +7,17 @@ import 'package:frontend/features/memories/presentation/screens/memory_list_scre
 import 'package:frontend/features/privacy/presentation/encryption_status_banner.dart';
 
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../providers/couple_providers.dart';
 import '../providers/couple_state.dart';
 import 'date_list_screen.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
+import 'package:frontend/core/theme/theme_customization.dart';
+import 'package:frontend/core/theme/theme_decorations.dart';
+import 'package:frontend/features/appearance/presentation/partner_theme_banner.dart';
+import 'package:frontend/features/appearance/presentation/theme_gallery_screen.dart';
+import 'package:frontend/features/appearance/providers/appearance_controller.dart';
+import 'package:frontend/features/photo_booth/presentation/photo_booth_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -40,6 +46,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: const Text('Our Little Space'),
         actions: [
           IconButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ThemeGalleryScreen()),
+            ),
+            icon: const Icon(Icons.palette_outlined),
+            tooltip: 'Themes',
+          ),
+          IconButton(
             onPressed: () {
               ref.read(authNotifierProvider.notifier).logout();
             },
@@ -48,10 +61,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: _buildContent(authState.user?.name, coupleState),
+      body: ThemedBackground(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: _buildContent(authState.user?.name, coupleState),
+          ),
         ),
       ),
     );
@@ -93,21 +108,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.favorite_rounded, size: 64),
+            const PartnerThemeBanner(),
 
-            const SizedBox(height: AppSpacing.lg),
-
-            Text(
-              'Hello, ${userName ?? 'there'} ♡',
-              style: AppTextStyles.title,
-              textAlign: TextAlign.center,
-            ),
+            ..._buildGreeting(userName, partner?.name),
 
             const SizedBox(height: AppSpacing.sm),
 
             Text(
               'Your couple space is ready.',
-              style: AppTextStyles.subtitle,
+              style: context.tokens.subtitle,
               textAlign: TextAlign.center,
             ),
 
@@ -124,7 +133,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                     Text(
                       '${couple.members.length} member(s)',
-                      style: AppTextStyles.subtitle,
+                      style: context.tokens.subtitle,
                     ),
 
                     if (partner != null) ...[
@@ -132,7 +141,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                       Text(
                         partner.name,
-                        style: AppTextStyles.title,
+                        style: context.tokens.title,
                         textAlign: TextAlign.center,
                       ),
 
@@ -140,7 +149,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                       Text(
                         partner.email,
-                        style: AppTextStyles.body,
+                        style: context.tokens.body,
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -181,6 +190,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
             OutlinedButton.icon(
               onPressed: () {
+                final catalog = ref.read(appearanceControllerProvider).catalog;
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => PhotoBoothScreen(
+                      // Offline / not loaded yet: all built-in layouts.
+                      availableTemplates: catalog?.photoBoothTemplates.map((t) => t.key).toSet(),
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.photo_camera_back_outlined),
+              label: const Text('Photo Booth'),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            OutlinedButton.icon(
+              onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => const DeviceManagementScreen(),
@@ -212,6 +239,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  /// The greeting follows the couple's chosen Couple Space style.
+  List<Widget> _buildGreeting(String? userName, String? partnerName) {
+    final t = context.tokens;
+    final hello = 'Hello, ${userName ?? 'there'} ♡';
+
+    return switch (t.coupleSpaceStyle) {
+      CoupleSpaceStyle.classic => [
+          Icon(Icons.favorite_rounded, size: 64, color: t.primary),
+          const SizedBox(height: AppSpacing.lg),
+          Text(hello, style: t.title, textAlign: TextAlign.center),
+        ],
+      CoupleSpaceStyle.cozy => [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(color: t.secondary.withValues(alpha: 0.35), shape: BoxShape.circle),
+            child: Icon(Icons.favorite_rounded, size: 56, color: t.primary),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            partnerName == null ? hello : '${userName ?? 'You'} & $partnerName',
+            style: t.display.copyWith(fontSize: 30),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      CoupleSpaceStyle.minimal => [
+          Text(hello, style: t.title, textAlign: TextAlign.center),
+        ],
+    };
+  }
+
   Widget _buildEmptyCouple() {
     final isLoading =
         ref.watch(coupleNotifierProvider).status == CoupleStatus.loading;
@@ -224,13 +281,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: AppSpacing.lg),
           Text(
             'Your little space is waiting ♡',
-            style: AppTextStyles.title,
+            style: context.tokens.title,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
             'Create a private space for the two of you.',
-            style: AppTextStyles.subtitle,
+            style: context.tokens.subtitle,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -286,13 +343,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: AppSpacing.lg),
           Text(
             'Something went wrong',
-            style: AppTextStyles.title,
+            style: context.tokens.title,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
             message ?? 'Unable to load your couple.',
-            style: AppTextStyles.subtitle,
+            style: context.tokens.subtitle,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.lg),
