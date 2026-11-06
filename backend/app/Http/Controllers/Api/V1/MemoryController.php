@@ -8,6 +8,7 @@ use App\Http\Requests\Api\V1\Memory\UpdateMemoryRequest;
 use App\Http\Resources\Api\V1\MemoryResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Memory;
+use App\Services\Memory\MemoryProtectionService;
 use App\Services\MemoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,20 @@ class MemoryController extends Controller
     public function __construct(
         private readonly MemoryService $memoryService,
     ) {}
+
+    public function protection(Request $request, MemoryProtectionService $protection): JsonResponse
+    {
+        try {
+            $couple = $this->memoryService->getUserCouple($request->user());
+        } catch (RuntimeException $exception) {
+            return ApiResponse::error($exception->getMessage(), status: 404);
+        }
+
+        return ApiResponse::success(
+            'Memory protection status retrieved successfully.',
+            ['protection' => $protection->summary($couple)],
+        );
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -111,7 +126,7 @@ class MemoryController extends Controller
     ): JsonResponse {
         Gate::authorize('delete', $memory);
 
-        $this->memoryService->delete($memory);
+        $this->memoryService->delete($memory, request()->user());
 
         return ApiResponse::success(
             'Memory deleted successfully.',

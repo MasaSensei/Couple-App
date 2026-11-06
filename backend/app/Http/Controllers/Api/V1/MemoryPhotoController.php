@@ -127,10 +127,13 @@ class MemoryPhotoController extends Controller
         Gate::authorize('delete', $photo);
 
         try {
-            $this->photoService->delete($photo);
+            $this->photoService->delete($photo, request()->user());
 
             return ApiResponse::success(
-                'Photo deleted successfully.',
+                'Photo moved to trash.',
+                [
+                    'restorable_until' => $photo->restorableUntil()?->toISOString(),
+                ],
             );
         } catch (RuntimeException $exception) {
             return ApiResponse::error(
@@ -140,6 +143,41 @@ class MemoryPhotoController extends Controller
         }
     }
 
+
+    public function trash(Memory $memory): JsonResponse
+    {
+        Gate::authorize('view', $memory);
+
+        return ApiResponse::success(
+            'Deleted photos retrieved successfully.',
+            [
+                'photos' => MemoryPhotoResource::collection(
+                    $this->photoService->listTrash($memory),
+                ),
+            ],
+        );
+    }
+
+    public function restore(MemoryPhoto $photo): JsonResponse
+    {
+        Gate::authorize('restore', $photo);
+
+        try {
+            $photo = $this->photoService->restore($photo, request()->user());
+
+            return ApiResponse::success(
+                'Photo restored successfully.',
+                [
+                    'photo' => new MemoryPhotoResource($photo),
+                ],
+            );
+        } catch (RuntimeException $exception) {
+            return ApiResponse::error(
+                $exception->getMessage(),
+                status: 422,
+            );
+        }
+    }
 
     public function content(MemoryPhoto $photo): Response
     {

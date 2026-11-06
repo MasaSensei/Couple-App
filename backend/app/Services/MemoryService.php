@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Couple;
 use App\Models\Memory;
+use App\Models\PhotoStorageAudit;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -84,9 +85,19 @@ class MemoryService
         return $memory->refresh();
     }
 
-    public function delete(Memory $memory): void
+    /** Soft delete; its photos go to the trash with the same retention as a single photo delete. */
+    public function delete(Memory $memory, ?User $user = null): void
     {
-        $memory->delete();
+        DB::transaction(function () use ($memory, $user): void {
+            $actor = $user ? "user:{$user->id}" : 'system';
+
+            $memory->photos()->get()->each(function ($photo) use ($actor): void {
+                $photo->delete();
+                PhotoStorageAudit::record($photo->id, 'trash', 'succeeded', $actor, 'Memory deleted.');
+            });
+
+            $memory->delete();
+        });
     }
 
     private function validateDateBelongsToCouple(

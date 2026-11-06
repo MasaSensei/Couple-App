@@ -1,0 +1,2 @@
+# DEV ONLY: secret key for local db:restore-check. Production keys never go in the repo.
+dev-restore.key

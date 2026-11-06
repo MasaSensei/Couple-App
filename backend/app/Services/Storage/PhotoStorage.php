@@ -42,6 +42,15 @@ interface PhotoStorage
         string $storageKey,
     );
 
+    /**
+     * Every stored key under $prefix (current versions only). Used by reconciliation.
+     *
+     * @return list<string>
+     */
+    public function listKeys(
+        string $prefix = '',
+    ): array;
+
     public function deleteObject(
         string $storageKey,
     ): void;

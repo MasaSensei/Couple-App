@@ -104,6 +104,11 @@ Route::prefix('v1')->group(function () {
         );
 
         Route::get(
+            '/memories/protection',
+            [MemoryController::class, 'protection'],
+        );
+
+        Route::get(
             '/memories/timeline',
             [MemoryController::class, 'timeline'],
         );
@@ -169,6 +174,16 @@ Route::prefix('v1')->group(function () {
             '/memory-photos/{photo}',
             [MemoryPhotoController::class, 'destroy'],
         );
+
+        Route::get(
+            '/memories/{memory}/photos/trash',
+            [MemoryPhotoController::class, 'trash'],
+        );
+
+        Route::post(
+            '/memory-photos/{photo}/restore',
+            [MemoryPhotoController::class, 'restore'],
+        )->withTrashed();
 
         Route::get(
             '/memory-photos/{photo}/content',

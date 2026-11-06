@@ -61,7 +61,8 @@ class RepairMemoryPhoto implements ShouldQueue, ShouldBeUnique
     {
         $photo = MemoryPhoto::withTrashed()->find($this->photoId);
 
-        if ($photo === null || $photo->status !== 'verified' || blank($photo->checksum)) {
+        // Never resurrect a copy the retention purge removed.
+        if ($photo === null || $photo->status !== 'verified' || blank($photo->checksum) || $photo->isPurged()) {
             return;
         }
 

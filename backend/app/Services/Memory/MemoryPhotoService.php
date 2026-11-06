@@ -3,8 +3,11 @@
 namespace App\Services\Memory;
 
 use App\Jobs\BackupMemoryPhoto;
+use App\Jobs\RepairMemoryPhoto;
+use App\Jobs\VerifyMemoryPhotoIntegrity;
 use App\Models\Memory;
 use App\Models\MemoryPhoto;
+use App\Models\PhotoStorageAudit;
 use App\Models\User;
 use App\Services\Storage\PhotoStorage;
 use Illuminate\Support\Facades\DB;
@@ -193,14 +196,83 @@ class MemoryPhotoService
         return app('photos.backup')->readStream($photo->storage_key);
     }
 
+    /**
+     * Moves the photo to the couple's trash. Neither copy is touched: objects
+     * are removed only by the retention purge (PurgeMemoryPhoto).
+     */
     public function delete(
         MemoryPhoto $photo,
+        ?User $user = null,
     ): void {
-        $this->photoStorage->deleteObject(
-            $photo->storage_key,
-        );
-
         $photo->delete();
+
+        PhotoStorageAudit::record($photo->id, 'trash', 'succeeded', $user ? "user:{$user->id}" : 'system');
+    }
+
+    /**
+     * Brings a trashed photo back while its retention lasts, then re-verifies
+     * the primary copy. A bad or unreachable copy does not block the restore:
+     * the backup still holds it and repair/verification jobs take over.
+     */
+    public function restore(
+        MemoryPhoto $photo,
+        User $user,
+    ): MemoryPhoto {
+        // Atomic with the purge's own claim: whichever runs first wins, never both.
+        $restored = MemoryPhoto::onlyTrashed()
+            ->whereKey($photo->id)
+            ->where('status', 'verified')
+            ->whereNull('primary_purged_at')
+            ->where('deleted_at', '>', now()->subDays(config('photos.trash_retention_days')))
+            ->update(['deleted_at' => null, 'updated_at' => now()]);
+
+        if ($restored === 0) {
+            throw new RuntimeException('This photo can no longer be restored.');
+        }
+
+        PhotoStorageAudit::record($photo->id, 'restore', 'succeeded', "user:{$user->id}");
+
+        $photo->refresh();
+
+        try {
+            $integrity = $this->photoStorage
+                ->checkIntegrity($photo->storage_key, $photo->checksum, $photo->encrypted_size);
+        } catch (\Throwable $exception) {
+            // Store unreachable: verify later instead of failing the user's restore.
+            report($exception);
+            VerifyMemoryPhotoIntegrity::dispatch($photo->id);
+
+            return $photo;
+        }
+
+        $photo->forceFill([
+            'primary_integrity' => $integrity,
+            'integrity_checked_at' => now(),
+        ]);
+
+        if ($integrity !== 'ok' && $photo->repair_status !== 'failed') {
+            $photo->forceFill(['repair_status' => 'pending']);
+        }
+
+        $photo->save();
+
+        if ($photo->repair_status === 'pending') {
+            RepairMemoryPhoto::dispatch($photo->id, "user:{$user->id}");
+        }
+
+        return $photo;
+    }
+
+    /** Trashed photos the couple can still restore, newest deletion first. */
+    public function listTrash(Memory $memory)
+    {
+        return $memory->photos()
+            ->onlyTrashed()
+            ->where('status', 'verified')
+            ->whereNull('primary_purged_at')
+            ->where('deleted_at', '>', now()->subDays(config('photos.trash_retention_days')))
+            ->orderByDesc('deleted_at')
+            ->get();
     }
 
     private function generateStorageKey(

@@ -135,6 +135,21 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        // Storage/backup alerts (storage:alerts). Add `slack` to route them to operators.
+        'alerts' => [
+            'driver' => 'stack',
+            'channels' => explode(',', (string) env('ALERT_LOG_CHANNELS', 'alerts_file')),
+            'ignore_exceptions' => false,
+        ],
+
+        'alerts_file' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/alerts.log'),
+            'level' => 'warning',
+            'days' => 90,
+            'replace_placeholders' => true,
+        ],
+
     ],
 
 ];

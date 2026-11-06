@@ -35,6 +35,12 @@ class FlysystemPhotoStorage implements PhotoStorage
         return $this->getObjectMetadata($storageKey);
     }
 
+    public function listKeys(
+        string $prefix = '',
+    ): array {
+        return $this->disk()->allFiles($prefix);
+    }
+
     public function deleteObject(
         string $storageKey,
     ): void {

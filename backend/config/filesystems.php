@@ -91,6 +91,20 @@ return [
             'report' => false,
         ],
 
+        // Encrypted PostgreSQL dumps (db:backup). Own bucket and credential.
+        'db_backups' => [
+            'driver' => 's3',
+            'key' => env('DB_BACKUP_ACCESS_KEY'),
+            'secret' => env('DB_BACKUP_SECRET_KEY'),
+            'region' => env('DB_BACKUP_REGION', 'us-east-1'),
+            'bucket' => env('DB_BACKUP_BUCKET'),
+            'endpoint' => env('DB_BACKUP_ENDPOINT'),
+            'use_path_style_endpoint' => env('DB_BACKUP_PATH_STYLE', false),
+            'visibility' => 'private',
+            'throw' => true,
+            'report' => false,
+        ],
+
     ],
 
     /*

@@ -62,7 +62,7 @@ class BackupMemoryPhoto implements ShouldQueue, ShouldBeUnique
         // Deleted photos are still backed up: retention, not this job, decides their fate.
         $photo = MemoryPhoto::withTrashed()->find($this->photoId);
 
-        if ($photo === null || $photo->status !== 'verified' || $photo->backup_status === 'verified') {
+        if ($photo === null || $photo->status !== 'verified' || $photo->backup_status === 'verified' || $photo->isPurged()) {
             return;
         }
 

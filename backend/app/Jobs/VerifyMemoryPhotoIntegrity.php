@@ -43,7 +43,8 @@ class VerifyMemoryPhotoIntegrity implements ShouldQueue, ShouldBeUnique
         // Trashed photos are checked too: they must still be restorable during retention.
         $photo = MemoryPhoto::withTrashed()->find($this->photoId);
 
-        if ($photo === null || $photo->status !== 'verified' || blank($photo->checksum)) {
+        // A purged primary is gone on purpose; reporting it as missing would trigger a repair.
+        if ($photo === null || $photo->status !== 'verified' || blank($photo->checksum) || $photo->isPurged()) {
             return;
         }
 
