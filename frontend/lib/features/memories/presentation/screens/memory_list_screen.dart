@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../providers/memory_providers.dart';
 import '../../providers/memory_state.dart';
@@ -10,6 +9,8 @@ import '../widgets/memory_protection_card.dart';
 import 'memory_detail_screen.dart';
 
 import 'package:go_router/go_router.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
+import 'package:frontend/core/theme/theme_decorations.dart';
 
 class MemoryListScreen extends ConsumerStatefulWidget {
   const MemoryListScreen({super.key});
@@ -78,7 +79,7 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
     final state = ref.watch(memoryNotifierProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: context.tokens.background,
       appBar: AppBar(
         title: const Text('Our Memories'),
         actions: [
@@ -103,7 +104,7 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
         },
         child: const Icon(Icons.add),
       ),
-      body: _buildBody(state),
+      body: ThemedBackground(child: _buildBody(state)),
     );
   }
 
@@ -180,10 +181,10 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.favorite_border,
                       size: 56,
-                      color: AppColors.primary,
+                      color: context.tokens.primary,
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     Text(
@@ -196,7 +197,7 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
                       'will appear here.',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(color: AppColors.textSecondary),
+                          ?.copyWith(color: context.tokens.textSecondary),
                     ),
                   ],
                 ),
@@ -215,10 +216,10 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.cloud_off_outlined,
               size: 48,
-              color: AppColors.error,
+              color: context.tokens.error,
             ),
             const SizedBox(height: AppSpacing.md),
             Text(

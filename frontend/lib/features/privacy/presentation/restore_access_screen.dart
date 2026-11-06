@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/security/encryption_errors.dart';
 import 'package:frontend/core/security/secure_screen.dart';
 import 'package:frontend/core/theme/app_spacing.dart';
-import 'package:frontend/core/theme/app_text_styles.dart';
 import 'package:frontend/core/widgets/app_button.dart';
 import 'package:frontend/features/memories/providers/memory_photo_provider.dart';
 import 'package:frontend/features/privacy/providers/privacy_providers.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 /// Shown when this device does not have the Couple Key: a new phone,
 /// the partner's first device, or a reinstall. Two ways in: approval from a
@@ -104,17 +104,17 @@ class _RestoreAccessScreenState extends ConsumerState<RestoreAccessScreen> {
             children: [
               Text(
                 EncryptionMessages.keyUnavailable,
-                style: AppTextStyles.body,
+                style: context.tokens.body,
               ),
               const SizedBox(height: AppSpacing.xl),
 
-              Text('Approve from another device', style: AppTextStyles.title),
+              Text('Approve from another device', style: context.tokens.title),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Open the app on a device that already shows your photos '
                 '(yours or your partner\'s), go to My Devices and approve this '
                 'device. Make sure it shows this code:',
-                style: AppTextStyles.body,
+                style: context.tokens.body,
               ),
               const SizedBox(height: AppSpacing.md),
               Center(
@@ -135,7 +135,7 @@ class _RestoreAccessScreenState extends ConsumerState<RestoreAccessScreen> {
 
               const SizedBox(height: AppSpacing.xl),
 
-              Text('Use your recovery key', style: AppTextStyles.title),
+              Text('Use your recovery key', style: context.tokens.title),
               const SizedBox(height: AppSpacing.sm),
               TextField(
                 controller: _recoveryController,
@@ -160,7 +160,7 @@ class _RestoreAccessScreenState extends ConsumerState<RestoreAccessScreen> {
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   _error!,
-                  style: AppTextStyles.body.copyWith(
+                  style: context.tokens.body.copyWith(
                     color: Theme.of(context).colorScheme.error,
                   ),
                 ),

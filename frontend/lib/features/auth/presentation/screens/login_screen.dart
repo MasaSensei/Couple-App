@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '/core/theme/app_spacing.dart';
-import '/core/theme/app_text_styles.dart';
 import '/core/widgets/app_button.dart';
 import '/core/widgets/app_text_field.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/auth_state.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -76,13 +76,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             children: [
               const SizedBox(height: AppSpacing.xl),
 
-              Text('Welcome back ♡', style: AppTextStyles.display),
+              Text('Welcome back ♡', style: context.tokens.display),
 
               const SizedBox(height: AppSpacing.sm),
 
               Text(
                 'Sign in to your little space together.',
-                style: AppTextStyles.subtitle,
+                style: context.tokens.subtitle,
               ),
 
               const SizedBox(height: AppSpacing.xxl),

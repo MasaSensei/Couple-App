@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../data/models/memory_model.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
+import 'package:frontend/core/theme/theme_customization.dart';
 
 class MemoryCard extends StatelessWidget {
   const MemoryCard({required this.memory, this.onTap, super.key});
@@ -14,28 +14,36 @@ class MemoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.tokens;
+    // The couple's Memory style: soft rounded cards, polaroid prints, or flat minimal rows.
+    final radius = switch (t.memoryStyle) {
+      MemoryStyle.soft => t.cardRadius,
+      MemoryStyle.polaroid => 4.0,
+      MemoryStyle.minimal => 0.0,
+    };
+
     return Card(
-      elevation: 0,
+      elevation: t.memoryStyle == MemoryStyle.polaroid ? 3 : t.cardElevation,
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        side: const BorderSide(color: AppColors.border),
+        borderRadius: BorderRadius.circular(radius),
+        side: t.memoryStyle == MemoryStyle.minimal || !t.cardBorder ? BorderSide.none : BorderSide(color: t.border),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(radius),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildDate(),
+              _buildDate(context),
 
               const SizedBox(height: AppSpacing.sm),
 
               Text(
                 memory.title,
-                style: AppTextStyles.title.copyWith(fontSize: 20),
+                style: context.tokens.title.copyWith(fontSize: 20),
               ),
 
               if (memory.locationName != null) ...[
@@ -43,17 +51,17 @@ class MemoryCard extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.location_on_outlined,
                       size: 18,
-                      color: AppColors.textSecondary,
+                      color: context.tokens.textSecondary,
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     Expanded(
                       child: Text(
                         memory.locationName!,
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.textSecondary,
+                        style: context.tokens.body.copyWith(
+                          color: context.tokens.textSecondary,
                         ),
                       ),
                     ),
@@ -68,8 +76,8 @@ class MemoryCard extends StatelessWidget {
                   memory.description!,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.textSecondary,
+                  style: context.tokens.body.copyWith(
+                    color: context.tokens.textSecondary,
                   ),
                 ),
               ],
@@ -80,7 +88,7 @@ class MemoryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDate() {
+  Widget _buildDate(BuildContext context) {
     final date = memory.memoryDate;
 
     return Row(
@@ -91,13 +99,13 @@ class MemoryCard extends StatelessWidget {
             vertical: AppSpacing.xs,
           ),
           decoration: BoxDecoration(
-            color: AppColors.secondary.withValues(alpha: 0.25),
+            color: context.tokens.secondary.withValues(alpha: 0.25),
             borderRadius: BorderRadius.circular(AppRadius.pill),
           ),
           child: Text(
             _formatDate(date),
-            style: AppTextStyles.body.copyWith(
-              color: AppColors.primaryDark,
+            style: context.tokens.body.copyWith(
+              color: context.tokens.primaryDark,
               fontWeight: FontWeight.w600,
             ),
           ),

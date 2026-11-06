@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_button.dart';
 import '../providers/couple_invitation_providers.dart';
 import '../providers/couple_invitation_state.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 class InvitePartnerScreen extends ConsumerStatefulWidget {
   const InvitePartnerScreen({super.key});
@@ -58,7 +58,7 @@ class _InvitePartnerScreenState extends ConsumerState<InvitePartnerScreen> {
 
                   Text(
                     'Invite your partner ♡',
-                    style: AppTextStyles.title,
+                    style: context.tokens.title,
                     textAlign: TextAlign.center,
                   ),
 
@@ -67,7 +67,7 @@ class _InvitePartnerScreenState extends ConsumerState<InvitePartnerScreen> {
                   Text(
                     'Create an invitation and share it '
                     'with your partner.',
-                    style: AppTextStyles.subtitle,
+                    style: context.tokens.subtitle,
                     textAlign: TextAlign.center,
                   ),
 
@@ -91,7 +91,7 @@ class _InvitePartnerScreenState extends ConsumerState<InvitePartnerScreen> {
                     const SizedBox(height: AppSpacing.md),
                     Text(
                       state.errorMessage ?? 'Unable to create invitation.',
-                      style: AppTextStyles.subtitle,
+                      style: context.tokens.subtitle,
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -121,7 +121,7 @@ class _InvitePartnerScreenState extends ConsumerState<InvitePartnerScreen> {
             SelectableText(
               token,
               textAlign: TextAlign.center,
-              style: AppTextStyles.title,
+              style: context.tokens.title,
             ),
 
             const SizedBox(height: AppSpacing.md),

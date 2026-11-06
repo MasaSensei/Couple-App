@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../providers/date_providers.dart';
 import '../providers/date_state.dart';
 import 'date_form_screen.dart';
 import 'date_detail_screen.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 class DateListScreen extends ConsumerStatefulWidget {
   const DateListScreen({super.key});
@@ -69,14 +69,14 @@ class _DateListScreenState extends ConsumerState<DateListScreen> {
             const SizedBox(height: AppSpacing.lg),
             Text(
               'No dates yet ♡',
-              style: AppTextStyles.title,
+              style: context.tokens.title,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               'Your little plans together '
               'will appear here.',
-              style: AppTextStyles.subtitle,
+              style: context.tokens.subtitle,
               textAlign: TextAlign.center,
             ),
           ],
@@ -91,7 +91,7 @@ class _DateListScreenState extends ConsumerState<DateListScreen> {
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Text(
           message,
-          style: AppTextStyles.subtitle,
+          style: context.tokens.subtitle,
           textAlign: TextAlign.center,
         ),
       ),
@@ -125,18 +125,18 @@ class _DateListScreenState extends ConsumerState<DateListScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(date.title, style: AppTextStyles.title),
+                    Text(date.title, style: context.tokens.title),
 
                     const SizedBox(height: AppSpacing.sm),
 
                     Text(
                       _formatDate(date.scheduledAt),
-                      style: AppTextStyles.subtitle,
+                      style: context.tokens.subtitle,
                     ),
 
                     if (date.location != null) ...[
                       const SizedBox(height: AppSpacing.xs),
-                      Text(date.location!, style: AppTextStyles.body),
+                      Text(date.location!, style: context.tokens.body),
                     ],
 
                     const SizedBox(height: AppSpacing.md),
@@ -153,7 +153,7 @@ class _DateListScreenState extends ConsumerState<DateListScreen> {
   }
 
   Widget _buildStatus(String status) {
-    return Text(status.toUpperCase(), style: AppTextStyles.body);
+    return Text(status.toUpperCase(), style: context.tokens.body);
   }
 
   String _formatDate(DateTime date) {

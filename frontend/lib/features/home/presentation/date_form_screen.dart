@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../data/models/date_model.dart';
 import '../providers/date_providers.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 class DateFormScreen extends ConsumerStatefulWidget {
   const DateFormScreen({super.key, this.date});
@@ -166,7 +166,7 @@ class _DateFormScreenState extends ConsumerState<DateFormScreen> {
                 widget.isEditing
                     ? 'Update your plan ♡'
                     : 'Plan something special ♡',
-                style: AppTextStyles.title,
+                style: context.tokens.title,
               ),
 
               const SizedBox(height: AppSpacing.xl),
@@ -225,13 +225,13 @@ class _DateFormScreenState extends ConsumerState<DateFormScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Date & Time', style: AppTextStyles.subtitle),
+                  Text('Date & Time', style: context.tokens.subtitle),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     _scheduledAt == null
                         ? 'Not selected'
                         : _formatDateTime(_scheduledAt!),
-                    style: AppTextStyles.body,
+                    style: context.tokens.body,
                   ),
                 ],
               ),

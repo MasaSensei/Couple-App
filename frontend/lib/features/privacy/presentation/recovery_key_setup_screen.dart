@@ -6,10 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/security/encryption_errors.dart';
 import 'package:frontend/core/security/secure_screen.dart';
 import 'package:frontend/core/theme/app_spacing.dart';
-import 'package:frontend/core/theme/app_text_styles.dart';
 import 'package:frontend/core/widgets/app_button.dart';
 import 'package:frontend/features/memories/providers/memory_photo_provider.dart';
 import 'package:frontend/features/privacy/providers/privacy_providers.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 enum _Step { intro, reveal, verify, done }
 
@@ -162,7 +162,7 @@ class _RecoveryKeySetupScreenState
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   _error!,
-                  style: AppTextStyles.body.copyWith(
+                  style: context.tokens.body.copyWith(
                     color: Theme.of(context).colorScheme.error,
                   ),
                 ),
@@ -175,14 +175,14 @@ class _RecoveryKeySetupScreenState
   }
 
   List<Widget> _intro() => [
-    Text('Your memories are private ❤️', style: AppTextStyles.title),
+    Text('Your memories are private ❤️', style: context.tokens.title),
     const SizedBox(height: AppSpacing.md),
     Text(
       'Photos are encrypted on your device before they are uploaded.\n\n'
       'That means our servers cannot read the photos you save here.\n\n'
       'Set up your recovery key so you can restore access if you lose '
       'your devices.',
-      style: AppTextStyles.body,
+      style: context.tokens.body,
     ),
     const SizedBox(height: AppSpacing.xl),
     AppButton(
@@ -193,7 +193,7 @@ class _RecoveryKeySetupScreenState
   ];
 
   List<Widget> _reveal() => [
-    Text('Your Private Recovery Key', style: AppTextStyles.title),
+    Text('Your Private Recovery Key', style: context.tokens.title),
     const SizedBox(height: AppSpacing.md),
     Card(
       child: InkWell(
@@ -225,7 +225,7 @@ class _RecoveryKeySetupScreenState
       '⚠️ Keep this somewhere safe, like a password manager or on paper.\n\n'
       'We cannot read your private photos for you if you lose both your '
       'devices and your recovery key.',
-      style: AppTextStyles.body,
+      style: context.tokens.body,
     ),
     const SizedBox(height: AppSpacing.md),
     CheckboxListTile(
@@ -250,11 +250,11 @@ class _RecoveryKeySetupScreenState
   ];
 
   List<Widget> _verify() => [
-    Text('Check your recovery key', style: AppTextStyles.title),
+    Text('Check your recovery key', style: context.tokens.title),
     const SizedBox(height: AppSpacing.md),
     Text(
       'Enter the recovery key you saved to make sure it works.',
-      style: AppTextStyles.body,
+      style: context.tokens.body,
     ),
     const SizedBox(height: AppSpacing.md),
     TextField(
@@ -278,12 +278,12 @@ class _RecoveryKeySetupScreenState
   ];
 
   List<Widget> _done() => [
-    Text('All set ❤️', style: AppTextStyles.title),
+    Text('All set ❤️', style: context.tokens.title),
     const SizedBox(height: AppSpacing.md),
     Text(
       'Your recovery key works. Keep it safe — you will only need it if you '
       'lose access on all your devices.',
-      style: AppTextStyles.body,
+      style: context.tokens.body,
     ),
     const SizedBox(height: AppSpacing.xl),
     AppButton(

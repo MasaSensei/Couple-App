@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../../auth/providers/auth_providers.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -39,7 +38,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
                     Text(
                       'Our Little Space',
-                      style: AppTextStyles.display,
+                      style: context.tokens.display,
                       textAlign: TextAlign.center,
                     ),
 
@@ -47,7 +46,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
                     Text(
                       'A private place for the two of you.',
-                      style: AppTextStyles.subtitle,
+                      style: context.tokens.subtitle,
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -59,13 +58,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
               left: 0,
               right: 0,
               bottom: AppSpacing.lg,
-              child: const Center(
+              child: Center(
                 child: SizedBox(
                   width: 28,
                   height: 28,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    color: AppColors.primary,
+                    color: context.tokens.primary,
                   ),
                 ),
               ),
@@ -81,11 +80,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       width: 104,
       height: 104,
       decoration: BoxDecoration(
-        color: AppColors.secondary.withValues(alpha: 0.22),
+        color: context.tokens.secondary.withValues(alpha: 0.22),
         shape: BoxShape.circle,
       ),
-      child: const Center(
-        child: Icon(Icons.favorite_rounded, size: 52, color: AppColors.primary),
+      child: Center(
+        child: Icon(Icons.favorite_rounded, size: 52, color: context.tokens.primary),
       ),
     );
   }

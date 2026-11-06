@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../data/models/memory_form_data.dart';
 import '../../data/models/memory_model.dart';
 import '../../providers/memory_providers.dart';
 import '../../providers/memory_state.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 class MemoryFormScreen extends ConsumerStatefulWidget {
   const MemoryFormScreen({this.memory, this.initialData, super.key});
@@ -154,8 +153,8 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
           widget.isEditing
               ? 'Keep this memory up to date.'
               : 'Save a little moment you want to remember.',
-          style: AppTextStyles.subtitle.copyWith(
-            color: AppColors.textSecondary,
+          style: context.tokens.subtitle.copyWith(
+            color: context.tokens.textSecondary,
           ),
         ),
       ],
@@ -174,7 +173,7 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
         ),
-        child: Text(_formatDate(_memoryDate), style: AppTextStyles.body),
+        child: Text(_formatDate(_memoryDate), style: context.tokens.body),
       ),
     );
   }
@@ -183,18 +182,18 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.08),
+        color: context.tokens.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.error_outline, color: AppColors.error),
+          Icon(Icons.error_outline, color: context.tokens.error),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               message,
-              style: AppTextStyles.body.copyWith(color: AppColors.error),
+              style: context.tokens.body.copyWith(color: context.tokens.error),
             ),
           ),
         ],

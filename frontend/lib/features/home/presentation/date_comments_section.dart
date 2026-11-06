@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/features/home/data/models/date_comment_model.dart';
 
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../providers/date_comment_state.dart';
 import '../providers/date_providers.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 class DateCommentsSection extends ConsumerStatefulWidget {
   const DateCommentsSection({super.key, required this.dateId});
@@ -78,7 +78,7 @@ class _DateCommentsSectionState extends ConsumerState<DateCommentsSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Comments', style: AppTextStyles.subtitle),
+        Text('Comments', style: context.tokens.subtitle),
 
         const SizedBox(height: AppSpacing.md),
 
@@ -110,12 +110,12 @@ class _DateCommentsSectionState extends ConsumerState<DateCommentsSection> {
         return const Center(child: CircularProgressIndicator());
 
       case DateCommentStatus.empty:
-        return Text('No comments yet ♡', style: AppTextStyles.body);
+        return Text('No comments yet ♡', style: context.tokens.body);
 
       case DateCommentStatus.error:
         return Text(
           state.errorMessage ?? 'Unable to load comments.',
-          style: AppTextStyles.body,
+          style: context.tokens.body,
         );
 
       case DateCommentStatus.loaded:
@@ -136,15 +136,15 @@ class _DateCommentsSectionState extends ConsumerState<DateCommentsSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(comment.userName ?? 'Unknown', style: AppTextStyles.subtitle),
+          Text(comment.userName ?? 'Unknown', style: context.tokens.subtitle),
 
           const SizedBox(height: AppSpacing.xs),
 
-          Text(comment.content, style: AppTextStyles.body),
+          Text(comment.content, style: context.tokens.body),
 
           if (comment.createdAt != null) ...[
             const SizedBox(height: AppSpacing.xs),
-            Text(_formatDate(comment.createdAt!), style: AppTextStyles.body),
+            Text(_formatDate(comment.createdAt!), style: context.tokens.body),
           ],
         ],
       ),

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/features/memories/data/models/memory_form_data.dart';
 
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../data/models/date_model.dart';
 import '../providers/date_providers.dart';
 import 'date_form_screen.dart';
@@ -11,6 +10,7 @@ import 'date_comments_section.dart';
 import '../../memories/presentation/screens/memory_form_screen.dart';
 import '../../memories/data/models/memory_model.dart';
 import '../../memories/presentation/screens/memory_detail_screen.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 class DateDetailScreen extends ConsumerStatefulWidget {
   const DateDetailScreen({super.key, required this.dateId});
@@ -203,7 +203,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(date.title, style: AppTextStyles.title),
+                  Text(date.title, style: context.tokens.title),
 
                   const SizedBox(height: AppSpacing.sm),
 
@@ -272,7 +272,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
-      child: Text(status.toUpperCase(), style: AppTextStyles.body),
+      child: Text(status.toUpperCase(), style: context.tokens.body),
     );
   }
 
@@ -295,9 +295,9 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: AppTextStyles.subtitle),
+                  Text(title, style: context.tokens.subtitle),
                   const SizedBox(height: AppSpacing.xs),
-                  Text(value, style: AppTextStyles.body),
+                  Text(value, style: context.tokens.body),
                 ],
               ),
             ),
@@ -314,9 +314,9 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Description', style: AppTextStyles.subtitle),
+            Text('Description', style: context.tokens.subtitle),
             const SizedBox(height: AppSpacing.sm),
-            Text(description, style: AppTextStyles.body),
+            Text(description, style: context.tokens.body),
           ],
         ),
       ),
@@ -334,7 +334,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
             const SizedBox(height: AppSpacing.md),
             Text(
               'Unable to load this date.',
-              style: AppTextStyles.subtitle,
+              style: context.tokens.subtitle,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.md),

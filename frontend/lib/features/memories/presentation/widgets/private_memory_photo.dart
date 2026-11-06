@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/security/encryption_errors.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
+import 'package:frontend/core/theme/theme_customization.dart';
 import 'package:frontend/features/privacy/presentation/restore_access_screen.dart';
 import 'package:frontend/features/memories/data/models/memory_photo_model.dart';
 import 'package:frontend/features/memories/providers/memory_photo_provider.dart';
@@ -53,14 +55,38 @@ class _PrivateMemoryPhotoState extends ConsumerState<PrivateMemoryPhoto> {
           );
         }
 
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Image.memory(
-            Uint8List.fromList(bytes),
-            fit: BoxFit.cover,
-            width: double.infinity,
-          ),
+        final t = context.tokens;
+
+        // Decode at display size, not the full 2048 px upload: a grid of
+        // full-size bitmaps is what exhausts memory on low-end phones.
+        final image = LayoutBuilder(
+          builder: (context, constraints) {
+            final dpr = MediaQuery.devicePixelRatioOf(context);
+            final width = constraints.maxWidth.isFinite ? (constraints.maxWidth * dpr).round() : null;
+
+            return Image.memory(
+              Uint8List.fromList(bytes),
+              fit: BoxFit.cover,
+              width: double.infinity,
+              cacheWidth: width,
+              gaplessPlayback: true,
+            );
+          },
         );
+
+        return switch (t.memoryStyle) {
+          MemoryStyle.soft => ClipRRect(borderRadius: BorderRadius.circular(16), child: image),
+          MemoryStyle.minimal => image,
+          MemoryStyle.polaroid => Container(
+              padding: const EdgeInsets.fromLTRB(6, 6, 6, 18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(3),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 6, offset: const Offset(0, 2))],
+              ),
+              child: image,
+            ),
+        };
       },
     );
   }

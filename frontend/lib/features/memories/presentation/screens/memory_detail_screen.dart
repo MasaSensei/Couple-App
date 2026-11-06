@@ -6,12 +6,13 @@ import 'package:frontend/features/memories/data/models/memory_photo_model.dart';
 import 'package:frontend/features/memories/presentation/widgets/private_memory_photo.dart';
 import 'package:frontend/features/memories/providers/memory_photo_provider.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../data/models/memory_model.dart';
 import 'memory_photo_viewer_screen.dart';
 import '../widgets/memory_comment_section.dart';
+
+import 'package:frontend/core/theme/app_theme_tokens.dart';
+import 'package:frontend/core/theme/theme_decorations.dart';
 
 class MemoryDetailScreen extends ConsumerStatefulWidget {
   const MemoryDetailScreen({required this.memory, super.key});
@@ -47,203 +48,206 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildDate(),
+      body: ThemedBackground(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildDate(),
 
-              const SizedBox(height: AppSpacing.md),
-
-              Text(
-                widget.memory.title,
-                style: AppTextStyles.display.copyWith(fontSize: 28),
-              ),
-
-              if (widget.memory.locationName != null) ...[
                 const SizedBox(height: AppSpacing.md),
-                _buildLocation(),
-              ],
 
-              if (widget.memory.description != null &&
-                  widget.memory.description!.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.xl),
                 Text(
-                  widget.memory.description!,
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.textSecondary,
-                    height: 1.5,
-                  ),
+                  widget.memory.title,
+                  style: context.tokens.display.copyWith(fontSize: 28),
                 ),
-              ],
 
-              const SizedBox(height: 24),
+                if (widget.memory.locationName != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _buildLocation(),
+                ],
 
-              Text(
-                'Photos',
-                style: Theme.of(context).textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w600),
-              ),
-
-              const SizedBox(height: 12),
-
-              OutlinedButton.icon(
-                onPressed: () async {
-                  final file = await ref
-                      .read(memoryPhotoNotifierProvider.notifier)
-                      .pickPhoto();
-
-                  if (file != null) await _upload(file);
-                },
-                icon: const Icon(Icons.add_photo_alternate_outlined),
-                label: const Text('Tambah Foto'),
-              ),
-
-              const SizedBox(height: 12),
-
-              Consumer(
-                builder: (context, ref, child) {
-                  final photoState = ref.watch(memoryPhotoNotifierProvider);
-
-                  return photoState.when(
-                    loading: () => const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(AppSpacing.lg),
-                        child: CircularProgressIndicator(),
-                      ),
+                if (widget.memory.description != null &&
+                    widget.memory.description!.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xl),
+                  Text(
+                    widget.memory.description!,
+                    style: context.tokens.body.copyWith(
+                      color: context.tokens.textSecondary,
+                      height: 1.5,
                     ),
+                  ),
+                ],
 
-                    error: (error, stackTrace) {
-                      return Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.border),
+                const SizedBox(height: 24),
+
+                Text(
+                  'Photos',
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+
+                const SizedBox(height: 12),
+
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final file = await ref
+                        .read(memoryPhotoNotifierProvider.notifier)
+                        .pickPhoto();
+
+                    if (file != null) await _upload(file);
+                  },
+                  icon: const Icon(Icons.add_photo_alternate_outlined),
+                  label: const Text('Tambah Foto'),
+                ),
+
+                const SizedBox(height: 12),
+
+                Consumer(
+                  builder: (context, ref, child) {
+                    final photoState = ref.watch(memoryPhotoNotifierProvider);
+
+                    return photoState.when(
+                      loading: () => const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(AppSpacing.lg),
+                          child: CircularProgressIndicator(),
                         ),
-                        child: Text(
-                          'Gagal memuat foto.',
-                          style: AppTextStyles.body.copyWith(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                      );
-                    },
+                      ),
 
-                    data: (photos) {
-                      final verifiedPhotos = photos
-                          .where((photo) => photo.status == 'verified')
-                          .toList();
-
-                      if (verifiedPhotos.isEmpty) {
+                      error: (error, stackTrace) {
                         return Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(AppSpacing.lg),
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: context.tokens.surface,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.border),
+                            border: Border.all(color: context.tokens.border),
                           ),
-                          child: Column(
-                            children: [
-                              const Icon(
-                                Icons.photo_library_outlined,
-                                color: AppColors.primary,
-                                size: 36,
-                              ),
-
-                              const SizedBox(height: AppSpacing.sm),
-
-                              Text(
-                                'Belum ada foto',
-                                style: AppTextStyles.subtitle.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-
-                              const SizedBox(height: AppSpacing.xs),
-
-                              Text(
-                                'Tambahkan foto untuk '
-                                'mengabadikan memory ini.',
-                                textAlign: TextAlign.center,
-                                style: AppTextStyles.body.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
+                          child: Text(
+                            'Gagal memuat foto.',
+                            style: context.tokens.body.copyWith(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
                           ),
                         );
-                      }
+                      },
 
-                      return GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: verifiedPhotos.length,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: AppSpacing.sm,
-                              mainAxisSpacing: AppSpacing.sm,
-                              childAspectRatio: 1,
+                      data: (photos) {
+                        final verifiedPhotos = photos
+                            .where((photo) => photo.status == 'verified')
+                            .toList();
+
+                        if (verifiedPhotos.isEmpty) {
+                          return Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            decoration: BoxDecoration(
+                              color: context.tokens.surface,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: context.tokens.border),
                             ),
-                        itemBuilder: (context, index) {
-                          final photo = verifiedPhotos[index];
-
-                          return Stack(
-                            children: [
-                              Positioned.fill(
-                                child: GestureDetector(
-                                  onTap: () {
-                                    _openPhotoViewer(
-                                      initialIndex: index,
-                                      photos: verifiedPhotos,
-                                    );
-                                  },
-                                  child: PrivateMemoryPhoto(photo: photo),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.photo_library_outlined,
+                                  color: context.tokens.primary,
+                                  size: 36,
                                 ),
+
+                                const SizedBox(height: AppSpacing.sm),
+
+                                Text(
+                                  'Belum ada foto',
+                                  style: context.tokens.subtitle.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+
+                                const SizedBox(height: AppSpacing.xs),
+
+                                Text(
+                                  'Tambahkan foto untuk '
+                                  'mengabadikan memory ini.',
+                                  textAlign: TextAlign.center,
+                                  style: context.tokens.body.copyWith(
+                                    color: context.tokens.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: verifiedPhotos.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: AppSpacing.sm,
+                                mainAxisSpacing: AppSpacing.sm,
+                                childAspectRatio: 1,
                               ),
+                          itemBuilder: (context, index) {
+                            final photo = verifiedPhotos[index];
 
-                              if (_protectionBadge(photo) case final badge?)
-                                Positioned(left: 8, bottom: 8, child: badge),
+                            return Stack(
+                              children: [
+                                Positioned.fill(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      _openPhotoViewer(
+                                        initialIndex: index,
+                                        photos: verifiedPhotos,
+                                      );
+                                    },
+                                    child: PrivateMemoryPhoto(photo: photo),
+                                  ),
+                                ),
 
-                              Positioned(
-                                top: 8,
-                                right: 8,
-                                child: Material(
-                                  color: Colors.black54,
-                                  shape: const CircleBorder(),
-                                  child: InkWell(
-                                    customBorder: const CircleBorder(),
-                                    onTap: () =>
-                                        _confirmDeletePhoto(photoId: photo.id),
-                                    child: const Padding(
-                                      padding: EdgeInsets.all(8),
-                                      child: Icon(
-                                        Icons.delete_outline,
-                                        color: Colors.white,
-                                        size: 20,
+                                if (_protectionBadge(photo) case final badge?)
+                                  Positioned(left: 8, bottom: 8, child: badge),
+
+                                Positioned(
+                                  top: 8,
+                                  right: 8,
+                                  child: Material(
+                                    color: Colors.black54,
+                                    shape: const CircleBorder(),
+                                    child: InkWell(
+                                      customBorder: const CircleBorder(),
+                                      onTap: () => _confirmDeletePhoto(
+                                        photoId: photo.id,
+                                      ),
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: Icon(
+                                          Icons.delete_outline,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                  );
-                },
-              ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              MemoryCommentSection(memoryId: widget.memory.id),
-            ],
+                MemoryCommentSection(memoryId: widget.memory.id),
+              ],
+            ),
           ),
         ),
       ),
@@ -257,13 +261,13 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: AppColors.secondary.withValues(alpha: 0.25),
+        color: context.tokens.secondary.withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         _formatDate(widget.memory.memoryDate),
-        style: AppTextStyles.body.copyWith(
-          color: AppColors.primaryDark,
+        style: context.tokens.body.copyWith(
+          color: context.tokens.primaryDark,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -274,7 +278,8 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
   /// Protected photos show nothing: that is the normal state.
   Widget? _protectionBadge(MemoryPhotoModel photo) {
     final (icon, label) = switch (photo.protectionStatus) {
-      'backing_up' || 'uploading' => (Icons.cloud_upload_outlined, 'Backing up'),
+      'backing_up' ||
+      'uploading' => (Icons.cloud_upload_outlined, 'Backing up'),
       'restoring' => (Icons.autorenew, 'Restoring'),
       'needs_attention' => (Icons.error_outline, 'Needs attention'),
       _ => (null, null),
@@ -354,7 +359,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          restored ? 'Foto dipulihkan.' : 'Foto ini sudah tidak bisa dipulihkan.',
+          restored
+              ? 'Foto dipulihkan.'
+              : 'Foto ini sudah tidak bisa dipulihkan.',
         ),
       ),
     );
@@ -388,8 +395,8 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
                   snapshot.hasError
                       ? 'Tidak bisa memuat foto yang dihapus.'
                       : 'Tidak ada foto yang baru dihapus.',
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.textSecondary,
+                  style: context.tokens.body.copyWith(
+                    color: context.tokens.textSecondary,
                   ),
                 ),
               ),
@@ -425,7 +432,6 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
     );
   }
 
-
   Future<void> _upload(File file) async {
     try {
       await ref
@@ -438,7 +444,10 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
         SnackBar(
           content: Text(error.message),
           duration: const Duration(seconds: 8),
-          action: SnackBarAction(label: 'Retry', onPressed: () => _upload(file)),
+          action: SnackBarAction(
+            label: 'Retry',
+            onPressed: () => _upload(file),
+          ),
         ),
       );
     }
@@ -448,10 +457,10 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(
+        Icon(
           Icons.location_on_outlined,
           size: 20,
-          color: AppColors.textSecondary,
+          color: context.tokens.textSecondary,
         ),
 
         const SizedBox(width: AppSpacing.xs),
@@ -459,7 +468,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
         Expanded(
           child: Text(
             widget.memory.locationName!,
-            style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
+            style: context.tokens.body.copyWith(
+              color: context.tokens.textSecondary,
+            ),
           ),
         ),
       ],

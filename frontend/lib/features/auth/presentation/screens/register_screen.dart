@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '/core/theme/app_spacing.dart';
-import '/core/theme/app_text_styles.dart';
 import '/core/widgets/app_button.dart';
 import '/core/widgets/app_text_field.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/auth_state.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -99,13 +99,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Create your space ♡', style: AppTextStyles.display),
+              Text('Create your space ♡', style: context.tokens.display),
 
               const SizedBox(height: AppSpacing.sm),
 
               Text(
                 'A little place made just for the two of you.',
-                style: AppTextStyles.subtitle,
+                style: context.tokens.subtitle,
               ),
 
               const SizedBox(height: AppSpacing.xxl),

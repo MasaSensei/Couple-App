@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../data/models/memory_protection_summary.dart';
 import '../../providers/memory_providers.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 /// "Memory Protection ❤️": what the server has verified about the couple's
 /// photos. Only says "protected" when every stored photo has a verified
@@ -28,16 +27,16 @@ class MemoryProtectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = switch (summary.state) {
-      'protected' => AppColors.success,
-      'needs_attention' => AppColors.error,
-      _ => AppColors.primary,
+      'protected' => context.tokens.success,
+      'needs_attention' => context.tokens.error,
+      _ => context.tokens.primary,
     };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Memory Protection ❤️', style: AppTextStyles.subtitle.copyWith(fontWeight: FontWeight.w700)),
+        Text('Memory Protection ❤️', style: context.tokens.subtitle.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: AppSpacing.sm),
         Row(
           children: [
@@ -47,20 +46,20 @@ class MemoryProtectionCard extends StatelessWidget {
               size: 20,
             ),
             const SizedBox(width: AppSpacing.sm),
-            Expanded(child: Text(headline(summary), style: AppTextStyles.body.copyWith(color: color))),
+            Expanded(child: Text(headline(summary), style: context.tokens.body.copyWith(color: color))),
           ],
         ),
         const SizedBox(height: AppSpacing.md),
-        _row('Photos', summary.photos),
-        _row('Protected', summary.protected),
-        if (summary.backingUp > 0) _row('Backing up', summary.backingUp),
-        if (summary.uploading > 0) _row('Uploading', summary.uploading),
-        if (summary.restoring > 0) _row('Restoring', summary.restoring),
-        if (summary.needsAttention > 0) _row('Needs attention', summary.needsAttention),
-        if (summary.uploadFailed > 0) _row('Upload failed', summary.uploadFailed),
+        _row(context, 'Photos', summary.photos),
+        _row(context, 'Protected', summary.protected),
+        if (summary.backingUp > 0) _row(context, 'Backing up', summary.backingUp),
+        if (summary.uploading > 0) _row(context, 'Uploading', summary.uploading),
+        if (summary.restoring > 0) _row(context, 'Restoring', summary.restoring),
+        if (summary.needsAttention > 0) _row(context, 'Needs attention', summary.needsAttention),
+        if (summary.uploadFailed > 0) _row(context, 'Upload failed', summary.uploadFailed),
         const SizedBox(height: AppSpacing.md),
-        _when('Last integrity check', summary.lastIntegrityCheckAt),
-        _when('Last verified backup', summary.lastVerifiedBackupAt),
+        _when(context, 'Last integrity check', summary.lastIntegrityCheckAt),
+        _when(context, 'Last verified backup', summary.lastVerifiedBackupAt),
         if (summary.needsAttention > 0 || summary.uploadFailed > 0) ...[
           const SizedBox(height: AppSpacing.md),
           Text(
@@ -68,31 +67,31 @@ class MemoryProtectionCard extends StatelessWidget {
                 ? 'A failed upload is still on your phone. Open the memory to try again.'
                 : 'We keep two copies of every photo and are working on it. '
                     'Your photos stay encrypted the whole time.',
-            style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
+            style: context.tokens.body.copyWith(color: context.tokens.textSecondary),
           ),
         ],
       ],
     );
   }
 
-  Widget _row(String label, int value) {
+  Widget _row(BuildContext context, String label, int value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: AppTextStyles.body)),
-          Text('$value', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
+          Expanded(child: Text(label, style: context.tokens.body)),
+          Text('$value', style: context.tokens.body.copyWith(fontWeight: FontWeight.w600)),
         ],
       ),
     );
   }
 
-  Widget _when(String label, DateTime? at) {
+  Widget _when(BuildContext context, String label, DateTime? at) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Text(
         '$label: ${at == null ? 'not yet' : formatWhen(at.toLocal())}',
-        style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
+        style: context.tokens.body.copyWith(color: context.tokens.textSecondary),
       ),
     );
   }
@@ -133,7 +132,7 @@ Future<void> showMemoryProtectionSheet(BuildContext context) {
                 child: Text(
                   "We couldn't check your photos' protection right now.",
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
+                  style: context.tokens.body.copyWith(color: context.tokens.textSecondary),
                 ),
               ),
             ),

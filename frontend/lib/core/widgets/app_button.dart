@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/theme/app_theme_tokens.dart';
 
-import '../theme/app_text_styles.dart';
 
 class AppButton extends StatelessWidget {
   const AppButton({
@@ -27,7 +27,7 @@ class AppButton extends StatelessWidget {
                 color: Colors.white,
               ),
             )
-          : Text(label, style: AppTextStyles.button),
+          : Text(label, style: context.tokens.button),
     );
   }
 }
