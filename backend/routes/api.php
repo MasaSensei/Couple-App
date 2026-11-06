@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Appearance\AppearanceController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\Couple\CoupleKeyPackageController;
 use App\Http\Controllers\Api\V1\Couple\CoupleKeyRecoveryPackageController;
@@ -48,6 +49,11 @@ Route::prefix('v1')->group(function () {
             CoupleKeyRecoveryPackageController::class,
             'update',
         ]);
+
+        Route::get('/appearance/catalog', [AppearanceController::class, 'catalog']);
+        Route::get('/couple/theme', [AppearanceController::class, 'show']);
+        Route::put('/couple/theme', [AppearanceController::class, 'update']);
+        Route::delete('/couple/theme/customization', [AppearanceController::class, 'resetCustomization']);
 
         Route::post('/couple', [CoupleController::class, 'store']);
         Route::get('/couple', [CoupleController::class, 'show']);

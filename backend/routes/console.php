@@ -221,3 +221,12 @@ Artisan::command('db:restore {--object= : Object key in the db-backups bucket (d
 
         return 0;
     })->purpose('Restore an encrypted database backup into a new, empty database');
+
+// Run on every deploy (also run by the appearance migration). Adds new themes /
+// templates from database/data/appearance_catalog.json; never deletes and never
+// overrides what admins set (status, premium, order).
+Artisan::command('appearance:sync-catalog', function (\App\Services\Appearance\AppearanceCatalog $catalog) {
+    $counts = $catalog->sync();
+
+    $this->info("Synced {$counts['themes']} theme(s) and {$counts['templates']} Photo Booth template(s).");
+})->purpose('Sync the theme and Photo Booth catalog from the app definitions');

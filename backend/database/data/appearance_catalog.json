@@ -1,0 +1,265 @@
+{
+  "_comment": "Shared keys between Flutter (lib/core/theme, lib/features/photo_booth) and the backend. Visual definitions live in Flutter; this file holds metadata and the allowed customization values. A Flutter test checks both sides match.",
+  "themes": [
+    {
+      "key": "classic_rose",
+      "name": "Classic Rose",
+      "version": 1,
+      "sort_order": 0,
+      "is_default": true,
+      "options": {
+        "accents": [],
+        "backgrounds": [],
+        "fonts": []
+      }
+    },
+    {
+      "key": "sakura",
+      "name": "Sakura",
+      "version": 1,
+      "sort_order": 1,
+      "is_default": false,
+      "options": {
+        "accents": [
+          "rose",
+          "plum",
+          "coral"
+        ],
+        "backgrounds": [
+          "blossom",
+          "cream",
+          "mist"
+        ],
+        "fonts": [
+          "romantic",
+          "elegant",
+          "simple"
+        ]
+      }
+    },
+    {
+      "key": "winter_love",
+      "name": "Winter Love",
+      "version": 1,
+      "sort_order": 2,
+      "is_default": false,
+      "options": {
+        "accents": [
+          "ice",
+          "silver",
+          "berry"
+        ],
+        "backgrounds": [
+          "snow",
+          "frost"
+        ],
+        "fonts": [
+          "crisp",
+          "elegant"
+        ]
+      }
+    },
+    {
+      "key": "midnight",
+      "name": "Midnight",
+      "version": 1,
+      "sort_order": 3,
+      "is_default": false,
+      "options": {
+        "accents": [
+          "moonlight",
+          "lavender",
+          "aurora"
+        ],
+        "backgrounds": [
+          "navy",
+          "ink"
+        ],
+        "fonts": [
+          "elegant",
+          "simple"
+        ]
+      }
+    },
+    {
+      "key": "vintage_film",
+      "name": "Vintage Film",
+      "version": 1,
+      "sort_order": 4,
+      "is_default": false,
+      "options": {
+        "accents": [
+          "sepia",
+          "kodak",
+          "faded_teal"
+        ],
+        "backgrounds": [
+          "cream",
+          "paper"
+        ],
+        "fonts": [
+          "typewriter",
+          "book"
+        ]
+      }
+    },
+    {
+      "key": "imperial_winter",
+      "name": "Imperial Winter",
+      "version": 1,
+      "sort_order": 5,
+      "is_default": false,
+      "options": {
+        "accents": [
+          "royal",
+          "tsarina",
+          "garnet"
+        ],
+        "backgrounds": [
+          "ice_lilac",
+          "pearl"
+        ],
+        "fonts": [
+          "imperial",
+          "modern"
+        ]
+      }
+    },
+    {
+      "key": "cottage",
+      "name": "Cottage",
+      "version": 1,
+      "sort_order": 6,
+      "is_default": false,
+      "options": {
+        "accents": [
+          "moss",
+          "terracotta",
+          "lavender"
+        ],
+        "backgrounds": [
+          "cream",
+          "sage"
+        ],
+        "fonts": [
+          "storybook",
+          "simple"
+        ]
+      }
+    },
+    {
+      "key": "cafe",
+      "name": "Café",
+      "version": 1,
+      "sort_order": 7,
+      "is_default": false,
+      "options": {
+        "accents": [
+          "espresso",
+          "mocha",
+          "matcha"
+        ],
+        "backgrounds": [
+          "latte",
+          "oat"
+        ],
+        "fonts": [
+          "menu",
+          "notebook"
+        ]
+      }
+    },
+    {
+      "key": "starry_night",
+      "name": "Starry Night",
+      "version": 1,
+      "sort_order": 8,
+      "is_default": false,
+      "options": {
+        "accents": [
+          "gold",
+          "comet",
+          "nebula"
+        ],
+        "backgrounds": [
+          "sky",
+          "deep"
+        ],
+        "fonts": [
+          "celestial",
+          "simple"
+        ]
+      }
+    }
+  ],
+  "photo_booth_templates": [
+    {
+      "key": "classic_2",
+      "name": "Classic 2-frame",
+      "version": 1,
+      "photo_slots": 2,
+      "sort_order": 0
+    },
+    {
+      "key": "classic_3",
+      "name": "Classic 3-frame",
+      "version": 1,
+      "photo_slots": 3,
+      "sort_order": 1
+    },
+    {
+      "key": "classic_4",
+      "name": "Classic 4-frame",
+      "version": 1,
+      "photo_slots": 4,
+      "sort_order": 2
+    },
+    {
+      "key": "vertical_strip",
+      "name": "Vertical photo strip",
+      "version": 1,
+      "photo_slots": 4,
+      "sort_order": 3
+    },
+    {
+      "key": "polaroid",
+      "name": "Polaroid",
+      "version": 1,
+      "photo_slots": 1,
+      "sort_order": 4
+    },
+    {
+      "key": "vintage_film",
+      "name": "Vintage Film",
+      "version": 1,
+      "photo_slots": 3,
+      "sort_order": 5
+    },
+    {
+      "key": "romantic_frame",
+      "name": "Romantic Frame",
+      "version": 1,
+      "photo_slots": 2,
+      "sort_order": 6
+    },
+    {
+      "key": "winter_frame",
+      "name": "Winter Frame",
+      "version": 1,
+      "photo_slots": 3,
+      "sort_order": 7
+    }
+  ],
+  "customization": {
+    "couple_space_styles": [
+      "classic",
+      "cozy",
+      "minimal"
+    ],
+    "memory_styles": [
+      "soft",
+      "polaroid",
+      "minimal"
+    ]
+  }
+}

@@ -42,7 +42,8 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->is_admin;
+        // Fail closed: an unloaded/null flag must deny, not error.
+        return $this->is_admin === true;
     }
 
     public function sentCoupleInvitations(): HasMany
