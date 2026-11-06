@@ -142,6 +142,7 @@ Filament has no photo resource. That means no preview, no download, no decrypt a
 - Photos stuck in `pending`, `uploading`, or `failed` are moved to the trash after 24 h and purged by retention (see `docs/storage/reliability.md` §13).
 - The Recovery Key setup and restore screens set `FLAG_SECURE` on Android (no screenshots, screen recording, or recents thumbnail). iOS has no equivalent API, so screenshots there are not blocked.
 - There is no export of the Recovery Key beyond Copy, which is cleared after 60 s. Users should write it down or store it in a password manager.
+- Photo Booth (Phase 7) prints are rendered on the device and saved through this same pipeline (`uploadPhotoBytes`), so they are ordinary encrypted memory photos. Sharing a print hands a plaintext PNG to the OS share sheet, by the user's explicit choice; see `docs/appearance/photo-booth.md` §5.
 
 ## 11. Verification
 
