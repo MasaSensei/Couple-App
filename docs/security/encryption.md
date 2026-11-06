@@ -139,7 +139,7 @@ Filament has no photo resource. That means no preview, no download, no decrypt a
 
 - `image_picker` copies the selected photo into the app's cache. We never write our own plaintext temp files: preparation and encryption happen in memory. The picker's cached copy, however, is left for the OS to clean up.
 - Key packages are not signed by the sender, so a freshly installed device trusts the first package the server gives it (trust on first use).
-- Photos with status `pending` or `failed` are not cleaned up yet. Planned for Phase 6.
+- Photos stuck in `pending`, `uploading`, or `failed` are moved to the trash after 24 h and purged by retention (see `docs/storage/reliability.md` §13).
 - The Recovery Key setup and restore screens set `FLAG_SECURE` on Android (no screenshots, screen recording, or recents thumbnail). iOS has no equivalent API, so screenshots there are not blocked.
 - There is no export of the Recovery Key beyond Copy, which is cleared after 60 s. Users should write it down or store it in a password manager.
 
