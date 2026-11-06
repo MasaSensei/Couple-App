@@ -17,7 +17,7 @@ class MemoryPhotoTest extends TestCase
 
     public function test_plaintext_upload_without_encryption_metadata_is_rejected(): void
     {
-        Storage::fake('local');
+        Storage::fake('photos_primary');
 
         $user = User::factory()->create();
         $couple = Couple::factory()->create();
@@ -47,7 +47,7 @@ class MemoryPhotoTest extends TestCase
             ['photo' => UploadedFile::fake()->image('memory.jpg', 10, 10)],
         )->assertStatus(422);
 
-        $this->assertSame([], Storage::disk('local')->allFiles());
+        $this->assertSame([], Storage::disk('photos_primary')->allFiles());
     }
 
     public function test_user_can_list_verified_memory_photos(): void

@@ -19,7 +19,9 @@ RUN apt-get update && apt-get install -y \
         intl \
         zip \
         gd \
-    && rm -rf /var/lib/apt/lists/*
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && rm -rf /var/lib/apt/lists/* /tmp/pear
 
 COPY docker/upload.ini /usr/local/etc/php/conf.d/upload.ini
 

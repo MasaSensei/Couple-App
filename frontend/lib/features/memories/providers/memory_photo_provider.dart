@@ -196,6 +196,14 @@ class MemoryPhotoNotifier extends Notifier<AsyncValue<List<MemoryPhotoModel>>> {
         coupleKey: coupleKey,
         photoId: photo.id.toString(),
       );
+
+      // Never upload ciphertext this device has not proven it can decrypt.
+      await _photoEncryptionService.verifyRoundTrip(
+        encryptedPhoto: encryptedPhoto,
+        plaintext: prepared.bytes,
+        coupleKey: coupleKey,
+        photoId: photo.id.toString(),
+      );
     } catch (_) {
       throw const PhotoUploadException(EncryptionMessages.encryptionFailed);
     }

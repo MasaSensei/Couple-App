@@ -60,6 +60,37 @@ return [
             'report' => false,
         ],
 
+        /*
+         * Encrypted photo ciphertext. Primary and backup must use separate
+         * credentials (ideally separate providers/accounts). 'throw' is on so
+         * storage failures surface as exceptions instead of silent false.
+         */
+        'photos_primary' => [
+            'driver' => 's3',
+            'key' => env('PHOTOS_PRIMARY_ACCESS_KEY'),
+            'secret' => env('PHOTOS_PRIMARY_SECRET_KEY'),
+            'region' => env('PHOTOS_PRIMARY_REGION', 'us-east-1'),
+            'bucket' => env('PHOTOS_PRIMARY_BUCKET'),
+            'endpoint' => env('PHOTOS_PRIMARY_ENDPOINT'),
+            'use_path_style_endpoint' => env('PHOTOS_PRIMARY_PATH_STYLE', false),
+            'visibility' => 'private',
+            'throw' => true,
+            'report' => false,
+        ],
+
+        'photos_backup' => [
+            'driver' => 's3',
+            'key' => env('PHOTOS_BACKUP_ACCESS_KEY'),
+            'secret' => env('PHOTOS_BACKUP_SECRET_KEY'),
+            'region' => env('PHOTOS_BACKUP_REGION', 'us-east-1'),
+            'bucket' => env('PHOTOS_BACKUP_BUCKET'),
+            'endpoint' => env('PHOTOS_BACKUP_ENDPOINT'),
+            'use_path_style_endpoint' => env('PHOTOS_BACKUP_PATH_STYLE', false),
+            'visibility' => 'private',
+            'throw' => true,
+            'report' => false,
+        ],
+
     ],
 
     /*

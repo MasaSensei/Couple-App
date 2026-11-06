@@ -16,6 +16,13 @@ class MemoryPhotoSecurityTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Storage::fake('photos_primary');
+    }
+
     private function createCoupleWithUser(): array
     {
         $user = User::factory()->create();
@@ -50,7 +57,7 @@ class MemoryPhotoSecurityTest extends TestCase
             'status' => 'verified',
         ]);
 
-        Storage::disk('local')->put(
+        Storage::disk('photos_primary')->put(
             'test/photo.jpg',
             'test image',
         );
@@ -85,7 +92,7 @@ class MemoryPhotoSecurityTest extends TestCase
             'status' => 'verified',
         ]);
 
-        Storage::disk('local')->put(
+        Storage::disk('photos_primary')->put(
             'test/private.jpg',
             'private image',
         );
@@ -118,7 +125,7 @@ class MemoryPhotoSecurityTest extends TestCase
             'status' => 'verified',
         ]);
 
-        Storage::disk('local')->put(
+        Storage::disk('photos_primary')->put(
             'test/private.jpg',
             'private image',
         );
@@ -150,7 +157,7 @@ class MemoryPhotoSecurityTest extends TestCase
             'status' => 'pending',
         ]);
 
-        Storage::disk('local')->put(
+        Storage::disk('photos_primary')->put(
             'test/pending.jpg',
             'pending image',
         );
@@ -183,7 +190,7 @@ class MemoryPhotoSecurityTest extends TestCase
             'status' => 'verified',
         ]);
 
-        Storage::disk('local')->put(
+        Storage::disk('photos_primary')->put(
             'test/deleted.jpg',
             'deleted image',
         );

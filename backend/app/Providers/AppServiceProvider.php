@@ -6,7 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use App\Models\Memory;
 use App\Policies\MemoryPolicy;
 use Illuminate\Support\Facades\Gate;
-use App\Services\Storage\LocalPhotoStorage;
+use App\Services\Storage\FlysystemPhotoStorage;
 use App\Services\Storage\PhotoStorage;
 use App\Models\MemoryPhoto;
 use App\Policies\MemoryPhotoPolicy;
@@ -22,7 +22,13 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(
             PhotoStorage::class,
-            LocalPhotoStorage::class,
+            fn () => new FlysystemPhotoStorage('photos_primary'),
+        );
+
+        // Independent copy; only backup/repair jobs use it.
+        $this->app->bind(
+            'photos.backup',
+            fn () => new FlysystemPhotoStorage('photos_backup'),
         );
     }
 

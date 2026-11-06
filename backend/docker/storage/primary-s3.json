@@ -1,0 +1,14 @@
+{
+  "identities": [
+    {
+      "name": "operator",
+      "credentials": [{ "accessKey": "dev-primary-operator", "secretKey": "dev-primary-operator-secret" }],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    },
+    {
+      "name": "app",
+      "credentials": [{ "accessKey": "dev-primary-app", "secretKey": "dev-primary-app-secret" }],
+      "actions": ["Read:photos-primary", "Write:photos-primary", "List:photos-primary"]
+    }
+  ]
+}

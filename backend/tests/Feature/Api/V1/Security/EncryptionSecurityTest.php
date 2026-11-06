@@ -40,7 +40,8 @@ class EncryptionSecurityTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('local');
+        Storage::fake('photos_primary');
+        Storage::fake('photos_backup');
 
         $this->couple = Couple::factory()->create();
         $this->userA = User::factory()->create();
@@ -85,16 +86,21 @@ class EncryptionSecurityTest extends TestCase
         [$photo, $photoKey] = $this->uploadEncryptedPhoto($this->userA, $coupleKey);
 
         // Storage holds ciphertext only: not an image, no plaintext.
-        $stored = Storage::disk('local')->get($photo->storage_key);
+        $stored = Storage::disk('photos_primary')->get($photo->storage_key);
         $this->assertStringNotContainsString('private-photo-pixels', $stored);
         $this->assertStringStartsNotWith("\xFF\xD8", $stored);
         $this->assertFalse(@getimagesizefromstring($stored));
 
-        // No key material or plaintext anywhere in the database or storage.
-        $haystack = $this->dumpDatabase().implode('', array_map(
-            fn (string $file) => Storage::disk('local')->get($file),
-            Storage::disk('local')->allFiles(),
-        ));
+        // The backup holds the same ciphertext, never anything the server decrypted.
+        $this->assertSame($stored, Storage::disk('photos_backup')->get($photo->storage_key));
+
+        // No key material or plaintext anywhere in the database or either storage copy.
+        $haystack = $this->dumpDatabase();
+        foreach (['photos_primary', 'photos_backup'] as $disk) {
+            foreach (Storage::disk($disk)->allFiles() as $file) {
+                $haystack .= Storage::disk($disk)->get($file);
+            }
+        }
 
         foreach ([$coupleKey, $photoKey, $recoveryKey, $deviceWrappingKey, self::PLAINTEXT_PHOTO] as $secret) {
             foreach ($this->encodings($secret) as $encoded) {

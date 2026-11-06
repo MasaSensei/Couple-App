@@ -2,6 +2,7 @@
 
 namespace App\Services\Memory;
 
+use App\Jobs\BackupMemoryPhoto;
 use App\Models\Memory;
 use App\Models\MemoryPhoto;
 use App\Models\User;
@@ -125,7 +126,7 @@ class MemoryPhotoService
         ]);
 
         try {
-            if ($photo->encryption_version === null || $photo->checksum === null) {
+            if (! $photo->hasDecryptionMetadata()) {
                 throw new RuntimeException('Photo is missing encryption metadata.');
             }
 
@@ -140,11 +141,10 @@ class MemoryPhotoService
                 throw new RuntimeException('Photo checksum mismatch.');
             }
 
-            $photo->update([
+            $photo->forceFill([
                 'status' => 'verified',
-            ]);
-
-            return $photo->refresh();
+                'backup_status' => 'pending',
+            ])->save();
         } catch (\Throwable $exception) {
             $photo->update([
                 'status' => 'failed',
@@ -155,6 +155,42 @@ class MemoryPhotoService
                 previous: $exception,
             );
         }
+
+        // The upload is already safe on primary; a queue outage must not fail it.
+        // `photos:backup-pending` re-dispatches anything left pending.
+        try {
+            BackupMemoryPhoto::dispatch($photo->id);
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
+
+        return $photo->refresh();
+    }
+
+    /**
+     * Ciphertext stream for download. Falls back to the verified backup when the
+     * primary is known bad or unreachable; both hold identical ciphertext and the
+     * client authenticates it (GCM) either way.
+     *
+     * @return resource
+     */
+    public function readCiphertext(MemoryPhoto $photo)
+    {
+        $bad = ['mismatch', 'missing'];
+
+        if (! in_array($photo->primary_integrity, $bad, true)) {
+            try {
+                return $this->photoStorage->readStream($photo->storage_key);
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        }
+
+        if ($photo->backup_status !== 'verified' || in_array($photo->backup_integrity, $bad, true)) {
+            throw new RuntimeException('No readable copy of this photo is available right now.');
+        }
+
+        return app('photos.backup')->readStream($photo->storage_key);
     }
 
     public function delete(

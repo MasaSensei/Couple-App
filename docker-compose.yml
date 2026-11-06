@@ -17,6 +17,42 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      storage_init:
+        condition: service_completed_successfully
+    networks:
+      - couples_network
+
+  queue:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile
+    container_name: couples_queue
+    restart: unless-stopped
+    working_dir: /var/www/html
+    command: php artisan queue:work --sleep=3 --max-time=3600
+    volumes:
+      - ./backend:/var/www/html
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - app
+    networks:
+      - couples_network
+
+  scheduler:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile
+    container_name: couples_scheduler
+    restart: unless-stopped
+    working_dir: /var/www/html
+    command: php artisan schedule:work
+    volumes:
+      - ./backend:/var/www/html
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - app
     networks:
       - couples_network
 
@@ -77,9 +113,52 @@ services:
     networks:
       - couples_network
 
+  # Two independent S3-compatible stores (SeaweedFS) with separate data and
+  # credentials. Dev stand-in for two providers/accounts; same host, so this
+  # does NOT give real failure-domain separation (see docs/storage/reliability.md).
+  storage_primary:
+    image: chrislusf/seaweedfs:4.48
+    container_name: couples_storage_primary
+    restart: unless-stopped
+    command: server -dir=/data -s3 -s3.config=/etc/seaweedfs/s3.json
+    volumes:
+      - storage_primary_data:/data
+      - ./backend/docker/storage/primary-s3.json:/etc/seaweedfs/s3.json:ro
+    networks:
+      couples_network:
+        # S3 SDKs reject underscores in endpoint hostnames.
+        aliases: [storage-primary]
+
+  storage_backup:
+    image: chrislusf/seaweedfs:4.48
+    container_name: couples_storage_backup
+    restart: unless-stopped
+    command: server -dir=/data -s3 -s3.config=/etc/seaweedfs/s3.json
+    volumes:
+      - storage_backup_data:/data
+      - ./backend/docker/storage/backup-s3.json:/etc/seaweedfs/s3.json:ro
+    networks:
+      couples_network:
+        # S3 SDKs reject underscores in endpoint hostnames.
+        aliases: [storage-backup]
+
+  storage_init:
+    image: amazon/aws-cli:latest
+    container_name: couples_storage_init
+    entrypoint: ["sh", "/init.sh"]
+    volumes:
+      - ./backend/docker/storage/init.sh:/init.sh:ro
+    depends_on:
+      - storage_primary
+      - storage_backup
+    networks:
+      - couples_network
+
 volumes:
   postgres_data:
   redis_data:
+  storage_primary_data:
+  storage_backup_data:
 
 networks:
   couples_network:

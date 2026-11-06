@@ -486,6 +486,97 @@ void main() {
     );
   });
 
+  group('verifyRoundTrip', () {
+    final service = PhotoEncryptionService();
+    final coupleKey = CoupleKey(
+      keyId: 'test-couple-key',
+      secretKey: SecretKeyData.random(length: 32),
+    );
+    const plaintext = <int>[1, 2, 3, 4, 5];
+
+    EncryptedPhoto withCiphertext(EncryptedPhoto source, List<int> bytes) =>
+        EncryptedPhoto(
+          metadata: source.metadata,
+          nonce: source.nonce,
+          ciphertext: bytes,
+          mac: source.mac,
+          checksum: source.checksum,
+        );
+
+    test('accepts a freshly encrypted photo', () async {
+      final encrypted = await service.encrypt(
+        plaintext: plaintext,
+        coupleKey: coupleKey,
+        photoId: 'photo-1',
+      );
+
+      await service.verifyRoundTrip(
+        encryptedPhoto: encrypted,
+        plaintext: plaintext,
+        coupleKey: coupleKey,
+        photoId: 'photo-1',
+      );
+    });
+
+    test('rejects ciphertext that does not decrypt', () async {
+      final encrypted = await service.encrypt(
+        plaintext: plaintext,
+        coupleKey: coupleKey,
+        photoId: 'photo-1',
+      );
+      final corrupted = List<int>.from(encrypted.ciphertext)..[0] ^= 1;
+
+      await expectLater(
+        service.verifyRoundTrip(
+          encryptedPhoto: withCiphertext(encrypted, corrupted),
+          plaintext: plaintext,
+          coupleKey: coupleKey,
+          photoId: 'photo-1',
+        ),
+        throwsA(anything),
+      );
+    });
+
+    test('rejects a ciphertext of different plaintext', () async {
+      final encrypted = await service.encrypt(
+        plaintext: plaintext,
+        coupleKey: coupleKey,
+        photoId: 'photo-1',
+      );
+
+      await expectLater(
+        service.verifyRoundTrip(
+          encryptedPhoto: encrypted,
+          plaintext: const [9, 9, 9, 9, 9],
+          coupleKey: coupleKey,
+          photoId: 'photo-1',
+        ),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('rejects a key that is not the one used to encrypt', () async {
+      final encrypted = await service.encrypt(
+        plaintext: plaintext,
+        coupleKey: coupleKey,
+        photoId: 'photo-1',
+      );
+
+      await expectLater(
+        service.verifyRoundTrip(
+          encryptedPhoto: encrypted,
+          plaintext: plaintext,
+          coupleKey: CoupleKey(
+            keyId: 'test-couple-key',
+            secretKey: SecretKeyData.random(length: 32),
+          ),
+          photoId: 'photo-1',
+        ),
+        throwsA(anything),
+      );
+    });
+  });
+
   test('recovered Couple Key can decrypt an existing photo', () async {
     final photoService = PhotoEncryptionService();
     final recoveryService = CoupleKeyRecoveryService();

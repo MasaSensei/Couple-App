@@ -54,6 +54,33 @@ class PhotoEncryptionService {
     );
   }
 
+  /// Proves [encryptedPhoto] decrypts back to [plaintext] before it leaves the
+  /// device. The server then only has to prove its stored bytes match
+  /// [EncryptedPhoto.checksum] for every copy to be decryptable with the key.
+  /// Throws [StateError] or [SecretBoxAuthenticationError] on any mismatch.
+  Future<void> verifyRoundTrip({
+    required EncryptedPhoto encryptedPhoto,
+    required List<int> plaintext,
+    required CoupleKey coupleKey,
+    required String photoId,
+  }) async {
+    final decrypted = await decrypt(
+      encryptedPhoto: encryptedPhoto,
+      coupleKey: coupleKey,
+      photoId: photoId,
+    );
+
+    if (decrypted.length != plaintext.length) {
+      throw StateError('Encrypted photo round trip mismatch.');
+    }
+
+    for (var i = 0; i < plaintext.length; i++) {
+      if (decrypted[i] != plaintext[i]) {
+        throw StateError('Encrypted photo round trip mismatch.');
+      }
+    }
+  }
+
   Future<String> _calculateChecksum(List<int> ciphertext) async {
     final digest = await Sha256().hash(ciphertext);
 

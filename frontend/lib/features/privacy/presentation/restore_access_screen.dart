@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/security/encryption_errors.dart';
+import 'package:frontend/core/security/secure_screen.dart';
 import 'package:frontend/core/theme/app_spacing.dart';
 import 'package:frontend/core/theme/app_text_styles.dart';
 import 'package:frontend/core/widgets/app_button.dart';
@@ -24,7 +25,14 @@ class _RestoreAccessScreenState extends ConsumerState<RestoreAccessScreen> {
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    SecureScreen.enable();
+  }
+
+  @override
   void dispose() {
+    SecureScreen.disable();
     _recoveryController.dispose();
     super.dispose();
   }

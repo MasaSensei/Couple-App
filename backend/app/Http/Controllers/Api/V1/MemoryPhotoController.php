@@ -9,7 +9,6 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Memory;
 use App\Models\MemoryPhoto;
 use App\Services\Memory\MemoryPhotoService;
-use App\Services\Storage\PhotoStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 use RuntimeException;
@@ -21,7 +20,6 @@ class MemoryPhotoController extends Controller
 {
     public function __construct(
         private readonly MemoryPhotoService $photoService,
-        private readonly PhotoStorage $photoStorage,
     ) {}
 
     public function index(Memory $memory): JsonResponse
@@ -149,10 +147,17 @@ class MemoryPhotoController extends Controller
 
         abort_unless($photo->status === 'verified', 404);
 
-        $path = $this->photoStorage->getObject($photo->storage_key);
+        try {
+            $stream = $this->photoService->readCiphertext($photo);
+        } catch (RuntimeException $exception) {
+            return ApiResponse::error($exception->getMessage(), status: 503);
+        }
 
         // Always ciphertext: never let a client render it as an image.
-        return response()->file($path, [
+        return response()->stream(function () use ($stream): void {
+            fpassthru($stream);
+            fclose($stream);
+        }, 200, [
             'Content-Type' => 'application/octet-stream',
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',

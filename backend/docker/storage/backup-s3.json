@@ -1,0 +1,14 @@
+{
+  "identities": [
+    {
+      "name": "operator",
+      "credentials": [{ "accessKey": "dev-backup-operator", "secretKey": "dev-backup-operator-secret" }],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    },
+    {
+      "name": "app",
+      "credentials": [{ "accessKey": "dev-backup-app", "secretKey": "dev-backup-app-secret" }],
+      "actions": ["Read:photos-backup", "Write:photos-backup", "List:photos-backup"]
+    }
+  ]
+}
