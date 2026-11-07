@@ -56,6 +56,7 @@ class _ThemeDetailScreenState extends ConsumerState<ThemeDetailScreen> {
       ApplyOutcome.applied => '${widget.definition.name} is now your theme ♡',
       ApplyOutcome.conflict =>
         'Your partner just changed the theme to ${ThemeRegistry.byKey(current.themeKey).name}. Review it, then apply again if you like.',
+      ApplyOutcome.locked => '${widget.definition.name} is part of a paid plan. See Plan & storage to compare plans.',
       ApplyOutcome.failed => "We couldn't save the theme. Your current theme hasn't changed.",
     };
 
@@ -72,7 +73,7 @@ class _ThemeDetailScreenState extends ConsumerState<ThemeDetailScreen> {
       content: Text(switch (outcome) {
         ApplyOutcome.applied => 'Back to the ${widget.definition.name} defaults.',
         ApplyOutcome.conflict => 'Your partner changed the theme a moment ago. Have a look first.',
-        ApplyOutcome.failed => "We couldn't reset it. Nothing changed.",
+        ApplyOutcome.locked || ApplyOutcome.failed => "We couldn't reset it. Nothing changed.",
       }),
     ));
   }

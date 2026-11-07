@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/core/error/api_exception.dart';
 import 'package:frontend/core/network/api_client.dart';
 import 'package:frontend/core/theme/app_theme.dart';
 import 'package:frontend/core/theme/app_theme_tokens.dart';
@@ -38,7 +39,8 @@ final appThemeDataProvider = Provider.family<ThemeData, Brightness>((ref, bright
   return theme.copyWith(extensions: [tokens]);
 });
 
-enum ApplyOutcome { applied, conflict, failed }
+/// `locked`: the theme is part of a paid plan the couple does not have.
+enum ApplyOutcome { applied, conflict, locked, failed }
 
 @immutable
 class AppearanceState {
@@ -178,6 +180,12 @@ class AppearanceController extends Notifier<AppearanceState> {
       state = state.copyWith(saving: false, partnerChanged: true);
 
       return ApplyOutcome.conflict;
+    } on ApiException catch (error) {
+      // Server-side entitlement check (premium theme without a paid plan).
+      state = state.copyWith(saving: false);
+      final code = error.data is Map ? (error.data as Map)['code'] : null;
+
+      return error.statusCode == 403 && code == 'entitlement_required' ? ApplyOutcome.locked : ApplyOutcome.failed;
     } catch (_) {
       // Local settings untouched.
       state = state.copyWith(saving: false);

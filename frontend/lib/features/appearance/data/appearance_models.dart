@@ -83,21 +83,26 @@ class AppearanceCatalog {
 
 @immutable
 class CatalogItem {
-  const CatalogItem({required this.key, required this.name, required this.version, this.isPremium = false});
+  const CatalogItem({required this.key, required this.name, required this.version, this.isPremium = false, this.locked = false});
 
   final String key;
   final String name;
   final int version;
   final bool isPremium;
 
+  /// Premium and not in the couple's plan (from the server). Display only:
+  /// the server re-checks on save.
+  final bool locked;
+
   factory CatalogItem.fromJson(Map<String, dynamic> json) => CatalogItem(
         key: json['key'] as String,
         name: json['name'] as String? ?? json['key'] as String,
         version: (json['version'] as num?)?.toInt() ?? 1,
         isPremium: json['is_premium'] as bool? ?? false,
+        locked: json['locked'] as bool? ?? false,
       );
 
-  Map<String, dynamic> toJson() => {'key': key, 'name': name, 'version': version, 'is_premium': isPremium};
+  Map<String, dynamic> toJson() => {'key': key, 'name': name, 'version': version, 'is_premium': isPremium, 'locked': locked};
 }
 
 /// The partner changed the theme since this device last read it.

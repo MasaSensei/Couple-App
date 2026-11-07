@@ -109,6 +109,7 @@ class _ThemeGalleryScreenState extends ConsumerState<ThemeGalleryScreen> {
                   return _ThemeCard(
                     definition: theme,
                     active: theme.key == state.settings.themeKey,
+                    locked: state.catalog?.themes.any((c) => c.key == theme.key && c.locked) ?? false,
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => ThemeDetailScreen(definition: theme)),
                     ),
@@ -134,10 +135,13 @@ class _ThemeGalleryScreenState extends ConsumerState<ThemeGalleryScreen> {
 }
 
 class _ThemeCard extends StatelessWidget {
-  const _ThemeCard({required this.definition, required this.active, required this.onTap});
+  const _ThemeCard({required this.definition, required this.active, required this.onTap, this.locked = false});
 
   final ThemeDefinition definition;
   final bool active;
+
+  /// Premium theme not in the couple's plan: can be previewed, not applied.
+  final bool locked;
   final VoidCallback onTap;
 
   @override
@@ -147,7 +151,7 @@ class _ThemeCard extends StatelessWidget {
     return Semantics(
       button: true,
       selected: active,
-      label: '${definition.name} theme${active ? ', active' : ''}',
+      label: '${definition.name} theme${active ? ', active' : ''}${locked ? ', paid plan' : ''}',
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(t.cardRadius),
@@ -173,6 +177,7 @@ class _ThemeCard extends StatelessWidget {
                       child: Text(definition.name, style: t.body.copyWith(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
                     if (active) Icon(Icons.check_circle_rounded, color: t.primary, size: 20, semanticLabel: 'Active'),
+                    if (locked && !active) Icon(Icons.lock_outline_rounded, color: t.primary, size: 18, semanticLabel: 'Paid plan'),
                   ],
                 ),
               ),

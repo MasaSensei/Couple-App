@@ -18,6 +18,7 @@ import 'package:frontend/features/appearance/presentation/partner_theme_banner.d
 import 'package:frontend/features/appearance/presentation/theme_gallery_screen.dart';
 import 'package:frontend/features/appearance/providers/appearance_controller.dart';
 import 'package:frontend/features/photo_booth/presentation/photo_booth_screen.dart';
+import 'package:frontend/features/subscription/presentation/subscription_overview_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -194,8 +195,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => PhotoBoothScreen(
-                      // Offline / not loaded yet: all built-in layouts.
-                      availableTemplates: catalog?.photoBoothTemplates.map((t) => t.key).toSet(),
+                      // Offline / not loaded yet: all built-in layouts. Premium
+                      // layouts outside the couple's plan are not offered.
+                      availableTemplates: catalog?.photoBoothTemplates.where((t) => !t.locked).map((t) => t.key).toSet(),
                     ),
                   ),
                 );
@@ -216,6 +218,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               },
               icon: const Icon(Icons.devices_rounded),
               label: const Text('My Devices'),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const SubscriptionOverviewScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.workspace_premium_outlined),
+              label: const Text('Plan & storage'),
             ),
 
             if (couple.members.length < 2) ...[
