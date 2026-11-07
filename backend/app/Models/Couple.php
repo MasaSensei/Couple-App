@@ -40,4 +40,30 @@ class Couple extends Model
             CoupleKeyPackage::class,
         );
     }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(CoupleSubscription::class);
+    }
+
+    public function hasMember(User $user): bool
+    {
+        return $this->members()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Opaque id given to the store at purchase (Google obfuscatedAccountId,
+     * Apple appAccountToken). Random, so it reveals nothing about the couple,
+     * and stable, so a store purchase can be matched back to this couple only.
+     */
+    public function billingAccountToken(): string
+    {
+        if ($this->billing_account_token === null) {
+            static::whereKey($this->id)->whereNull('billing_account_token')
+                ->update(['billing_account_token' => (string) \Illuminate\Support\Str::uuid()]);
+            $this->billing_account_token = static::whereKey($this->id)->value('billing_account_token');
+        }
+
+        return $this->billing_account_token;
+    }
 }

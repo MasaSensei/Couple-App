@@ -32,7 +32,17 @@ class User extends Authenticatable implements FilamentUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'admin_permissions' => 'array',
         ];
+    }
+
+    /** Admin permissions beyond panel access. See docs/billing/subscriptions.md §10. */
+    public const ADMIN_PERMISSIONS = ['billing.view', 'billing.manage', 'plans.manage'];
+
+    public function hasAdminPermission(string $permission): bool
+    {
+        return $this->is_admin === true
+            && in_array($permission, $this->admin_permissions ?? [], true);
     }
 
     public function coupleMemberships(): HasMany

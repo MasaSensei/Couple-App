@@ -11,6 +11,7 @@ use App\Models\MemoryPhoto;
 use App\Services\Memory\MemoryPhotoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
+use App\Services\Billing\StorageQuotaExceeded;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Requests\Api\V1\Memory\UploadMemoryPhotoRequest;
@@ -60,6 +61,8 @@ class MemoryPhotoController extends Controller
                 ],
                 201,
             );
+        } catch (StorageQuotaExceeded $exception) {
+            return $this->quotaExceeded($exception);
         } catch (RuntimeException $exception) {
             return ApiResponse::error(
                 $exception->getMessage(),
@@ -87,6 +90,8 @@ class MemoryPhotoController extends Controller
                     'photo' => new MemoryPhotoResource($photo),
                 ],
             );
+        } catch (StorageQuotaExceeded $exception) {
+            return $this->quotaExceeded($exception);
         } catch (RuntimeException $exception) {
             return ApiResponse::error(
                 $exception->getMessage(),
@@ -113,6 +118,8 @@ class MemoryPhotoController extends Controller
                     ),
                 ],
             );
+        } catch (StorageQuotaExceeded $exception) {
+            return $this->quotaExceeded($exception);
         } catch (RuntimeException $exception) {
             return ApiResponse::error(
                 $exception->getMessage(),
@@ -135,6 +142,8 @@ class MemoryPhotoController extends Controller
                     'restorable_until' => $photo->restorableUntil()?->toISOString(),
                 ],
             );
+        } catch (StorageQuotaExceeded $exception) {
+            return $this->quotaExceeded($exception);
         } catch (RuntimeException $exception) {
             return ApiResponse::error(
                 $exception->getMessage(),
@@ -171,6 +180,8 @@ class MemoryPhotoController extends Controller
                     'photo' => new MemoryPhotoResource($photo),
                 ],
             );
+        } catch (StorageQuotaExceeded $exception) {
+            return $this->quotaExceeded($exception);
         } catch (RuntimeException $exception) {
             return ApiResponse::error(
                 $exception->getMessage(),
@@ -187,6 +198,8 @@ class MemoryPhotoController extends Controller
 
         try {
             $stream = $this->photoService->readCiphertext($photo);
+        } catch (StorageQuotaExceeded $exception) {
+            return $this->quotaExceeded($exception);
         } catch (RuntimeException $exception) {
             return ApiResponse::error($exception->getMessage(), status: 503);
         }
@@ -222,11 +235,22 @@ class MemoryPhotoController extends Controller
                     'photo' => new MemoryPhotoResource($photo),
                 ],
             );
+        } catch (StorageQuotaExceeded $exception) {
+            return $this->quotaExceeded($exception);
         } catch (RuntimeException $exception) {
             return ApiResponse::error(
                 $exception->getMessage(),
                 status: 422,
             );
         }
+    }
+
+    /** 422 with a machine-readable code so the app can explain and offer options. */
+    private function quotaExceeded(StorageQuotaExceeded $exception): JsonResponse
+    {
+        return ApiResponse::error($exception->getMessage(), [
+            'code' => 'storage_quota_exceeded',
+            'storage' => $exception->usage,
+        ], 422);
     }
 }

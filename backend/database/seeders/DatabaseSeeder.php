@@ -21,5 +21,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // Placeholder paid plans (dev/demo only; see the seeder's docblock).
+        $this->call(SubscriptionPlanSeeder::class);
     }
 }

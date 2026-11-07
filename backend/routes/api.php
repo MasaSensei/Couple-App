@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\Api\V1\Appearance\AppearanceController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\Billing\MockStoreController;
+use App\Http\Controllers\Api\V1\Billing\SubscriptionController;
+use App\Http\Controllers\Api\V1\Billing\WebhookController;
 use App\Http\Controllers\Api\V1\Couple\CoupleKeyPackageController;
 use App\Http\Controllers\Api\V1\Couple\CoupleKeyRecoveryPackageController;
 use App\Http\Controllers\Api\V1\CoupleController;
@@ -49,6 +52,24 @@ Route::prefix('v1')->group(function () {
             CoupleKeyRecoveryPackageController::class,
             'update',
         ]);
+
+        // Subscriptions (docs/billing/subscriptions.md §11). Always the caller's own couple.
+        Route::get('/billing/plans', [SubscriptionController::class, 'plans']);
+        Route::get('/couple/subscription', [SubscriptionController::class, 'show']);
+        Route::get('/couple/entitlements', [SubscriptionController::class, 'entitlements']);
+        Route::get('/couple/storage', [SubscriptionController::class, 'storage']);
+        Route::get('/couple/subscription/transactions', [SubscriptionController::class, 'transactions']);
+        Route::middleware('throttle:20,1')->group(function () {
+            Route::post('/couple/subscription/intents', [SubscriptionController::class, 'createIntent']);
+            Route::post('/couple/subscription/verify', [SubscriptionController::class, 'verify']);
+            Route::post('/couple/subscription/restore', [SubscriptionController::class, 'restore']);
+            Route::post('/couple/subscription/cancel', [SubscriptionController::class, 'cancel']);
+        });
+
+        // Development stand-in for the store purchase sheet. Never registered in production.
+        if (config('billing.providers.mock.enabled')) {
+            Route::post('/billing/mock/purchases', [MockStoreController::class, 'purchase']);
+        }
 
         Route::get('/appearance/catalog', [AppearanceController::class, 'catalog']);
         Route::get('/couple/theme', [AppearanceController::class, 'show']);
@@ -231,4 +252,9 @@ Route::prefix('v1')->group(function () {
         '/couple/invite/{token}',
         [CoupleController::class, 'showInvitation']
     );
+
+    // Provider notifications: no user auth, signature-verified instead.
+    Route::post('/billing/webhooks/{provider}', WebhookController::class)
+        ->whereIn('provider', ['mock', 'google_play', 'app_store'])
+        ->middleware('throttle:120,1');
 });

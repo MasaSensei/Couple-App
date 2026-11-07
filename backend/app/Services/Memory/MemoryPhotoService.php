@@ -9,8 +9,9 @@ use App\Models\Memory;
 use App\Models\MemoryPhoto;
 use App\Models\PhotoStorageAudit;
 use App\Models\User;
+use App\Services\Billing\StorageQuotaExceeded;
+use App\Services\Billing\StorageQuotaService;
 use App\Services\Storage\PhotoStorage;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\UploadedFile;
 use RuntimeException;
 
@@ -19,6 +20,7 @@ class MemoryPhotoService
 
     public function __construct(
         private readonly PhotoStorage $photoStorage,
+        private readonly StorageQuotaService $quota,
     ) {}
 
     public function createUploadSession(
@@ -30,7 +32,13 @@ class MemoryPhotoService
             $memory,
         );
 
-        $photo = DB::transaction(
+        // Reserves quota for the ciphertext (or the declared plaintext size
+        // until the client sends its encryption metadata). Throws
+        // StorageQuotaExceeded before anything is created when full.
+        $photo = $this->quota->reserve(
+            $memory->couple,
+            (int) ($data['encrypted_size'] ?? $data['file_size']),
+            null,
             function () use (
                 $user,
                 $memory,
@@ -101,7 +109,7 @@ class MemoryPhotoService
             throw new RuntimeException('Unknown encryption key.');
         }
 
-        $photo->update([
+        $this->quota->reserve($photo->memory->couple, (int) $data['encrypted_size'], $photo->id, fn () => $photo->update([
             'encryption_version' => $data['encryption_version'],
             'encryption_algorithm' => $data['encryption_algorithm'],
             'key_id' => $data['key_id'],
@@ -109,7 +117,7 @@ class MemoryPhotoService
             'encrypted_size' => $data['encrypted_size'],
             'checksum' => strtolower($data['checksum']),
             'mac' => $data['mac'],
-        ]);
+        ]));
 
         return $photo->refresh();
     }
@@ -124,9 +132,16 @@ class MemoryPhotoService
             );
         }
 
-        $photo->update([
-            'status' => 'uploading',
-        ]);
+        // Authoritative check on the declared ciphertext size, which
+        // verifyObject() below confirms. Over quota: marked failed and left to
+        // the abandoned-upload cleanup; it never counts as usage.
+        try {
+            $this->quota->assertFits($photo->memory->couple, (int) $photo->encrypted_size, $photo->id);
+        } catch (StorageQuotaExceeded $exception) {
+            $photo->update(['status' => 'failed']);
+
+            throw $exception;
+        }
 
         try {
             if (! $photo->hasDecryptionMetadata()) {
@@ -218,6 +233,10 @@ class MemoryPhotoService
         MemoryPhoto $photo,
         User $user,
     ): MemoryPhoto {
+        // Trashed photos do not count towards the quota, so bringing one back
+        // needs free space. The photo simply stays in the trash until then.
+        $this->quota->assertFits($photo->memory->couple, (int) ($photo->encrypted_size ?? $photo->file_size));
+
         // Atomic with the purge's own claim: whichever runs first wins, never both.
         $restored = MemoryPhoto::onlyTrashed()
             ->whereKey($photo->id)

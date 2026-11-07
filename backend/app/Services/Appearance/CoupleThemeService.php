@@ -6,6 +6,8 @@ use App\Models\Couple;
 use App\Models\CoupleThemeSetting;
 use App\Models\Theme;
 use App\Models\User;
+use App\Services\Billing\EntitlementRequired;
+use App\Services\Billing\EntitlementService;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -24,6 +26,7 @@ class CoupleThemeService
 {
     public function __construct(
         private readonly AppearanceCatalog $catalog,
+        private readonly EntitlementService $entitlements,
     ) {}
 
     public function current(Couple $couple): array
@@ -57,6 +60,14 @@ class CoupleThemeService
         // A hidden/retired theme may be kept (e.g. to tweak its customization) but not newly chosen.
         if ($theme === null || ($theme->status !== 'active' && $themeKey !== $current['theme_key'])) {
             throw ValidationException::withMessages(['theme_key' => 'This theme is not available.']);
+        }
+
+        // Same rule for premium: a couple whose subscription ended keeps the
+        // premium theme they already use (and can still tweak it), but cannot
+        // newly switch to one.
+        if ($theme->is_premium && $themeKey !== $current['theme_key']
+            && ! $this->entitlements->forCouple($couple)->allows('premium_themes')) {
+            throw new EntitlementRequired('premium_themes', 'This theme is part of a paid plan.');
         }
 
         return $this->write($couple, $user, $theme, $this->catalog->validateCustomization($theme, $customization), $expectedVersion);

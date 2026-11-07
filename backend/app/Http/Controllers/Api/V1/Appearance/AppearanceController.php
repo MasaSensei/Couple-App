@@ -10,6 +10,8 @@ use App\Models\PhotoBoothTemplate;
 use App\Models\Theme;
 use App\Services\Appearance\CoupleThemeService;
 use App\Services\Appearance\ThemeVersionConflict;
+use App\Services\Billing\EntitlementRequired;
+use App\Services\Billing\EntitlementService;
 use App\Services\MemoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,8 +25,15 @@ class AppearanceController extends Controller
     ) {}
 
     /** Selectable themes and Photo Booth templates (metadata only). */
-    public function catalog(): JsonResponse
+    public function catalog(Request $request, EntitlementService $entitlements): JsonResponse
     {
+        // `locked` = premium and not included in the couple's plan. Display
+        // only: choosing a theme is re-checked server-side on save.
+        $couple = $request->user()->coupleMemberships()->with('couple')->first()?->couple;
+        $granted = $couple ? $entitlements->forCouple($couple) : null;
+        $themesUnlocked = $granted?->allows('premium_themes') ?? false;
+        $boothUnlocked = $granted?->allows('premium_photo_booth') ?? false;
+
         return ApiResponse::success('Appearance catalog retrieved successfully.', [
             'themes' => Theme::selectable()->get()->map(fn (Theme $theme) => [
                 'key' => $theme->key,
@@ -32,6 +41,7 @@ class AppearanceController extends Controller
                 'version' => $theme->version,
                 'is_default' => $theme->is_default,
                 'is_premium' => $theme->is_premium,
+                'locked' => $theme->is_premium && ! $themesUnlocked,
                 'options' => $theme->options,
             ]),
             'photo_booth_templates' => PhotoBoothTemplate::selectable()->get()->map(fn (PhotoBoothTemplate $template) => [
@@ -40,6 +50,7 @@ class AppearanceController extends Controller
                 'version' => $template->version,
                 'photo_slots' => $template->photo_slots,
                 'is_premium' => $template->is_premium,
+                'locked' => $template->is_premium && ! $boothUnlocked,
             ]),
         ]);
     }
@@ -87,6 +98,11 @@ class AppearanceController extends Controller
             return $action($couple);
         } catch (ThemeVersionConflict $conflict) {
             return ApiResponse::error($conflict->getMessage(), ['theme' => $conflict->current], 409);
+        } catch (EntitlementRequired $required) {
+            return ApiResponse::error($required->getMessage(), [
+                'code' => 'entitlement_required',
+                'entitlement' => $required->entitlement,
+            ], 403);
         }
     }
 }

@@ -230,3 +230,113 @@ Artisan::command('appearance:sync-catalog', function (\App\Services\Appearance\A
 
     $this->info("Synced {$counts['themes']} theme(s) and {$counts['templates']} Photo Booth template(s).");
 })->purpose('Sync the theme and Photo Booth catalog from the app definitions');
+
+// ── Billing (docs/billing/subscriptions.md) ──────────────────────────────
+
+// Safety net for lifecycle timing: ends cancelled subscriptions at period
+// end, asks the provider about overdue renewals and applies grace periods.
+// Entitlements are time-checked on every request, so this never decides
+// *whether* benefits stop on time, only when the status catches up.
+Artisan::command('billing:sweep', function (\App\Services\Billing\SubscriptionService $subscriptions) {
+    $counts = $subscriptions->sweep();
+
+    $this->info(collect($counts)->map(fn ($count, $key) => "{$key}: {$count}")->implode(', '));
+})->purpose('Advance subscriptions whose period or grace ended');
+
+Schedule::command('billing:sweep')->hourly()->withoutOverlapping();
+
+// Webhooks stored but not applied (queue outage, provider outage).
+Artisan::command('billing:retry-webhooks {--older-than=10 : Minutes}', function () {
+    $ids = \App\Models\PaymentWebhookEvent::query()
+        ->whereIn('status', ['received', 'failed', 'processing'])
+        ->where('attempts', '<', 20)
+        ->where('updated_at', '<=', now()->subMinutes((int) $this->option('older-than')))
+        ->pluck('id');
+
+    // A provider that is still unreachable must not stop the other retries.
+    $ids->each(function (int $id): void {
+        try {
+            \App\Jobs\ProcessPaymentWebhook::dispatch($id);
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
+    });
+
+    $this->info("Re-dispatched {$ids->count()} webhook(s).");
+})->purpose('Retry payment webhooks that were not processed');
+
+Schedule::command('billing:retry-webhooks')->everyFifteenMinutes()->withoutOverlapping();
+
+// Admin permissions are granted here, not in the panel, so no admin can
+// give themselves financial access.
+Artisan::command('admin:permission {action : grant|revoke} {email} {permission}', function () {
+    $permission = $this->argument('permission');
+
+    if (! in_array($permission, \App\Models\User::ADMIN_PERMISSIONS, true)) {
+        $this->error('Unknown permission. Use one of: '.implode(', ', \App\Models\User::ADMIN_PERMISSIONS));
+
+        return 1;
+    }
+
+    $user = \App\Models\User::where('email', $this->argument('email'))->first();
+
+    if ($user === null || $user->is_admin !== true) {
+        $this->error('No admin user with that email.');
+
+        return 1;
+    }
+
+    $current = $user->admin_permissions ?? [];
+    $user->forceFill(['admin_permissions' => $this->argument('action') === 'grant'
+        ? array_values(array_unique([...$current, $permission]))
+        : array_values(array_diff($current, [$permission]))])->save();
+
+    \App\Models\AdminAuditLog::record(null, "permission_{$this->argument('action')}", $user, ['permission' => $permission, 'via' => 'cli']);
+    Log::channel('alerts')->notice("Admin permission {$this->argument('action')}: {$permission}", ['user_id' => $user->id]);
+    $this->info("{$user->email}: ".(implode(', ', $user->admin_permissions) ?: '(none)'));
+
+    return 0;
+})->purpose('Grant or revoke an admin permission (billing.view, billing.manage, plans.manage)');
+
+// Drives the development mock store (never available in production).
+Artisan::command('billing:mock {action : renew|fail|hold|pause|cancel|resume|expire|refund|chargeback|outage-on|outage-off} {token?}', function (\App\Services\Billing\Providers\MockStore $store) {
+    if (! app(\App\Services\Billing\Providers\MockPaymentProvider::class)->isEnabled()) {
+        $this->error('The mock provider is disabled.');
+
+        return 1;
+    }
+
+    $action = $this->argument('action');
+
+    if (str_starts_with($action, 'outage-')) {
+        $store->setOutage($action === 'outage-on');
+        $this->info("Mock store outage: {$action}");
+
+        return 0;
+    }
+
+    $token = $this->argument('token') ?? throw new RuntimeException('A purchase token is required.');
+
+    match ($action) {
+        'renew' => $store->renew($token),
+        'fail' => $store->failRenewal($token),
+        'hold' => $store->hold($token),
+        'pause' => $store->pause($token),
+        'cancel' => $store->cancel($token),
+        'resume' => $store->resume($token),
+        'expire' => $store->expire($token),
+        'refund' => $store->refund($token),
+        'chargeback' => $store->refund($token, chargeback: true),
+    };
+
+    // Deliver the signed webhook like the store would.
+    $webhook = $store->webhook($token, $action);
+    $response = app()->handle(\Illuminate\Http\Request::create('/api/v1/billing/webhooks/mock', 'POST', server: [
+        'CONTENT_TYPE' => 'application/json',
+        'HTTP_X_MOCK_SIGNATURE' => $webhook['signature'],
+    ], content: $webhook['body']));
+
+    $this->info("Mock {$action} applied; webhook → HTTP {$response->getStatusCode()}");
+
+    return 0;
+})->purpose('Simulate store events on a mock purchase (development only)');
