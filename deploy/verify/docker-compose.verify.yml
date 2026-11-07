@@ -1,0 +1,58 @@
+# Run the PRODUCTION images on a developer machine, isolated from the dev
+# stack's database and Redis, to verify the image before it reaches staging:
+#
+#   docker compose -f deploy/docker-compose.prod.yml -f deploy/verify/docker-compose.verify.yml \
+#       --env-file deploy/verify/verify.env -p couples-verify up -d --wait
+#
+# Differences from production: no Caddy/TLS (web published on 127.0.0.1:8088),
+# and the app reaches the dev SeaweedFS buckets through the dev network.
+# Uses its own postgres/redis volumes; nothing here touches dev data.
+
+# IMPORTANT: the dev network also contains hosts named `postgres` and `redis`.
+# The verify stack therefore addresses its own data services by unique aliases,
+# otherwise it would silently talk to the DEV database/Redis.
+x-verify-env: &verify-env
+  DB_HOST: verify-postgres
+  REDIS_HOST: verify-redis
+
+services:
+  postgres:
+    networks:
+      internal:
+        aliases: [verify-postgres]
+  redis:
+    networks:
+      internal:
+        aliases: [verify-redis]
+
+  caddy:
+    profiles: ["never"]
+
+  web:
+    ports: ["127.0.0.1:8088:8080"]
+
+  app:
+    networks: [internal, egress, devstorage]
+    environment:
+      <<: *verify-env
+      CONTAINER_ROLE: web
+  queue:
+    networks: [internal, egress, devstorage]
+    environment:
+      <<: *verify-env
+      CONTAINER_ROLE: queue
+  scheduler:
+    networks: [internal, egress, devstorage]
+    environment:
+      <<: *verify-env
+      CONTAINER_ROLE: scheduler
+  migrate:
+    networks: [internal, egress, devstorage]
+    environment:
+      <<: *verify-env
+      CONTAINER_ROLE: ops
+
+networks:
+  devstorage:
+    external: true
+    name: couple-app_couples_network

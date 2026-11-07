@@ -12,6 +12,10 @@ services:
       - ./backend:/var/www/html
     env_file:
       - ./backend/.env
+    environment:
+      # `artisan serve` is single-process by default: one slow request (e.g. a
+      # dependency outage) would block every other request. Dev only.
+      PHP_CLI_SERVER_WORKERS: 4
     depends_on:
       postgres:
         condition: service_healthy
