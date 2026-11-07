@@ -4,18 +4,18 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Memory\CreateMemoryPhotoUploadRequest;
+use App\Http\Requests\Api\V1\Memory\UpdateMemoryPhotoEncryptionRequest;
+use App\Http\Requests\Api\V1\Memory\UploadMemoryPhotoRequest;
 use App\Http\Resources\Api\V1\Memory\MemoryPhotoResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Memory;
 use App\Models\MemoryPhoto;
+use App\Services\Billing\StorageQuotaExceeded;
 use App\Services\Memory\MemoryPhotoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
-use App\Services\Billing\StorageQuotaExceeded;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
-use App\Http\Requests\Api\V1\Memory\UploadMemoryPhotoRequest;
-use App\Http\Requests\Api\V1\Memory\UpdateMemoryPhotoEncryptionRequest;
 
 class MemoryPhotoController extends Controller
 {
@@ -71,7 +71,6 @@ class MemoryPhotoController extends Controller
         }
     }
 
-
     public function updateEncryption(
         UpdateMemoryPhotoEncryptionRequest $request,
         MemoryPhoto $photo,
@@ -99,7 +98,6 @@ class MemoryPhotoController extends Controller
             );
         }
     }
-
 
     public function complete(
         MemoryPhoto $photo,
@@ -151,7 +149,6 @@ class MemoryPhotoController extends Controller
             );
         }
     }
-
 
     public function trash(Memory $memory): JsonResponse
     {
@@ -214,7 +211,6 @@ class MemoryPhotoController extends Controller
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }
-
 
     public function uploadBinary(
         UploadMemoryPhotoRequest $request,

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Couples;
 
 use App\Filament\Resources\Couples\Pages\ListCouples;
 use App\Filament\Resources\Couples\Pages\ViewCouple;
+use App\Filament\Resources\Couples\RelationManagers\MembersRelationManager;
 use App\Filament\Resources\Couples\Schemas\CoupleInfolist;
 use App\Filament\Resources\Couples\Tables\CouplesTable;
 use App\Models\Couple;
@@ -19,7 +20,7 @@ class CoupleResource extends Resource
     protected static ?string $model = Couple::class;
 
     protected static string|BackedEnum|null $navigationIcon =
-    Heroicon::OutlinedRectangleStack;
+        Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'id';
 
@@ -36,7 +37,7 @@ class CoupleResource extends Resource
     public static function getRelations(): array
     {
         return [
-            \App\Filament\Resources\Couples\RelationManagers\MembersRelationManager::class,
+            MembersRelationManager::class,
         ];
     }
 

@@ -7,6 +7,7 @@ use App\Filament\Resources\SubscriptionPlans\Pages\CreateSubscriptionPlan;
 use App\Filament\Resources\SubscriptionPlans\Pages\EditSubscriptionPlan;
 use App\Filament\Resources\SubscriptionPlans\Pages\ListSubscriptionPlans;
 use App\Filament\Resources\SubscriptionPlans\RelationManagers\VersionsRelationManager;
+use App\Models\CoupleSubscription;
 use App\Models\SubscriptionPlan;
 use BackedEnum;
 use Filament\Actions\EditAction;
@@ -69,7 +70,7 @@ class SubscriptionPlanResource extends Resource
                 TextColumn::make('publishedVersion.currency')->label('Cur.')->placeholder('–'),
                 TextColumn::make('publishedVersion.billing_interval')->label('Interval')->placeholder('–'),
                 TextColumn::make('subscribers')->label('Live subscriptions')
-                    ->state(fn (SubscriptionPlan $record) => \App\Models\CoupleSubscription::live()
+                    ->state(fn (SubscriptionPlan $record) => CoupleSubscription::live()
                         ->whereHas('planVersion', fn ($q) => $q->where('subscription_plan_id', $record->id))->count()),
                 TextColumn::make('sort_order'),
             ])

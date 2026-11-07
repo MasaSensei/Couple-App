@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Themes;
 
 use App\Filament\Resources\Themes\Pages\EditTheme;
 use App\Filament\Resources\Themes\Pages\ListThemes;
+use App\Models\CoupleThemeSetting;
 use App\Models\Theme;
 use BackedEnum;
 use Filament\Actions\EditAction;
@@ -56,7 +57,7 @@ class ThemeResource extends Resource
                 TextColumn::make('version'),
                 TextColumn::make('couples')
                     ->label('Couples using')
-                    ->state(fn ($record) => \App\Models\CoupleThemeSetting::where('theme_key', $record->key)->count()),
+                    ->state(fn ($record) => CoupleThemeSetting::where('theme_key', $record->key)->count()),
                 TextColumn::make('status')->badge()
                     ->color(fn (string $state) => ['active' => 'success', 'hidden' => 'warning', 'retired' => 'gray'][$state] ?? 'gray'),
                 IconColumn::make('is_premium')->boolean()->label('Premium'),

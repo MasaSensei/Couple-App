@@ -92,7 +92,7 @@ class StorageQuotaService
     {
         $usage = $this->usage($couple, $exceptPhotoId);
 
-        if ($usage['used_bytes'] + $usage['reserved_bytes'] + max(0, $bytes) > $usage['limit_bytes']) {
+        if ($usage['limit_bytes'] < $usage['used_bytes'] + $usage['reserved_bytes'] + max(0, $bytes)) {
             throw new StorageQuotaExceeded($this->usage($couple));
         }
     }

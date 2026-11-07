@@ -10,6 +10,7 @@ use App\Models\Memory;
 use App\Models\MemoryPhoto;
 use App\Models\PhotoStorageAudit;
 use App\Models\User;
+use App\Services\Memory\MemoryPhotoService;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -251,7 +252,7 @@ class PhotoRetentionTest extends TestCase
 
         // Even bypassing the policy, the service's conditional update refuses.
         $this->expectException(\RuntimeException::class);
-        app(\App\Services\Memory\MemoryPhotoService::class)->restore($photo->refresh(), $this->user);
+        app(MemoryPhotoService::class)->restore($photo->refresh(), $this->user);
     }
 
     public function test_restored_photo_is_never_purged(): void

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Couple extends Model
 {
@@ -60,7 +61,7 @@ class Couple extends Model
     {
         if ($this->billing_account_token === null) {
             static::whereKey($this->id)->whereNull('billing_account_token')
-                ->update(['billing_account_token' => (string) \Illuminate\Support\Str::uuid()]);
+                ->update(['billing_account_token' => (string) Str::uuid()]);
             $this->billing_account_token = static::whereKey($this->id)->value('billing_account_token');
         }
 

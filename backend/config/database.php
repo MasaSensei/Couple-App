@@ -97,6 +97,9 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Fail fast when the database is unreachable instead of tying up a PHP-FPM
+            // worker until the request timeout (pdo_pgsql maps this to connect_timeout).
+            'options' => [PDO::ATTR_TIMEOUT => (int) env('DB_CONNECT_TIMEOUT', 3)],
         ],
 
         'sqlsrv' => [

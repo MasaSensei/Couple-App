@@ -20,7 +20,7 @@ use Throwable;
  * is marked healthy. Both buckets are versioned, so the bad bytes that get
  * replaced remain as a noncurrent version for investigation.
  */
-class RepairMemoryPhoto implements ShouldQueue, ShouldBeUnique
+class RepairMemoryPhoto implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 

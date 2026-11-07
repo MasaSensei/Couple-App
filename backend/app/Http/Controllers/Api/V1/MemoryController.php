@@ -152,22 +152,17 @@ class MemoryController extends Controller
         return ApiResponse::success(
             'Memory timeline retrieved successfully.',
             [
-                'memories' =>
-                MemoryResource::collection(
+                'memories' => MemoryResource::collection(
                     $memories,
                 ),
                 'pagination' => [
-                    'current_page' =>
-                    $memories->currentPage(),
+                    'current_page' => $memories->currentPage(),
 
-                    'last_page' =>
-                    $memories->lastPage(),
+                    'last_page' => $memories->lastPage(),
 
-                    'per_page' =>
-                    $memories->perPage(),
+                    'per_page' => $memories->perPage(),
 
-                    'total' =>
-                    $memories->total(),
+                    'total' => $memories->total(),
                 ],
             ],
         );

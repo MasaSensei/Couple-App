@@ -8,6 +8,7 @@ use App\Models\Memory;
 use App\Models\MemoryPhoto;
 use App\Models\PhotoStorageAudit;
 use App\Models\User;
+use App\Services\Storage\PhotoReconciliationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -77,7 +78,7 @@ class PhotoReconciliationTest extends TestCase
 
         $this->artisan('photos:reconcile')->assertFailed();
 
-        $report = app(\App\Services\Storage\PhotoReconciliationService::class)->run(queueChecks: false);
+        $report = app(PhotoReconciliationService::class)->run(queueChecks: false);
         $this->assertSame([$missingPrimary->id], $report['missing_primary']);
         $this->assertSame([$missingBackup->id], $report['missing_backup']);
         $this->assertSame([$unfinished->id], $report['unfinished_uploads']);

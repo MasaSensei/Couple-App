@@ -82,8 +82,8 @@ class CoupleInvitationService
             $token = Str::random(64);
         } while (
             CoupleInvitation::query()
-            ->where('token', $token)
-            ->exists()
+                ->where('token', $token)
+                ->exists()
         );
 
         return $token;

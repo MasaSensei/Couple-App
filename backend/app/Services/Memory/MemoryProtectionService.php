@@ -4,6 +4,7 @@ namespace App\Services\Memory;
 
 use App\Models\Couple;
 use App\Models\MemoryPhoto;
+use Illuminate\Support\Carbon;
 
 /**
  * What the couple sees about their photos' safety. Derived from the server
@@ -67,6 +68,6 @@ class MemoryProtectionService
 
     private function iso(?string $timestamp): ?string
     {
-        return $timestamp === null ? null : \Illuminate\Support\Carbon::parse($timestamp)->toISOString();
+        return $timestamp === null ? null : Carbon::parse($timestamp)->toISOString();
     }
 }

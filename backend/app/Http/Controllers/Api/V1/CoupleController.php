@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Resources\Api\V1\CoupleInvitationResource;
-use App\Http\Requests\Api\V1\Couple\CreateCoupleInvitationRequest;
-use App\Services\CoupleInvitationService;
-use App\Models\CoupleInvitation;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Api\V1\CoupleResource;
+use App\Http\Requests\Api\V1\Couple\CreateCoupleInvitationRequest;
 use App\Http\Requests\Api\V1\Couple\JoinCoupleRequest;
+use App\Http\Resources\Api\V1\CoupleInvitationResource;
+use App\Http\Resources\Api\V1\CoupleResource;
 use App\Http\Responses\ApiResponse;
+use App\Services\CoupleInvitationService;
 use App\Services\CoupleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

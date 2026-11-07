@@ -76,6 +76,10 @@ return [
             'visibility' => 'private',
             'throw' => true,
             'report' => false,
+            // A slow or dead provider must fail fast (jobs retry with backoff) instead of
+            // holding PHP-FPM workers or queue slots. AWS SDK retries throttling/5xx.
+            'http' => ['connect_timeout' => (float) env('STORAGE_CONNECT_TIMEOUT', 5), 'timeout' => (float) env('STORAGE_TIMEOUT', 60)],
+            'retries' => (int) env('STORAGE_RETRIES', 3),
         ],
 
         'photos_backup' => [
@@ -89,6 +93,10 @@ return [
             'visibility' => 'private',
             'throw' => true,
             'report' => false,
+            // A slow or dead provider must fail fast (jobs retry with backoff) instead of
+            // holding PHP-FPM workers or queue slots. AWS SDK retries throttling/5xx.
+            'http' => ['connect_timeout' => (float) env('STORAGE_CONNECT_TIMEOUT', 5), 'timeout' => (float) env('STORAGE_TIMEOUT', 60)],
+            'retries' => (int) env('STORAGE_RETRIES', 3),
         ],
 
         // Encrypted PostgreSQL dumps (db:backup). Own bucket and credential.
@@ -103,6 +111,10 @@ return [
             'visibility' => 'private',
             'throw' => true,
             'report' => false,
+            // A slow or dead provider must fail fast (jobs retry with backoff) instead of
+            // holding PHP-FPM workers or queue slots. AWS SDK retries throttling/5xx.
+            'http' => ['connect_timeout' => (float) env('STORAGE_CONNECT_TIMEOUT', 5), 'timeout' => (float) env('STORAGE_TIMEOUT', 60)],
+            'retries' => (int) env('STORAGE_RETRIES', 3),
         ],
 
     ],

@@ -17,7 +17,6 @@ use RuntimeException;
 
 class MemoryPhotoService
 {
-
     public function __construct(
         private readonly PhotoStorage $photoStorage,
         private readonly StorageQuotaService $quota,
@@ -54,8 +53,7 @@ class MemoryPhotoService
                     // Not stored: file names can reveal private details.
                     'original_filename' => null,
 
-                    'mime_type' =>
-                    $data['mime_type'],
+                    'mime_type' => $data['mime_type'],
 
                     'file_size' => $data['file_size'],
 
@@ -68,13 +66,11 @@ class MemoryPhotoService
 
                     'width' => $data['width'] ?? null,
 
-                    'height' =>
-                    $data['height'] ?? null,
+                    'height' => $data['height'] ?? null,
 
                     'status' => 'pending',
 
-                    'sort_order' =>
-                    $data['sort_order'] ?? 0,
+                    'sort_order' => $data['sort_order'] ?? 0,
                 ]);
             },
         );

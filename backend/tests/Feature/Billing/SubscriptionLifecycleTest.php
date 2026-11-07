@@ -4,11 +4,15 @@ namespace Tests\Feature\Billing;
 
 use App\Models\Couple;
 use App\Models\CoupleSubscription;
+use App\Models\MemoryPhoto;
 use App\Models\PaymentWebhookEvent;
 use App\Models\SubscriptionEvent;
 use App\Models\SubscriptionTransaction;
 use App\Models\User;
+use App\Services\Billing\Entitlements;
 use App\Services\Billing\EntitlementService;
+use App\Services\Billing\Providers\MockPaymentProvider;
+use App\Services\Billing\SubscriptionLifecycle;
 use App\Services\Billing\SubscriptionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -30,7 +34,7 @@ class SubscriptionLifecycleTest extends TestCase
         [$this->alice, $this->bob, $this->couple] = $this->makeCouple();
     }
 
-    private function entitlements(): \App\Services\Billing\Entitlements
+    private function entitlements(): Entitlements
     {
         return app(EntitlementService::class)->forCouple($this->couple);
     }
@@ -131,7 +135,7 @@ class SubscriptionLifecycleTest extends TestCase
         app(SubscriptionService::class)->sweep();
         $subscription = CoupleSubscription::first();
         $this->assertSame(['expired', 'expired'], [$subscription->status, $subscription->ended_reason]);
-        $this->assertNotNull(\App\Models\MemoryPhoto::find($photo->id), 'expiry never deletes photos');
+        $this->assertNotNull(MemoryPhoto::find($photo->id), 'expiry never deletes photos');
         $this->actingAs($this->alice)->getJson('/api/v1/couple/subscription')->assertJsonPath('data.plan_key', 'free');
     }
 
@@ -196,7 +200,7 @@ class SubscriptionLifecycleTest extends TestCase
         $this->buy($this->alice);
         $subscription = $this->liveSubscription($this->couple);
         $token = $subscription->provider_subscription_id;
-        $staleState = app(\App\Services\Billing\Providers\MockPaymentProvider::class)->fetchSubscription($token); // "active"
+        $staleState = app(MockPaymentProvider::class)->fetchSubscription($token); // "active"
 
         $this->store()->refund($token);
         $this->webhook($token, 'refund');
@@ -249,7 +253,7 @@ class SubscriptionLifecycleTest extends TestCase
 
     public function test_status_transitions_are_validated(): void
     {
-        $lifecycle = app(\App\Services\Billing\SubscriptionLifecycle::class);
+        $lifecycle = app(SubscriptionLifecycle::class);
 
         $this->assertFalse($lifecycle->canTransition('expired', 'active', 'user:1'));
         $this->assertFalse($lifecycle->canTransition('expired', 'active', 'admin:1'));

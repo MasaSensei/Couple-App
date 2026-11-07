@@ -18,7 +18,7 @@ use Throwable;
  * times: an already-verified backup is recognised, and the backup bucket is
  * versioned so a rewrite never destroys an earlier copy.
  */
-class BackupMemoryPhoto implements ShouldQueue, ShouldBeUnique
+class BackupMemoryPhoto implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 

@@ -1,16 +1,27 @@
 <?php
 
 use App\Jobs\BackupMemoryPhoto;
+use App\Jobs\ProcessPaymentWebhook;
 use App\Jobs\PurgeMemoryPhoto;
+use App\Jobs\QueueHeartbeat;
 use App\Jobs\RepairMemoryPhoto;
 use App\Jobs\VerifyMemoryPhotoIntegrity;
+use App\Models\AdminAuditLog;
 use App\Models\DatabaseBackup;
 use App\Models\MemoryPhoto;
+use App\Models\PaymentWebhookEvent;
 use App\Models\PhotoStorageAudit;
+use App\Models\User;
+use App\Services\Appearance\AppearanceCatalog;
 use App\Services\Backup\DatabaseBackupService;
+use App\Services\Billing\Providers\MockPaymentProvider;
+use App\Services\Billing\Providers\MockStore;
+use App\Services\Billing\SubscriptionService;
+use App\Services\Ops\Heartbeat;
+use App\Services\Ops\OpsAlerts;
 use App\Services\Storage\PhotoReconciliationService;
-use App\Services\Storage\StorageHealthService;
 use Illuminate\Foundation\Inspiring;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -41,7 +52,7 @@ Artisan::command('photos:backup-pending {--older-than=15 : Minutes since last ch
     $this->info("Dispatched {$count} backup job(s).");
 })->purpose('Re-dispatch photo backups that are still pending');
 
-Schedule::command('photos:backup-pending')->everyTenMinutes()->withoutOverlapping();
+Schedule::command('photos:backup-pending')->everyTenMinutes()->withoutOverlapping()->onOneServer();
 
 // Re-hash each copy at least every --days. --limit spreads the download cost
 // (each check reads the whole object from both stores) across the week.
@@ -69,7 +80,7 @@ Artisan::command('photos:verify-integrity {--days=7} {--limit=500}', function ()
     $this->info("Dispatched {$ids->count()} integrity check(s), {$repairs->count()} repair(s).");
 })->purpose('Queue integrity checks for photos not verified recently');
 
-Schedule::command('photos:verify-integrity')->hourly()->withoutOverlapping();
+Schedule::command('photos:verify-integrity')->hourly()->withoutOverlapping()->onOneServer();
 
 // Retention. Never deletes anything itself: it trashes abandoned uploads and
 // queues PurgeMemoryPhoto, which re-checks every condition before deleting.
@@ -97,7 +108,7 @@ Artisan::command('photos:purge', function () {
     $this->info("Trashed {$abandoned->count()} abandoned upload(s), queued {$due->count()} purge(s).");
 })->purpose('Apply photo trash and backup retention');
 
-Schedule::command('photos:purge')->dailyAt('03:30')->withoutOverlapping();
+Schedule::command('photos:purge')->dailyAt('03:30')->withoutOverlapping()->onOneServer();
 
 // Encrypted PostgreSQL backup (docs/storage/reliability.md §14).
 Artisan::command('db:backup', function (DatabaseBackupService $service) {
@@ -106,7 +117,7 @@ Artisan::command('db:backup', function (DatabaseBackupService $service) {
     $this->info("Backup #{$backup->id} succeeded: {$backup->size_bytes} bytes, sha256 {$backup->sha256}.");
 })->purpose('Dump, encrypt and upload the database, then verify the stored copy');
 
-Schedule::command('db:backup')->dailyAt('02:00')->withoutOverlapping();
+Schedule::command('db:backup')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
 
 // Operator command: needs the backup SECRET key, which the app server must not hold in production.
 Artisan::command('db:restore-check {--identity= : Path to the secret key file} {--backup= : Backup id (default: latest)} {--keep : Keep the scratch database}',
@@ -140,7 +151,7 @@ Artisan::command('db:restore-check {--identity= : Path to the secret key file} {
     })->purpose('Restore a database backup into a scratch database and verify it');
 
 // Runs only where an operator identity is configured (dev, drill environment).
-Schedule::command('db:restore-check')->weeklyOn(0, '04:00')->withoutOverlapping()
+Schedule::command('db:restore-check')->weeklyOn(0, '04:00')->withoutOverlapping()->onOneServer()
     ->when(fn () => filled(config('backup.restore_identity')));
 
 Artisan::command('db:backup-keygen', function () {
@@ -161,35 +172,39 @@ Artisan::command('photos:reconcile {--no-queue : Report only, do not queue integ
     return $service->isClean($report) ? 0 : 1;
 })->purpose('Compare photo rows with stored objects (report only, never deletes)');
 
-Schedule::command('photos:reconcile')->dailyAt('05:00')->withoutOverlapping();
+Schedule::command('photos:reconcile')->dailyAt('05:00')->withoutOverlapping()->onOneServer();
 
-// Evaluates storage/backup alerts and routes them to the `alerts` log channel
+// Evaluates every operator alert (storage, backup, infrastructure, billing;
+// App\Services\Ops\OpsAlerts) and routes them to the `alerts` log channel
 // (file by default, Slack via ALERT_LOG_CHANNELS). Each alert is re-sent at most
 // every 6 h while active, and a "resolved" line is written when it clears.
-Artisan::command('storage:alerts', function (StorageHealthService $health) {
-    $alerts = collect($health->alerts())->keyBy('code');
-    $previous = Cache::get('storage:alerts:active', []);
+// Kept under its Phase 6 name; `ops:alerts` is the same command.
+foreach (['storage:alerts', 'ops:alerts'] as $alertCommand) {
+    Artisan::command($alertCommand, function (OpsAlerts $ops) {
+        $alerts = collect($ops->dispatch());
 
-    foreach ($alerts as $code => $alert) {
-        if (Cache::add("storage:alerts:sent:{$code}", true, now()->addHours(6))) {
-            Log::channel('alerts')->{$alert['level']}($alert['message'], ['code' => $code]);
-        }
-    }
+        $alerts->each(fn ($alert) => $this->line(strtoupper($alert['level']).'  '.$alert['message']));
+        $this->info($alerts->isEmpty() ? 'No active alerts.' : "{$alerts->count()} active alert(s).");
 
-    foreach (array_diff($previous, $alerts->keys()->all()) as $code) {
-        Cache::forget("storage:alerts:sent:{$code}");
-        Log::channel('alerts')->notice("Resolved: {$code}", ['code' => $code]);
-    }
+        return $alerts->contains('level', 'critical') ? 1 : 0;
+    })->purpose('Evaluate storage, backup, infrastructure and billing alerts');
+}
 
-    Cache::forever('storage:alerts:active', $alerts->keys()->all());
+Schedule::command('ops:alerts')->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
 
-    $alerts->each(fn ($alert) => $this->line(strtoupper($alert['level']).'  '.$alert['message']));
-    $this->info($alerts->isEmpty() ? 'No active alerts.' : "{$alerts->count()} active alert(s).");
+// Liveness of the scheduler and the queue worker (stored in PostgreSQL) plus
+// optional pings to an external dead-man's switch (HEARTBEAT_URL_*). The
+// external service is what alerts when this whole machine, Redis or the
+// scheduler is down, since nothing in-process can report its own death.
+Artisan::command('ops:heartbeat', function (Heartbeat $heartbeat) {
+    $heartbeat->beat('scheduler');
+    QueueHeartbeat::dispatch();
+})->purpose('Record scheduler liveness and enqueue a queue heartbeat');
 
-    return $alerts->contains('level', 'critical') ? 1 : 0;
-})->purpose('Evaluate storage and backup alerts');
+// No overlap mutex on purpose: it must keep beating even if the cache is down.
+Schedule::command('ops:heartbeat')->everyMinute();
 
-Schedule::command('storage:alerts')->everyFifteenMinutes()->withoutOverlapping();
+Schedule::command('sanctum:prune-expired --hours=24')->daily()->withoutOverlapping()->onOneServer();
 
 // Disaster restore (docs/storage/disaster-recovery.md §4). Operator-only: needs the secret key.
 // Restores into a new/empty database and never overwrites one that has tables.
@@ -225,7 +240,7 @@ Artisan::command('db:restore {--object= : Object key in the db-backups bucket (d
 // Run on every deploy (also run by the appearance migration). Adds new themes /
 // templates from database/data/appearance_catalog.json; never deletes and never
 // overrides what admins set (status, premium, order).
-Artisan::command('appearance:sync-catalog', function (\App\Services\Appearance\AppearanceCatalog $catalog) {
+Artisan::command('appearance:sync-catalog', function (AppearanceCatalog $catalog) {
     $counts = $catalog->sync();
 
     $this->info("Synced {$counts['themes']} theme(s) and {$counts['templates']} Photo Booth template(s).");
@@ -237,17 +252,17 @@ Artisan::command('appearance:sync-catalog', function (\App\Services\Appearance\A
 // end, asks the provider about overdue renewals and applies grace periods.
 // Entitlements are time-checked on every request, so this never decides
 // *whether* benefits stop on time, only when the status catches up.
-Artisan::command('billing:sweep', function (\App\Services\Billing\SubscriptionService $subscriptions) {
+Artisan::command('billing:sweep', function (SubscriptionService $subscriptions) {
     $counts = $subscriptions->sweep();
 
     $this->info(collect($counts)->map(fn ($count, $key) => "{$key}: {$count}")->implode(', '));
 })->purpose('Advance subscriptions whose period or grace ended');
 
-Schedule::command('billing:sweep')->hourly()->withoutOverlapping();
+Schedule::command('billing:sweep')->hourly()->withoutOverlapping()->onOneServer();
 
 // Webhooks stored but not applied (queue outage, provider outage).
 Artisan::command('billing:retry-webhooks {--older-than=10 : Minutes}', function () {
-    $ids = \App\Models\PaymentWebhookEvent::query()
+    $ids = PaymentWebhookEvent::query()
         ->whereIn('status', ['received', 'failed', 'processing'])
         ->where('attempts', '<', 20)
         ->where('updated_at', '<=', now()->subMinutes((int) $this->option('older-than')))
@@ -256,8 +271,8 @@ Artisan::command('billing:retry-webhooks {--older-than=10 : Minutes}', function 
     // A provider that is still unreachable must not stop the other retries.
     $ids->each(function (int $id): void {
         try {
-            \App\Jobs\ProcessPaymentWebhook::dispatch($id);
-        } catch (\Throwable $exception) {
+            ProcessPaymentWebhook::dispatch($id);
+        } catch (Throwable $exception) {
             report($exception);
         }
     });
@@ -265,20 +280,20 @@ Artisan::command('billing:retry-webhooks {--older-than=10 : Minutes}', function 
     $this->info("Re-dispatched {$ids->count()} webhook(s).");
 })->purpose('Retry payment webhooks that were not processed');
 
-Schedule::command('billing:retry-webhooks')->everyFifteenMinutes()->withoutOverlapping();
+Schedule::command('billing:retry-webhooks')->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
 
 // Admin permissions are granted here, not in the panel, so no admin can
 // give themselves financial access.
 Artisan::command('admin:permission {action : grant|revoke} {email} {permission}', function () {
     $permission = $this->argument('permission');
 
-    if (! in_array($permission, \App\Models\User::ADMIN_PERMISSIONS, true)) {
-        $this->error('Unknown permission. Use one of: '.implode(', ', \App\Models\User::ADMIN_PERMISSIONS));
+    if (! in_array($permission, User::ADMIN_PERMISSIONS, true)) {
+        $this->error('Unknown permission. Use one of: '.implode(', ', User::ADMIN_PERMISSIONS));
 
         return 1;
     }
 
-    $user = \App\Models\User::where('email', $this->argument('email'))->first();
+    $user = User::where('email', $this->argument('email'))->first();
 
     if ($user === null || $user->is_admin !== true) {
         $this->error('No admin user with that email.');
@@ -291,16 +306,47 @@ Artisan::command('admin:permission {action : grant|revoke} {email} {permission}'
         ? array_values(array_unique([...$current, $permission]))
         : array_values(array_diff($current, [$permission]))])->save();
 
-    \App\Models\AdminAuditLog::record(null, "permission_{$this->argument('action')}", $user, ['permission' => $permission, 'via' => 'cli']);
+    AdminAuditLog::record(null, "permission_{$this->argument('action')}", $user, ['permission' => $permission, 'via' => 'cli']);
     Log::channel('alerts')->notice("Admin permission {$this->argument('action')}: {$permission}", ['user_id' => $user->id]);
     $this->info("{$user->email}: ".(implode(', ', $user->admin_permissions) ?: '(none)'));
 
     return 0;
 })->purpose('Grant or revoke an admin permission (billing.view, billing.manage, plans.manage)');
 
+// Panel access is granted here too (the user form cannot toggle is_admin), so
+// a compromised admin session cannot mint more admins. Revoking also drops the
+// billing permissions and signs the user out of the API.
+Artisan::command('admin:role {action : grant|revoke} {email}', function () {
+    $action = $this->argument('action');
+
+    if (! in_array($action, ['grant', 'revoke'], true)) {
+        $this->error('Action must be grant or revoke.');
+
+        return 1;
+    }
+
+    $user = User::where('email', $this->argument('email'))->first();
+
+    if ($user === null) {
+        $this->error('No user with that email.');
+
+        return 1;
+    }
+
+    $user->forceFill($action === 'grant'
+        ? ['is_admin' => true]
+        : ['is_admin' => false, 'admin_permissions' => [], 'app_authentication_secret' => null, 'app_authentication_recovery_codes' => null])->save();
+
+    AdminAuditLog::record(null, "admin_{$action}", $user, ['via' => 'cli']);
+    Log::channel('alerts')->notice("Admin role {$action}", ['user_id' => $user->id]);
+    $this->info("{$user->email}: admin=".($user->is_admin ? 'yes' : 'no'));
+
+    return 0;
+})->purpose('Grant or revoke admin panel access');
+
 // Drives the development mock store (never available in production).
-Artisan::command('billing:mock {action : renew|fail|hold|pause|cancel|resume|expire|refund|chargeback|outage-on|outage-off} {token?}', function (\App\Services\Billing\Providers\MockStore $store) {
-    if (! app(\App\Services\Billing\Providers\MockPaymentProvider::class)->isEnabled()) {
+Artisan::command('billing:mock {action : renew|fail|hold|pause|cancel|resume|expire|refund|chargeback|outage-on|outage-off} {token?}', function (MockStore $store) {
+    if (! app(MockPaymentProvider::class)->isEnabled()) {
         $this->error('The mock provider is disabled.');
 
         return 1;
@@ -331,7 +377,7 @@ Artisan::command('billing:mock {action : renew|fail|hold|pause|cancel|resume|exp
 
     // Deliver the signed webhook like the store would.
     $webhook = $store->webhook($token, $action);
-    $response = app()->handle(\Illuminate\Http\Request::create('/api/v1/billing/webhooks/mock', 'POST', server: [
+    $response = app()->handle(Request::create('/api/v1/billing/webhooks/mock', 'POST', server: [
         'CONTENT_TYPE' => 'application/json',
         'HTTP_X_MOCK_SIGNATURE' => $webhook['signature'],
     ], content: $webhook['body']));

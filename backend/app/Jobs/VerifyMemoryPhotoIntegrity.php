@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
  * Scheduled re-hash of every copy against the trusted DB checksum. Detection
  * only: it never writes, moves or deletes an object. Repair is a separate job.
  */
-class VerifyMemoryPhotoIntegrity implements ShouldQueue, ShouldBeUnique
+class VerifyMemoryPhotoIntegrity implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 

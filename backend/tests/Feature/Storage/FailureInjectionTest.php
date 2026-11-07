@@ -13,6 +13,8 @@ use App\Models\MemoryPhoto;
 use App\Models\PhotoStorageAudit;
 use App\Models\User;
 use App\Services\Storage\FlysystemPhotoStorage;
+use App\Services\Storage\PhotoStorage;
+use App\Services\Storage\StorageHealthService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
@@ -87,7 +89,7 @@ class FailureInjectionTest extends TestCase
 
     public function test_a_primary_upload_failure_is_never_reported_as_saved(): void
     {
-        $this->app->instance(\App\Services\Storage\PhotoStorage::class, $this->brokenStore('photos_primary', ['putObject']));
+        $this->app->instance(PhotoStorage::class, $this->brokenStore('photos_primary', ['putObject']));
         $photo = $this->photo(['status' => 'pending', 'backup_status' => null], primary: false, backup: false);
 
         $this->actingAs($this->user)
@@ -153,7 +155,7 @@ class FailureInjectionTest extends TestCase
         $this->assertSame('mismatch', $photo->refresh()->backup_integrity);
         $this->assertSame($this->ciphertext, Storage::disk('photos_primary')->get($photo->storage_key));
         Log::shouldHaveReceived('warning')->withArgs(fn ($message) => str_contains($message, 'integrity problem'));
-        $this->assertContains('integrity_mismatch', collect(app(\App\Services\Storage\StorageHealthService::class)->alerts())->pluck('code'));
+        $this->assertContains('integrity_mismatch', collect(app(StorageHealthService::class)->alerts())->pluck('code'));
 
         // The queued repair copies primary → backup, never the other way.
         Queue::assertPushed(RepairMemoryPhoto::class);
@@ -179,7 +181,7 @@ class FailureInjectionTest extends TestCase
         $this->assertSame('bad-1', Storage::disk('photos_primary')->get($photo->storage_key));
         $this->assertNotSame('succeeded', PhotoStorageAudit::where('memory_photo_id', $photo->id)->value('result'));
         Log::shouldHaveReceived('critical')->withArgs(fn ($message) => str_contains($message, 'operator intervention'));
-        $this->assertContains('repair_failed', collect(app(\App\Services\Storage\StorageHealthService::class)->alerts())->pluck('code'));
+        $this->assertContains('repair_failed', collect(app(StorageHealthService::class)->alerts())->pluck('code'));
     }
 
     public function test_g_delete_during_backup_never_shows_protected_and_keeps_retention(): void
@@ -236,7 +238,7 @@ class FailureInjectionTest extends TestCase
         $this->assertSame('degraded', $photo->protectionStatus());
         $this->assertStringContainsString('Connection refused', $photo->backup_error);
         Storage::disk('photos_primary')->assertExists($photo->storage_key);
-        $this->assertContains('backup_unreachable', collect(app(\App\Services\Storage\StorageHealthService::class)->alerts())->pluck('code'));
+        $this->assertContains('backup_unreachable', collect(app(StorageHealthService::class)->alerts())->pluck('code'));
 
         // Users still get their photo (from the primary).
         $this->actingAs($this->user)->get("/api/v1/memory-photos/{$photo->id}/content")->assertOk();

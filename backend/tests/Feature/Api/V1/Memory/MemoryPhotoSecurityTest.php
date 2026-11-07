@@ -4,7 +4,6 @@ namespace Tests\Feature\Api\V1\Memory;
 
 use App\Models\Couple;
 use App\Models\CoupleMember;
-use App\Models\Date;
 use App\Models\Memory;
 use App\Models\MemoryPhoto;
 use App\Models\User;

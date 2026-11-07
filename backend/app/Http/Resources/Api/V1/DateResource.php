@@ -18,19 +18,15 @@ class DateResource extends JsonResource
             'description' => $this->description,
             'location' => $this->location,
 
-            'scheduled_at' =>
-            $this->scheduled_at?->toISOString(),
+            'scheduled_at' => $this->scheduled_at?->toISOString(),
 
             'status' => $this->status,
 
-            'completed_at' =>
-            $this->completed_at?->toISOString(),
+            'completed_at' => $this->completed_at?->toISOString(),
 
-            'created_at' =>
-            $this->created_at?->toISOString(),
+            'created_at' => $this->created_at?->toISOString(),
 
-            'updated_at' =>
-            $this->updated_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
         ];
     }
 }

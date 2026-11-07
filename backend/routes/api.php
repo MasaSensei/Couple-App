@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\Appearance\AppearanceController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\Billing\MockStoreController;
@@ -8,29 +9,35 @@ use App\Http\Controllers\Api\V1\Billing\WebhookController;
 use App\Http\Controllers\Api\V1\Couple\CoupleKeyPackageController;
 use App\Http\Controllers\Api\V1\Couple\CoupleKeyRecoveryPackageController;
 use App\Http\Controllers\Api\V1\CoupleController;
-use App\Http\Controllers\Api\V1\DateController;
 use App\Http\Controllers\Api\V1\DateCommentController;
+use App\Http\Controllers\Api\V1\DateController;
 use App\Http\Controllers\Api\V1\DeviceController;
+use App\Http\Controllers\Api\V1\MemoryCommentController;
 use App\Http\Controllers\Api\V1\MemoryController;
 use App\Http\Controllers\Api\V1\MemoryPhotoController;
-use App\Http\Controllers\Api\V1\MemoryCommentController;
+use App\Http\Controllers\HealthController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
-    Route::post('/auth/register', [AuthController::class, 'register']);
-    Route::post('/auth/login', [AuthController::class, 'login']);
-
-    Route::get('/health', function () {
-        return response()->json([
-            'success' => true,
-            'message' => 'API is healthy.',
-        ]);
+    Route::middleware('throttle:auth')->group(function () {
+        Route::post('/auth/register', [AuthController::class, 'register']);
+        Route::post('/auth/login', [AuthController::class, 'login']);
     });
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/health', [HealthController::class, 'live']);
+    // No throttle: the rate limiter lives in Redis, and readiness must still
+    // answer (503 + details) when Redis is the thing that is down.
+    Route::get('/health/ready', [HealthController::class, 'ready']);
+
+    Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
+        Route::post('/auth/logout-all', [AuthController::class, 'logoutAll']);
+        Route::post('/auth/refresh', [AuthController::class, 'refresh']);
         Route::get('/me', [AuthController::class, 'me']);
         Route::patch('/me', [AuthController::class, 'updateProfile']);
+        Route::get('/me/export', [AccountController::class, 'export'])->middleware('throttle:6,1');
+        // Password-confirmed; throttled like login so it cannot be used to guess passwords.
+        Route::delete('/me', [AccountController::class, 'destroy'])->middleware('throttle:auth');
 
         Route::post('/couple/key-packages', [
             CoupleKeyPackageController::class,
@@ -180,17 +187,15 @@ Route::prefix('v1')->group(function () {
             [MemoryPhotoController::class, 'upload'],
         );
 
-
         Route::patch(
             '/memory-photos/{photo}/encryption',
             [MemoryPhotoController::class, 'updateEncryption'],
         );
 
-
         Route::post(
             '/memory-photos/{photo}/upload',
             [MemoryPhotoController::class, 'uploadBinary'],
-        );
+        )->middleware('throttle:uploads');
 
         Route::post(
             '/memory-photos/{photo}/complete',
@@ -251,7 +256,7 @@ Route::prefix('v1')->group(function () {
     Route::get(
         '/couple/invite/{token}',
         [CoupleController::class, 'showInvitation']
-    );
+    )->middleware('throttle:public');
 
     // Provider notifications: no user auth, signature-verified instead.
     Route::post('/billing/webhooks/{provider}', WebhookController::class)

@@ -4,12 +4,13 @@ namespace Tests\Unit\Services;
 
 use App\Models\Couple;
 use App\Models\CoupleKeyPackage;
+use App\Models\CoupleMember;
 use App\Models\User;
 use App\Models\UserDevice;
 use App\Services\CoupleKeyPackageService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
-use App\Models\CoupleMember;
 
 class CoupleKeyPackageServiceTest extends TestCase
 {
@@ -122,7 +123,7 @@ class CoupleKeyPackageServiceTest extends TestCase
 
         $service = app(CoupleKeyPackageService::class);
 
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectException(HttpException::class);
 
         $service->create(
             $user,
@@ -173,7 +174,7 @@ class CoupleKeyPackageServiceTest extends TestCase
         $service = app(CoupleKeyPackageService::class);
 
         $this->expectException(
-            \Symfony\Component\HttpKernel\Exception\HttpException::class,
+            HttpException::class,
         );
 
         $service->create(

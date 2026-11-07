@@ -8,6 +8,7 @@ use App\Models\DatabaseBackup;
 use App\Models\Memory;
 use App\Models\User;
 use App\Services\Backup\DatabaseBackupService;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -159,7 +160,7 @@ class DatabaseBackupTest extends TestCase
 
     public function test_upload_failure_marks_the_backup_failed(): void
     {
-        $disk = \Mockery::mock(\Illuminate\Contracts\Filesystem\Filesystem::class);
+        $disk = \Mockery::mock(Filesystem::class);
         $disk->shouldReceive('writeStream')->andThrow(new \RuntimeException('Connection refused.'));
         Storage::set('db_backups', $disk);
 

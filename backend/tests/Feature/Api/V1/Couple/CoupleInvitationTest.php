@@ -2,11 +2,12 @@
 
 namespace Tests\Feature\Api\V1\Couple;
 
+use App\Models\CoupleInvitation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
-use Illuminate\Support\Carbon;
 
 class CoupleInvitationTest extends TestCase
 {
@@ -35,7 +36,7 @@ class CoupleInvitationTest extends TestCase
             'data.invitation.token'
         );
 
-        \App\Models\CoupleInvitation::query()
+        CoupleInvitation::query()
             ->whereKey($invitationId)
             ->update([
                 'expires_at' => Carbon::now()->subMinute(),

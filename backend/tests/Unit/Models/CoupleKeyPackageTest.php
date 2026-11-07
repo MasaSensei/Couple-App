@@ -15,7 +15,7 @@ class CoupleKeyPackageTest extends TestCase
 {
     public function test_couple_key_package_belongs_to_couple(): void
     {
-        $package = new CoupleKeyPackage();
+        $package = new CoupleKeyPackage;
 
         $this->assertInstanceOf(
             BelongsTo::class,
@@ -25,7 +25,7 @@ class CoupleKeyPackageTest extends TestCase
 
     public function test_couple_key_package_belongs_to_device(): void
     {
-        $package = new CoupleKeyPackage();
+        $package = new CoupleKeyPackage;
 
         $this->assertInstanceOf(
             BelongsTo::class,
@@ -35,7 +35,7 @@ class CoupleKeyPackageTest extends TestCase
 
     public function test_couple_has_many_key_packages(): void
     {
-        $couple = new Couple();
+        $couple = new Couple;
 
         $this->assertInstanceOf(
             HasMany::class,
@@ -45,7 +45,7 @@ class CoupleKeyPackageTest extends TestCase
 
     public function test_device_has_many_key_packages(): void
     {
-        $device = new UserDevice();
+        $device = new UserDevice;
 
         $this->assertInstanceOf(
             HasMany::class,

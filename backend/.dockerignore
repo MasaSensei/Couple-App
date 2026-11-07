@@ -1,0 +1,20 @@
+# Never ship secrets, local state or dev tooling in the image.
+.env
+.env.*
+!.env.example
+.git
+.phpunit.result.cache
+node_modules
+vendor
+tests
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/framework/testing
+storage/app/private/*
+bootstrap/cache/*.php
+database/database.sqlite
+docker/db-backup
+*.key
+*.pem

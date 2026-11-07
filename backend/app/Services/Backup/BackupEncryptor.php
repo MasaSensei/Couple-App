@@ -23,8 +23,8 @@ class BackupEncryptor
     private const CHUNK = 65536;
 
     /**
-     * @param resource $in plaintext
-     * @param resource $out ciphertext
+     * @param  resource  $in  plaintext
+     * @param  resource  $out  ciphertext
      */
     public function encrypt($in, $out, string $publicKeyBase64): void
     {
@@ -63,8 +63,8 @@ class BackupEncryptor
     }
 
     /**
-     * @param resource $in ciphertext
-     * @param resource $out plaintext
+     * @param  resource  $in  ciphertext
+     * @param  resource  $out  plaintext
      */
     public function decrypt($in, $out, string $secretKeyBase64): void
     {

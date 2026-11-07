@@ -34,6 +34,19 @@ class UserFactory extends Factory
     }
 
     /**
+     * Admins in production always have MFA enrolled (ADMIN_MFA_REQUIRED), so
+     * factory admins do too. Tests about the enrolment flow clear it.
+     */
+    public function configure(): static
+    {
+        return $this->afterMaking(function (User $user): void {
+            if ($user->is_admin === true && $user->app_authentication_secret === null) {
+                $user->app_authentication_secret = 'JBSWY3DPEHPK3PXP';
+            }
+        });
+    }
+
+    /**
      * Indicate that the model's email address should be unverified.
      */
     public function unverified(): static

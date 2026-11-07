@@ -3,12 +3,13 @@
 namespace App\Services;
 
 use App\Models\Couple;
+use App\Models\Date;
 use App\Models\Memory;
 use App\Models\PhotoStorageAudit;
 use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use RuntimeException;
 
 class MemoryService
@@ -108,7 +109,7 @@ class MemoryService
             return;
         }
 
-        $exists = \App\Models\Date::query()
+        $exists = Date::query()
             ->where('id', $dateId)
             ->where('couple_id', $coupleId)
             ->exists();

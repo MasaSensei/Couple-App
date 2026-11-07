@@ -8,7 +8,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class MemoryPhotoResource extends JsonResource
 {
-
     public function toArray(Request $request): array
     {
         return [

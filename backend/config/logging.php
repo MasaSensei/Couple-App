@@ -1,5 +1,6 @@
 <?php
 
+use App\Logging\RedactSensitiveData;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -59,6 +60,7 @@ return [
         ],
 
         'single' => [
+            'tap' => [RedactSensitiveData::class],
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
@@ -66,6 +68,7 @@ return [
         ],
 
         'daily' => [
+            'tap' => [RedactSensitiveData::class],
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
@@ -109,8 +112,10 @@ return [
             'handler_with' => [
                 'stream' => 'php://stderr',
             ],
+            // Production: LOG_STDERR_FORMATTER=Monolog\Formatter\JsonFormatter (one JSON object per line).
             'formatter' => env('LOG_STDERR_FORMATTER'),
             'processors' => [PsrLogMessageProcessor::class],
+            'tap' => [RedactSensitiveData::class],
         ],
 
         'syslog' => [
@@ -143,6 +148,7 @@ return [
         ],
 
         'alerts_file' => [
+            'tap' => [RedactSensitiveData::class],
             'driver' => 'daily',
             'path' => storage_path('logs/alerts.log'),
             'level' => 'warning',

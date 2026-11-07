@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Date\CreateDateCommentRequest;
 use App\Http\Resources\Api\V1\DateCommentResource;
 use App\Http\Responses\ApiResponse;
-use App\Models\Date;
 use App\Services\DateCommentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

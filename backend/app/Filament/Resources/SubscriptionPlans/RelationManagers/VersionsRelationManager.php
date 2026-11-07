@@ -14,6 +14,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Validation\ValidationException;
 use LogicException;
 use RuntimeException;
@@ -128,7 +129,7 @@ class VersionsRelationManager extends RelationManager
             Notification::make()->title($success)->success()->send();
         } catch (ValidationException $exception) {
             Notification::make()->title(collect($exception->errors())->flatten()->implode(' '))->danger()->send();
-        } catch (RuntimeException|LogicException|\Illuminate\Auth\Access\AuthorizationException $exception) {
+        } catch (RuntimeException|LogicException|AuthorizationException $exception) {
             Notification::make()->title($exception->getMessage())->danger()->send();
         }
     }

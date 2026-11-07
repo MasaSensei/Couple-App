@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Storage;
 
+use App\Filament\Widgets\StorageHealthOverview;
 use App\Jobs\BackupMemoryPhoto;
 use App\Jobs\RepairMemoryPhoto;
 use App\Models\Couple;
@@ -10,6 +11,7 @@ use App\Models\Memory;
 use App\Models\MemoryPhoto;
 use App\Models\PhotoStorageAudit;
 use App\Models\User;
+use App\Services\Storage\PhotoStorage;
 use App\Services\Storage\StorageHealthService;
 use App\Services\Storage\StorageOperatorActions;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -17,6 +19,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
 use Mockery;
 use Tests\TestCase;
 
@@ -105,7 +108,7 @@ class StorageMonitoringTest extends TestCase
 
     public function test_unreachable_store_raises_an_alert(): void
     {
-        $broken = Mockery::mock(\App\Services\Storage\PhotoStorage::class);
+        $broken = Mockery::mock(PhotoStorage::class);
         $broken->shouldReceive('listKeys')->andThrow(new \RuntimeException('Connection refused.'));
         $this->app->instance('photos.backup', $broken);
 
@@ -187,7 +190,7 @@ class StorageMonitoringTest extends TestCase
         $this->photo(['backup_status' => 'pending']);
         $this->actingAs($this->admin);
 
-        \Livewire\Livewire::test(\App\Filament\Widgets\StorageHealthOverview::class)
+        Livewire::test(StorageHealthOverview::class)
             ->assertOk()
             ->assertSee('Protected photos')
             ->assertSee('1 / 2')

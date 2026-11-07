@@ -20,7 +20,7 @@ class CoupleInfolist
 
                 TextEntry::make('members_count')
                     ->label('Members')
-                    ->state(fn($record) => $record->members()->count()),
+                    ->state(fn ($record) => $record->members()->count()),
 
                 TextEntry::make('members')
                     ->label('Member Details')

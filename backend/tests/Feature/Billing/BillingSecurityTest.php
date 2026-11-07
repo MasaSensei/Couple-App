@@ -7,6 +7,7 @@ use App\Models\Couple;
 use App\Models\CoupleSubscription;
 use App\Models\PaymentWebhookEvent;
 use App\Models\SubscriptionEvent;
+use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Services\Billing\AdminSubscriptionActions;
 use App\Services\Billing\EntitlementService;
@@ -197,7 +198,7 @@ class BillingSecurityTest extends TestCase
     public function test_manual_grant_expires_on_its_own(): void
     {
         $manager = User::factory()->create(['is_admin' => true, 'admin_permissions' => ['billing.manage']]);
-        app(AdminSubscriptionActions::class)->grant($this->couple, \App\Models\SubscriptionPlan::where('key', 'together_plus')->first(), 7, $manager, 'Compensation for outage');
+        app(AdminSubscriptionActions::class)->grant($this->couple, SubscriptionPlan::where('key', 'together_plus')->first(), 7, $manager, 'Compensation for outage');
 
         $this->actingAs($this->bob)->getJson('/api/v1/couple/subscription')
             ->assertJsonPath('data.plan_key', 'together_plus')

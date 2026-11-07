@@ -6,12 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 class MemoryPhoto extends Model
 {
     use HasFactory;
     use SoftDeletes;
-
 
     protected $fillable = [
         'memory_id',
@@ -33,7 +33,6 @@ class MemoryPhoto extends Model
         'sort_order',
     ];
 
-
     protected function casts(): array
     {
         return [
@@ -51,7 +50,7 @@ class MemoryPhoto extends Model
     }
 
     /** Last moment a trashed photo can still be restored by the couple. */
-    public function restorableUntil(): ?\Illuminate\Support\Carbon
+    public function restorableUntil(): ?Carbon
     {
         return $this->deleted_at?->copy()->addDays(config('photos.trash_retention_days'));
     }

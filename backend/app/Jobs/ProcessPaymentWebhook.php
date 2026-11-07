@@ -9,7 +9,6 @@ use App\Services\Billing\Providers\PaymentProviderUnavailable;
 use App\Services\Billing\Providers\PurchaseVerificationFailed;
 use App\Services\Billing\SubscriptionService;
 use App\Services\Billing\UnknownSubscription;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +23,9 @@ class ProcessPaymentWebhook implements ShouldQueue
     use Queueable;
 
     public int $tries = 5;
+
+    // Provider re-fetch is an HTTP call; must finish well inside retry_after (90 s).
+    public int $timeout = 60;
 
     public function __construct(public readonly int $eventId) {}
 

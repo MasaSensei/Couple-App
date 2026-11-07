@@ -23,7 +23,7 @@ use Throwable;
  * even a purge that should not have happened can be undone by an operator
  * until then. The app never deletes a specific object version.
  */
-class PurgeMemoryPhoto implements ShouldQueue, ShouldBeUnique
+class PurgeMemoryPhoto implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 
