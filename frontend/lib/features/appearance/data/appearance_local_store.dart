@@ -20,28 +20,37 @@ class AppearanceLocalStore {
   static const _themeMode = 'appearance.theme_mode.v1';
   static const _reduceMotion = 'appearance.reduce_motion.v1';
 
-  CoupleThemeSettings? readCoupleTheme() => _decode(_coupleTheme, CoupleThemeSettings.fromJson);
+  CoupleThemeSettings? readCoupleTheme() =>
+      _decode(_coupleTheme, CoupleThemeSettings.fromJson);
 
   Future<void> writeCoupleTheme(CoupleThemeSettings settings) =>
       _prefs.setString(_coupleTheme, jsonEncode(settings.toJson()));
 
-  AppearanceCatalog? readCatalog() => _decode(_catalog, AppearanceCatalog.fromJson);
+  AppearanceCatalog? readCatalog() =>
+      _decode(_catalog, AppearanceCatalog.fromJson);
 
-  Future<void> writeCatalog(AppearanceCatalog catalog) => _prefs.setString(_catalog, jsonEncode(catalog.toJson()));
+  Future<void> writeCatalog(AppearanceCatalog catalog) =>
+      _prefs.setString(_catalog, jsonEncode(catalog.toJson()));
 
   /// Highest couple-theme version this user has seen; tells them when the partner changed it.
   int readSeenVersion() => _prefs.getInt(_seenVersion) ?? 0;
 
-  Future<void> writeSeenVersion(int version) => _prefs.setInt(_seenVersion, version);
+  Future<void> writeSeenVersion(int version) =>
+      _prefs.setInt(_seenVersion, version);
 
   ThemeMode readThemeMode() =>
-      ThemeMode.values.where((mode) => mode.name == _prefs.getString(_themeMode)).firstOrNull ?? ThemeMode.system;
+      ThemeMode.values
+          .where((mode) => mode.name == _prefs.getString(_themeMode))
+          .firstOrNull ??
+      ThemeMode.system;
 
-  Future<void> writeThemeMode(ThemeMode mode) => _prefs.setString(_themeMode, mode.name);
+  Future<void> writeThemeMode(ThemeMode mode) =>
+      _prefs.setString(_themeMode, mode.name);
 
   bool readReduceMotion() => _prefs.getBool(_reduceMotion) ?? false;
 
-  Future<void> writeReduceMotion(bool value) => _prefs.setBool(_reduceMotion, value);
+  Future<void> writeReduceMotion(bool value) =>
+      _prefs.setBool(_reduceMotion, value);
 
   /// On logout: the next account on this device must not inherit this couple's theme.
   Future<void> clearCoupleData() async {

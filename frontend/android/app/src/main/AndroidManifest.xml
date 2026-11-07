@@ -1,10 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <application
-        android:label="frontend"
+        android:label="Our Little Space"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="false"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
+        <!-- No cleartext HTTP in release; debug builds re-enable it for the local API (src/debug).
+             No cloud/device-transfer backup: device keys and the session must never leave the device. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

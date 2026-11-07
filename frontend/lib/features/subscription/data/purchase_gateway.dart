@@ -24,13 +24,15 @@ abstract class PurchaseGateway {
 class UnavailablePurchaseGateway implements PurchaseGateway {
   const UnavailablePurchaseGateway();
 
-  static const message = 'In-app purchases are not available in this version yet.';
+  static const message =
+      'In-app purchases are not available in this version yet.';
 
   @override
   String? get provider => null;
 
   @override
-  Future<StorePurchase?> buy(PurchaseIntent intent) async => throw const BillingFailure(message, code: 'provider_unavailable');
+  Future<StorePurchase?> buy(PurchaseIntent intent) async =>
+      throw const BillingFailure(message, code: 'provider_unavailable');
 
   @override
   Future<List<StorePurchase>> restorable() async => const [];
@@ -50,13 +52,19 @@ class MockPurchaseGateway implements PurchaseGateway {
   @override
   Future<StorePurchase?> buy(PurchaseIntent intent) async {
     try {
-      final response = await _apiClient.post('/billing/mock/purchases', data: {
-        'product_id': intent.productId,
-        'account_token': intent.accountToken,
-        'replaces_subscription_id': intent.replacesSubscriptionId,
-      });
+      final response = await _apiClient.post(
+        '/billing/mock/purchases',
+        data: {
+          'product_id': intent.productId,
+          'account_token': intent.accountToken,
+          'replaces_subscription_id': intent.replacesSubscriptionId,
+        },
+      );
       final data = Map<String, dynamic>.from(response.data['data'] as Map);
-      final purchase = StorePurchase(productId: data['product_id'] as String, purchaseToken: data['purchase_token'] as String);
+      final purchase = StorePurchase(
+        productId: data['product_id'] as String,
+        purchaseToken: data['purchase_token'] as String,
+      );
       _bought.add(purchase);
       return purchase;
     } on ApiException catch (error) {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/core/theme/app_theme_tokens.dart';
 
-
 class AppLoading extends StatelessWidget {
   const AppLoading({super.key, this.size = 28});
 

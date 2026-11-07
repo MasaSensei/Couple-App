@@ -20,7 +20,8 @@ class StorageScreen extends ConsumerWidget {
       body: storage == null
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-              onRefresh: () => ref.read(subscriptionControllerProvider.notifier).load(),
+              onRefresh: () =>
+                  ref.read(subscriptionControllerProvider.notifier).load(),
               child: StorageDetails(storage: storage),
             ),
     );
@@ -41,11 +42,28 @@ class StorageDetails extends StatelessWidget {
       children: [
         StorageUsageBar(storage: storage),
         const SizedBox(height: AppSpacing.lg),
-        _Row(label: 'Photos (${storage.photoCount})', value: BillingFormat.bytes(storage.usedBytes)),
-        if (storage.reservedBytes > 0) _Row(label: 'Uploads in progress', value: BillingFormat.bytes(storage.reservedBytes)),
-        if (storage.trashBytes > 0) _Row(label: 'Recently deleted (not counted)', value: BillingFormat.bytes(storage.trashBytes)),
-        _Row(label: 'Your plan’s storage', value: BillingFormat.bytes(storage.limitBytes)),
-        _Row(label: 'Remaining', value: BillingFormat.bytes(storage.remainingBytes)),
+        _Row(
+          label: 'Photos (${storage.photoCount})',
+          value: BillingFormat.bytes(storage.usedBytes),
+        ),
+        if (storage.reservedBytes > 0)
+          _Row(
+            label: 'Uploads in progress',
+            value: BillingFormat.bytes(storage.reservedBytes),
+          ),
+        if (storage.trashBytes > 0)
+          _Row(
+            label: 'Recently deleted (not counted)',
+            value: BillingFormat.bytes(storage.trashBytes),
+          ),
+        _Row(
+          label: 'Your plan’s storage',
+          value: BillingFormat.bytes(storage.limitBytes),
+        ),
+        _Row(
+          label: 'Remaining',
+          value: BillingFormat.bytes(storage.remainingBytes),
+        ),
         const SizedBox(height: AppSpacing.lg),
         Text(
           'Counted: the encrypted size of each photo, once. Our backup copy is never counted against you, '
@@ -63,14 +81,20 @@ class StorageDetails extends StatelessWidget {
                   Text('Your storage is full', style: text.titleMedium),
                   const SizedBox(height: AppSpacing.sm),
                   if (storage.isOverLimit)
-                    const Text('You are above your plan’s storage, for example because a paid plan ended. Nothing was deleted.'),
+                    const Text(
+                      'You are above your plan’s storage, for example because a paid plan ended. Nothing was deleted.',
+                    ),
                   const Text(
                     'You can still open, download and delete every photo and use all your memories. '
                     'Only new photos can’t be added until there is space: delete some photos, or choose a plan with more storage.',
                   ),
                   const SizedBox(height: AppSpacing.md),
                   OutlinedButton(
-                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PlanComparisonScreen())),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const PlanComparisonScreen(),
+                      ),
+                    ),
                     child: const Text('See plans'),
                   ),
                 ],
@@ -91,7 +115,12 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-        child: Row(children: [Expanded(child: Text(label)), Text(value, style: const TextStyle(fontWeight: FontWeight.w600))]),
-      );
+    padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+    child: Row(
+      children: [
+        Expanded(child: Text(label)),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+      ],
+    ),
+  );
 }

@@ -22,7 +22,8 @@ class ThemedBackground extends StatefulWidget {
   State<ThemedBackground> createState() => _ThemedBackgroundState();
 }
 
-class _ThemedBackgroundState extends State<ThemedBackground> with SingleTickerProviderStateMixin {
+class _ThemedBackgroundState extends State<ThemedBackground>
+    with SingleTickerProviderStateMixin {
   AnimationController? _controller;
 
   @override
@@ -39,7 +40,8 @@ class _ThemedBackgroundState extends State<ThemedBackground> with SingleTickerPr
 
   void _syncAnimation() {
     final tokens = widget.tokens ?? context.tokens;
-    final animate = tokens.decorationsEnabled &&
+    final animate =
+        tokens.decorationsEnabled &&
         tokens.animationsEnabled &&
         !MediaQuery.of(context).disableAnimations;
 
@@ -52,7 +54,8 @@ class _ThemedBackgroundState extends State<ThemedBackground> with SingleTickerPr
     final period = tokens.animation.period;
     if (_controller?.duration != period) {
       _controller?.dispose();
-      _controller = AnimationController(vsync: this, duration: period)..repeat();
+      _controller = AnimationController(vsync: this, duration: period)
+        ..repeat();
     }
   }
 
@@ -153,7 +156,8 @@ class ThemeDecorationPainter extends CustomPainter {
           dx = baseX + math.sin((t + phase) * math.pi * 2) * 0.015;
           dy = baseY + math.cos((t + phase) * math.pi * 2) * 0.01;
         case AnimationKind.twinkle:
-          alpha = 0.35 + 0.65 * (0.5 + 0.5 * math.sin((t + phase) * math.pi * 2));
+          alpha =
+              0.35 + 0.65 * (0.5 + 0.5 * math.sin((t + phase) * math.pi * 2));
         case AnimationKind.none:
           break;
       }
@@ -165,7 +169,9 @@ class ThemeDecorationPainter extends CustomPainter {
 
       canvas.save();
       canvas.translate(center.dx, center.dy);
-      canvas.rotate(rotation + (animation == AnimationKind.fall ? t * math.pi : 0));
+      canvas.rotate(
+        rotation + (animation == AnimationKind.fall ? t * math.pi : 0),
+      );
       canvas.scale(scale);
 
       switch (decoration.kind) {
@@ -174,15 +180,26 @@ class ThemeDecorationPainter extends CustomPainter {
         case DecorationKind.snowflakes:
           _snowflake(canvas, paint);
         case DecorationKind.stars:
-          _glowStar(canvas, paint, color.withValues(alpha: decoration.opacity * alpha));
+          _glowStar(
+            canvas,
+            paint,
+            color.withValues(alpha: decoration.opacity * alpha),
+          );
         case DecorationKind.leaves:
-          _leaf(canvas, paint..color = secondaryColor.withValues(alpha: decoration.opacity));
+          _leaf(
+            canvas,
+            paint..color = secondaryColor.withValues(alpha: decoration.opacity),
+          );
         case DecorationKind.coffee:
           i.isEven ? _bean(canvas, paint) : _steam(canvas, paint);
         case DecorationKind.ornaments:
           _sparkle(canvas, paint);
         case DecorationKind.constellations:
-          _glowStar(canvas, paint, color.withValues(alpha: decoration.opacity * alpha));
+          _glowStar(
+            canvas,
+            paint,
+            color.withValues(alpha: decoration.opacity * alpha),
+          );
           if (i % 4 == 0) constellation.add(center);
         default:
           break;
@@ -197,7 +214,8 @@ class ThemeDecorationPainter extends CustomPainter {
         ..strokeWidth = 0.8
         ..style = PaintingStyle.stroke;
       for (var i = 0; i < constellation.length - 1; i++) {
-        if ((constellation[i] - constellation[i + 1]).distance < size.shortestSide * 0.45) {
+        if ((constellation[i] - constellation[i + 1]).distance <
+            size.shortestSide * 0.45) {
           canvas.drawLine(constellation[i], constellation[i + 1], line);
         }
       }
@@ -229,7 +247,9 @@ class ThemeDecorationPainter extends CustomPainter {
     canvas.drawCircle(
       Offset.zero,
       6,
-      Paint()..shader = RadialGradient(colors: [core, core.withValues(alpha: 0)]).createShader(Rect.fromCircle(center: Offset.zero, radius: 6)),
+      Paint()
+        ..shader = RadialGradient(colors: [core, core.withValues(alpha: 0)])
+            .createShader(Rect.fromCircle(center: Offset.zero, radius: 6)),
     );
     canvas.drawCircle(Offset.zero, 1.3, paint);
   }
@@ -309,7 +329,9 @@ class ThemeDecorationPainter extends CustomPainter {
         ..quadraticBezierTo(8, 8, r, 8)
         ..moveTo(16, r * 0.7)
         ..quadraticBezierTo(16, 16, r * 0.7, 16)
-        ..addOval(Rect.fromCircle(center: Offset(r * 0.35, r * 0.35), radius: 3));
+        ..addOval(
+          Rect.fromCircle(center: Offset(r * 0.35, r * 0.35), radius: 3),
+        );
       canvas.drawPath(path, paint);
       canvas.restore();
     }
@@ -318,20 +340,36 @@ class ThemeDecorationPainter extends CustomPainter {
   void _moon(Canvas canvas, Size size) {
     final center = Offset(size.width * 0.82, size.height * 0.1);
     final radius = size.shortestSide * 0.06;
-    final paint = Paint()..color = color.withValues(alpha: decoration.opacity * 0.8);
+    final paint = Paint()
+      ..color = color.withValues(alpha: decoration.opacity * 0.8);
     final moon = Path.combine(
       PathOperation.difference,
       Path()..addOval(Rect.fromCircle(center: center, radius: radius)),
-      Path()..addOval(Rect.fromCircle(center: center + Offset(radius * 0.45, -radius * 0.2), radius: radius)),
+      Path()..addOval(
+        Rect.fromCircle(
+          center: center + Offset(radius * 0.45, -radius * 0.2),
+          radius: radius,
+        ),
+      ),
     );
     canvas.drawPath(moon, paint);
   }
 
   void _filmGrain(Canvas canvas, Size size, math.Random random) {
-    final grain = Paint()..color = secondaryColor.withValues(alpha: decoration.opacity);
-    final dots = (size.width * size.height / 900 * decoration.density).clamp(0, 2500).round();
+    final grain = Paint()
+      ..color = secondaryColor.withValues(alpha: decoration.opacity);
+    final dots = (size.width * size.height / 900 * decoration.density)
+        .clamp(0, 2500)
+        .round();
     for (var i = 0; i < dots; i++) {
-      canvas.drawCircle(Offset(random.nextDouble() * size.width, random.nextDouble() * size.height), 0.6, grain);
+      canvas.drawCircle(
+        Offset(
+          random.nextDouble() * size.width,
+          random.nextDouble() * size.height,
+        ),
+        0.6,
+        grain,
+      );
     }
 
     // Vignette: darker edges like an old print.
@@ -341,7 +379,10 @@ class ThemeDecorationPainter extends CustomPainter {
       Paint()
         ..shader = RadialGradient(
           radius: 0.95,
-          colors: [Colors.transparent, secondaryColor.withValues(alpha: decoration.opacity * 1.6)],
+          colors: [
+            Colors.transparent,
+            secondaryColor.withValues(alpha: decoration.opacity * 1.6),
+          ],
           stops: const [0.72, 1.0],
         ).createShader(rect),
     );
@@ -349,5 +390,8 @@ class ThemeDecorationPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant ThemeDecorationPainter old) =>
-      old.decoration != decoration || old.color != color || old.secondaryColor != secondaryColor || old.animation != animation;
+      old.decoration != decoration ||
+      old.color != color ||
+      old.secondaryColor != secondaryColor ||
+      old.animation != animation;
 }

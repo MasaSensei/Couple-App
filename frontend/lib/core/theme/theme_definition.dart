@@ -84,7 +84,13 @@ class ThemePalette {
   final Color success;
   final Color error;
 
-  ThemePalette copyWith({Color? primary, Color? onPrimary, Color? accent, Color? background, Color? surface}) {
+  ThemePalette copyWith({
+    Color? primary,
+    Color? onPrimary,
+    Color? accent,
+    Color? background,
+    Color? surface,
+  }) {
     return ThemePalette(
       brightness: brightness,
       primary: primary ?? this.primary,
@@ -142,13 +148,30 @@ class ThemeComponentStyle {
 }
 
 /// Background ornament painted behind content (see `theme_decorations.dart`).
-enum DecorationKind { none, petals, snowflakes, stars, filmGrain, ornaments, leaves, coffee, constellations }
+enum DecorationKind {
+  none,
+  petals,
+  snowflakes,
+  stars,
+  filmGrain,
+  ornaments,
+  leaves,
+  coffee,
+  constellations,
+}
 
 @immutable
 class ThemeDecoration {
-  const ThemeDecoration({required this.kind, this.density = 1.0, this.opacity = 0.18});
+  const ThemeDecoration({
+    required this.kind,
+    this.density = 1.0,
+    this.opacity = 0.18,
+  });
 
-  const ThemeDecoration.none() : kind = DecorationKind.none, density = 0, opacity = 0;
+  const ThemeDecoration.none()
+    : kind = DecorationKind.none,
+      density = 0,
+      opacity = 0;
 
   final DecorationKind kind;
 
@@ -163,9 +186,14 @@ enum AnimationKind { none, drift, twinkle, fall }
 
 @immutable
 class ThemeAnimation {
-  const ThemeAnimation({required this.kind, this.period = const Duration(seconds: 24)});
+  const ThemeAnimation({
+    required this.kind,
+    this.period = const Duration(seconds: 24),
+  });
 
-  const ThemeAnimation.none() : kind = AnimationKind.none, period = Duration.zero;
+  const ThemeAnimation.none()
+    : kind = AnimationKind.none,
+      period = Duration.zero;
 
   final AnimationKind kind;
   final Duration period;
@@ -175,7 +203,13 @@ class ThemeAnimation {
 
 @immutable
 class AccentPreset {
-  const AccentPreset({required this.key, required this.label, required this.primary, this.onPrimary = Colors.white, this.darkPrimary});
+  const AccentPreset({
+    required this.key,
+    required this.label,
+    required this.primary,
+    this.onPrimary = Colors.white,
+    this.darkPrimary,
+  });
 
   final String key;
   final String label;
@@ -188,7 +222,14 @@ class AccentPreset {
 
 @immutable
 class BackgroundPreset {
-  const BackgroundPreset({required this.key, required this.label, required this.background, required this.surface, this.darkBackground, this.darkSurface});
+  const BackgroundPreset({
+    required this.key,
+    required this.label,
+    required this.background,
+    required this.surface,
+    this.darkBackground,
+    this.darkSurface,
+  });
 
   final String key;
   final String label;
@@ -200,7 +241,12 @@ class BackgroundPreset {
 
 @immutable
 class FontPreset {
-  const FontPreset({required this.key, required this.label, this.displayFamily, this.bodyFamily});
+  const FontPreset({
+    required this.key,
+    required this.label,
+    this.displayFamily,
+    this.bodyFamily,
+  });
 
   final String key;
   final String label;

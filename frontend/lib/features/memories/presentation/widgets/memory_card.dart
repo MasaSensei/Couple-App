@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../data/models/memory_model.dart';
+
 import 'package:frontend/core/theme/app_theme_tokens.dart';
 import 'package:frontend/core/theme/theme_customization.dart';
 
@@ -27,7 +28,9 @@ class MemoryCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(radius),
-        side: t.memoryStyle == MemoryStyle.minimal || !t.cardBorder ? BorderSide.none : BorderSide(color: t.border),
+        side: t.memoryStyle == MemoryStyle.minimal || !t.cardBorder
+            ? BorderSide.none
+            : BorderSide(color: t.border),
       ),
       child: InkWell(
         onTap: onTap,

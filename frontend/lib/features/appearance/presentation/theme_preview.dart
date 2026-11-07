@@ -25,11 +25,19 @@ class ThemeScope extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final data = AppTheme.build(definition, Theme.of(context).brightness, customization: customization);
+    final data = AppTheme.build(
+      definition,
+      Theme.of(context).brightness,
+      customization: customization,
+    );
     final tokens = data.extension<AppThemeTokens>()!;
 
     return Theme(
-      data: animate ? data : data.copyWith(extensions: [tokens.copyWith(animationsEnabled: false)]),
+      data: animate
+          ? data
+          : data.copyWith(
+              extensions: [tokens.copyWith(animationsEnabled: false)],
+            ),
       child: child,
     );
   }
@@ -54,21 +62,40 @@ class ThemePreview extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Our Little Space', style: t.title.copyWith(fontSize: t.title.fontSize! * scale), maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(
+                'Our Little Space',
+                style: t.title.copyWith(fontSize: t.title.fontSize! * scale),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               SizedBox(height: 4 * scale),
-              Text('Hello, love ♡', style: t.subtitle.copyWith(fontSize: t.subtitle.fontSize! * scale), maxLines: 1),
+              Text(
+                'Hello, love ♡',
+                style: t.subtitle.copyWith(
+                  fontSize: t.subtitle.fontSize! * scale,
+                ),
+                maxLines: 1,
+              ),
               SizedBox(height: 12 * scale),
               _MemoryPreviewCard(scale: scale),
               const Spacer(),
               Align(
                 alignment: Alignment.centerRight,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16 * scale, vertical: 8 * scale),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16 * scale,
+                    vertical: 8 * scale,
+                  ),
                   decoration: BoxDecoration(
                     color: t.primary,
                     borderRadius: BorderRadius.circular(t.buttonRadius * scale),
                   ),
-                  child: Text('Add memory', style: t.button.copyWith(fontSize: t.button.fontSize! * scale)),
+                  child: Text(
+                    'Add memory',
+                    style: t.button.copyWith(
+                      fontSize: t.button.fontSize! * scale,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -91,19 +118,35 @@ class _MemoryPreviewCard extends StatelessWidget {
       height: 64 * scale,
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: [t.secondary, t.accent]),
-        borderRadius: BorderRadius.circular(t.memoryStyle == MemoryStyle.minimal ? 0 : 10 * scale),
+        borderRadius: BorderRadius.circular(
+          t.memoryStyle == MemoryStyle.minimal ? 0 : 10 * scale,
+        ),
       ),
-      child: Icon(Icons.favorite_rounded, color: t.surface.withValues(alpha: 0.85), size: 24 * scale),
+      child: Icon(
+        Icons.favorite_rounded,
+        color: t.surface.withValues(alpha: 0.85),
+        size: 24 * scale,
+      ),
     );
 
     return Container(
-      padding: EdgeInsets.all((t.memoryStyle == MemoryStyle.polaroid ? 8 : 10) * scale),
+      padding: EdgeInsets.all(
+        (t.memoryStyle == MemoryStyle.polaroid ? 8 : 10) * scale,
+      ),
       decoration: BoxDecoration(
         color: t.surface,
-        borderRadius: BorderRadius.circular((t.memoryStyle == MemoryStyle.polaroid ? 4 : t.cardRadius) * scale),
+        borderRadius: BorderRadius.circular(
+          (t.memoryStyle == MemoryStyle.polaroid ? 4 : t.cardRadius) * scale,
+        ),
         border: t.cardBorder ? Border.all(color: t.border) : null,
         boxShadow: t.cardElevation > 0 || t.memoryStyle == MemoryStyle.polaroid
-            ? [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 6 * scale, offset: Offset(0, 2 * scale))]
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 6 * scale,
+                  offset: Offset(0, 2 * scale),
+                ),
+              ]
             : null,
       ),
       child: Column(
@@ -111,7 +154,14 @@ class _MemoryPreviewCard extends StatelessWidget {
         children: [
           photo,
           SizedBox(height: 6 * scale),
-          Text('Our first date', style: t.body.copyWith(fontSize: t.body.fontSize! * scale, fontWeight: FontWeight.w600), maxLines: 1),
+          Text(
+            'Our first date',
+            style: t.body.copyWith(
+              fontSize: t.body.fontSize! * scale,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+          ),
         ],
       ),
     );

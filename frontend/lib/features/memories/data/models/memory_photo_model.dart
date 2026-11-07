@@ -25,6 +25,7 @@ class MemoryPhotoModel {
 
   final int id;
   final int memoryId;
+
   /// Null once the uploader's account has been deleted; the photo stays.
   final int? uploadedBy;
 

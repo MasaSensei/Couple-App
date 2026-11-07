@@ -34,9 +34,14 @@ abstract final class ThemeRegistry {
     photoBoothTemplates: {'classic_2', 'classic_3', 'classic_4', 'polaroid'},
   );
 
-  static final List<ThemeDefinition> all = List.unmodifiable([defaultTheme, ...builtInThemes]);
+  static final List<ThemeDefinition> all = List.unmodifiable([
+    defaultTheme,
+    ...builtInThemes,
+  ]);
 
-  static final Map<String, ThemeDefinition> _byKey = {for (final theme in all) theme.key: theme};
+  static final Map<String, ThemeDefinition> _byKey = {
+    for (final theme in all) theme.key: theme,
+  };
 
   static ThemeDefinition byKey(String? key) => _byKey[key] ?? defaultTheme;
 

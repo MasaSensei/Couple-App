@@ -18,23 +18,45 @@ void main() {
     final c = await container(repo);
     final controller = c.read(appearanceControllerProvider.notifier);
 
-    final outcome = await controller.apply('sakura', const ThemeCustomization(accent: 'plum'));
+    final outcome = await controller.apply(
+      'sakura',
+      const ThemeCustomization(accent: 'plum'),
+    );
 
     expect(outcome, ApplyOutcome.applied);
     expect(c.read(appearanceControllerProvider).settings.themeKey, 'sakura');
     expect(repo.server.customization.accent, 'plum');
-    expect(c.read(appThemeDataProvider(Brightness.light)).extension<AppThemeTokens>()!.themeKey, 'sakura');
+    expect(
+      c
+          .read(appThemeDataProvider(Brightness.light))
+          .extension<AppThemeTokens>()!
+          .themeKey,
+      'sakura',
+    );
   });
 
   test('the theme survives an app restart (read from the cache before the network)', () async {
     final repo = FakeAppearanceRepository();
-    await (await container(repo)).read(appearanceControllerProvider.notifier).apply('cottage', ThemeCustomization.defaults);
+    await (await container(repo))
+        .read(appearanceControllerProvider.notifier)
+        .apply('cottage', ThemeCustomization.defaults);
 
     // New process: server unreachable, cache still applies.
-    final restarted = await container(FakeAppearanceRepository()..offline = true);
+    final restarted = await container(
+      FakeAppearanceRepository()..offline = true,
+    );
 
-    expect(restarted.read(appearanceControllerProvider).settings.themeKey, 'cottage');
-    expect(restarted.read(appThemeDataProvider(Brightness.light)).extension<AppThemeTokens>()!.themeKey, 'cottage');
+    expect(
+      restarted.read(appearanceControllerProvider).settings.themeKey,
+      'cottage',
+    );
+    expect(
+      restarted
+          .read(appThemeDataProvider(Brightness.light))
+          .extension<AppThemeTokens>()!
+          .themeKey,
+      'cottage',
+    );
   });
 
   test('an API failure leaves the current theme untouched', () async {
@@ -60,7 +82,10 @@ void main() {
     await controller.refresh(); // both partners see version 0
 
     repo.partnerSaves('winter_love');
-    final outcome = await controller.apply('sakura', ThemeCustomization.defaults);
+    final outcome = await controller.apply(
+      'sakura',
+      ThemeCustomization.defaults,
+    );
 
     expect(outcome, ApplyOutcome.conflict);
     expect(repo.server.themeKey, 'winter_love');
@@ -70,26 +95,35 @@ void main() {
     expect(state.partnerChanged, isTrue);
 
     // Re-applying on top of the partner's version works.
-    expect(await controller.apply('sakura', ThemeCustomization.defaults), ApplyOutcome.applied);
+    expect(
+      await controller.apply('sakura', ThemeCustomization.defaults),
+      ApplyOutcome.applied,
+    );
     expect(c.read(appearanceControllerProvider).partnerChanged, isFalse);
   });
 
-  test('the partner\'s change is picked up on refresh and announced once', () async {
-    final repo = FakeAppearanceRepository();
-    final c = await container(repo);
-    final controller = c.read(appearanceControllerProvider.notifier);
-    await controller.apply('sakura', ThemeCustomization.defaults);
+  test(
+    'the partner\'s change is picked up on refresh and announced once',
+    () async {
+      final repo = FakeAppearanceRepository();
+      final c = await container(repo);
+      final controller = c.read(appearanceControllerProvider.notifier);
+      await controller.apply('sakura', ThemeCustomization.defaults);
 
-    repo.partnerSaves('starry_night');
-    await controller.refresh();
+      repo.partnerSaves('starry_night');
+      await controller.refresh();
 
-    expect(c.read(appearanceControllerProvider).settings.themeKey, 'starry_night');
-    expect(c.read(appearanceControllerProvider).partnerChanged, isTrue);
+      expect(
+        c.read(appearanceControllerProvider).settings.themeKey,
+        'starry_night',
+      );
+      expect(c.read(appearanceControllerProvider).partnerChanged, isTrue);
 
-    controller.acknowledgePartnerChange();
-    await controller.refresh();
-    expect(c.read(appearanceControllerProvider).partnerChanged, isFalse);
-  });
+      controller.acknowledgePartnerChange();
+      await controller.refresh();
+      expect(c.read(appearanceControllerProvider).partnerChanged, isFalse);
+    },
+  );
 
   test('a new device adopts the shared theme silently', () async {
     final repo = FakeAppearanceRepository()..partnerSaves('cafe');
@@ -105,7 +139,10 @@ void main() {
     final repo = FakeAppearanceRepository();
     final c = await container(repo);
     final controller = c.read(appearanceControllerProvider.notifier);
-    await controller.apply('cottage', const ThemeCustomization(accent: 'terracotta', decorations: false));
+    await controller.apply(
+      'cottage',
+      const ThemeCustomization(accent: 'terracotta', decorations: false),
+    );
 
     expect(await controller.resetCustomization(), ApplyOutcome.applied);
 
@@ -114,21 +151,33 @@ void main() {
     expect(settings.customization, ThemeCustomization.defaults);
   });
 
-  test('personal preferences stay local and never touch the shared theme', () async {
-    final repo = FakeAppearanceRepository();
-    final c = await container(repo);
-    final controller = c.read(appearanceControllerProvider.notifier);
-    await controller.apply('sakura', ThemeCustomization.defaults);
+  test(
+    'personal preferences stay local and never touch the shared theme',
+    () async {
+      final repo = FakeAppearanceRepository();
+      final c = await container(repo);
+      final controller = c.read(appearanceControllerProvider.notifier);
+      await controller.apply('sakura', ThemeCustomization.defaults);
 
-    await controller.setThemeMode(ThemeMode.dark);
-    await controller.setReduceMotion(true);
+      await controller.setThemeMode(ThemeMode.dark);
+      await controller.setReduceMotion(true);
 
-    expect(repo.writes, 1);
-    final restarted = await container(repo);
-    expect(restarted.read(appearanceControllerProvider).themeMode, ThemeMode.dark);
-    final tokens = restarted.read(appThemeDataProvider(Brightness.light)).extension<AppThemeTokens>()!;
-    expect(tokens.animationsEnabled, isFalse, reason: 'reduce motion switches theme animation off on this device');
-  });
+      expect(repo.writes, 1);
+      final restarted = await container(repo);
+      expect(
+        restarted.read(appearanceControllerProvider).themeMode,
+        ThemeMode.dark,
+      );
+      final tokens = restarted
+          .read(appThemeDataProvider(Brightness.light))
+          .extension<AppThemeTokens>()!;
+      expect(
+        tokens.animationsEnabled,
+        isFalse,
+        reason: 'reduce motion switches theme animation off on this device',
+      );
+    },
+  );
 
   test('logging out clears the couple theme from the device', () async {
     final repo = FakeAppearanceRepository();
@@ -136,18 +185,28 @@ void main() {
     final controller = c.read(appearanceControllerProvider.notifier);
     await controller.apply('midnight', ThemeCustomization.defaults);
 
-    (c.read(authNotifierProvider.notifier) as FakeAuthNotifier).set(const AuthState.unauthenticated());
+    (c.read(authNotifierProvider.notifier) as FakeAuthNotifier).set(
+      const AuthState.unauthenticated(),
+    );
     await Future<void>.delayed(Duration.zero);
 
-    expect(c.read(appearanceControllerProvider).settings.themeKey, 'classic_rose');
+    expect(
+      c.read(appearanceControllerProvider).settings.themeKey,
+      'classic_rose',
+    );
     final prefs = await SharedPreferences.getInstance();
     expect(AppearanceLocalStore(prefs).readCoupleTheme(), isNull);
   });
 
   test('a corrupt cache falls back to the default theme', () async {
-    SharedPreferences.setMockInitialValues({'appearance.couple_theme.v1': '{not json'});
+    SharedPreferences.setMockInitialValues({
+      'appearance.couple_theme.v1': '{not json',
+    });
     final c = await container(FakeAppearanceRepository()..offline = true);
 
-    expect(c.read(appearanceControllerProvider).settings.themeKey, 'classic_rose');
+    expect(
+      c.read(appearanceControllerProvider).settings.themeKey,
+      'classic_rose',
+    );
   });
 }

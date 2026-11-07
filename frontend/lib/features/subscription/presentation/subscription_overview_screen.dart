@@ -15,14 +15,18 @@ class SubscriptionOverviewScreen extends ConsumerStatefulWidget {
   const SubscriptionOverviewScreen({super.key});
 
   @override
-  ConsumerState<SubscriptionOverviewScreen> createState() => _SubscriptionOverviewScreenState();
+  ConsumerState<SubscriptionOverviewScreen> createState() =>
+      _SubscriptionOverviewScreenState();
 }
 
-class _SubscriptionOverviewScreenState extends ConsumerState<SubscriptionOverviewScreen> {
+class _SubscriptionOverviewScreenState
+    extends ConsumerState<SubscriptionOverviewScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(subscriptionControllerProvider.notifier).load());
+    Future.microtask(
+      () => ref.read(subscriptionControllerProvider.notifier).load(),
+    );
   }
 
   @override
@@ -37,63 +41,85 @@ class _SubscriptionOverviewScreenState extends ConsumerState<SubscriptionOvervie
         (null, _, final String error) => _Error(message: error),
         (null, _, _) => const Center(child: CircularProgressIndicator()),
         (final SubscriptionOverview overview, _, _) => RefreshIndicator(
-            onRefresh: () => ref.read(subscriptionControllerProvider.notifier).load(),
-            child: ListView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              children: [
-                _CurrentPlanCard(overview: overview, plan: state.currentPlan),
-                const SizedBox(height: AppSpacing.md),
-                Card(
-                  child: InkWell(
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StorageScreen())),
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(children: [
-                            Expanded(child: Text('Photo storage', style: Theme.of(context).textTheme.titleMedium)),
+          onRefresh: () =>
+              ref.read(subscriptionControllerProvider.notifier).load(),
+          child: ListView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            children: [
+              _CurrentPlanCard(overview: overview, plan: state.currentPlan),
+              const SizedBox(height: AppSpacing.md),
+              Card(
+                child: InkWell(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const StorageScreen()),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Photo storage',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                            ),
                             const Icon(Icons.chevron_right_rounded),
-                          ]),
-                          const SizedBox(height: AppSpacing.md),
-                          StorageUsageBar(storage: overview.storage),
-                        ],
-                      ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        StorageUsageBar(storage: overview.storage),
+                      ],
                     ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.md),
-                if (state.currentPlan != null)
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Your benefits', style: Theme.of(context).textTheme.titleMedium),
-                          const SizedBox(height: AppSpacing.sm),
-                          for (final feature in state.currentPlan!.features) FeatureRow(feature: feature),
-                        ],
-                      ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              if (state.currentPlan != null)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Your benefits',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        for (final feature in state.currentPlan!.features)
+                          FeatureRow(feature: feature),
+                      ],
                     ),
                   ),
-                const SizedBox(height: AppSpacing.lg),
-                FilledButton.icon(
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PlanComparisonScreen())),
-                  icon: const Icon(Icons.compare_arrows_rounded),
-                  label: const Text('Compare plans'),
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SubscriptionManagementScreen())),
-                  icon: const Icon(Icons.manage_accounts_outlined),
-                  label: const Text('Manage subscription'),
+              const SizedBox(height: AppSpacing.lg),
+              FilledButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const PlanComparisonScreen(),
+                  ),
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                const AlwaysIncludedNote(),
-              ],
-            ),
+                icon: const Icon(Icons.compare_arrows_rounded),
+                label: const Text('Compare plans'),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const SubscriptionManagementScreen(),
+                  ),
+                ),
+                icon: const Icon(Icons.manage_accounts_outlined),
+                label: const Text('Manage subscription'),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              const AlwaysIncludedNote(),
+            ],
           ),
+        ),
       },
     );
   }
@@ -125,23 +151,23 @@ class _CurrentPlanCard extends StatelessWidget {
               const Text('Free — no payment, no renewal.')
             else ...[
               Chip(label: Text(BillingFormat.status(subscription.status))),
-              Text(BillingFormat.priceWithInterval(
-                subscription.priceAmount,
-                subscription.currency,
-                subscription.billingInterval,
-                subscription.billingIntervalCount,
-              )),
+              Text(
+                BillingFormat.priceWithInterval(
+                  subscription.priceAmount,
+                  subscription.currency,
+                  subscription.billingInterval,
+                  subscription.billingIntervalCount,
+                ),
+              ),
               const SizedBox(height: AppSpacing.xs),
               Text(renewalLine(subscription)),
               const SizedBox(height: AppSpacing.xs),
-              Text(
-                switch (subscription.startedBy) {
-                  'me' => 'You started this subscription; it is billed to your store account.',
-                  'support' => 'Granted by support. It does not renew or charge anyone.',
-                  _ => 'Started by your partner. You both get every benefit.',
-                },
-                style: text.bodySmall,
-              ),
+              Text(switch (subscription.startedBy) {
+                'me' => 'You started this subscription; it is billed to your store account.',
+                'support' =>
+                  'Granted by support. It does not renew or charge anyone.',
+                _ => 'Started by your partner. You both get every benefit.',
+              }, style: text.bodySmall),
             ],
           ],
         ),
@@ -155,12 +181,15 @@ String renewalLine(CoupleSubscription s) {
   String on(DateTime? d) => d == null ? '' : ' on ${BillingFormat.date(d)}';
 
   return switch (s.status) {
-    'active' when s.autoRenew => 'Renews automatically${on(s.renewsAt)}. You can cancel anytime.',
+    'active' when s.autoRenew =>
+      'Renews automatically${on(s.renewsAt)}. You can cancel anytime.',
     'active' => 'Benefits end${on(s.benefitsEndAt)}. It will not renew.',
-    'cancelled' => s.benefitsEndAt == null
-        ? 'Auto-renew is off. Benefits continue until the paid period ends, then you move to Free. Nothing is deleted.'
-        : 'Auto-renew is off. Benefits continue until ${BillingFormat.date(s.benefitsEndAt!)}, then you move to Free. Nothing is deleted.',
-    'grace_period' => 'The store could not take the last payment. Update your payment method in the store${s.graceEndsAt == null ? '' : ' before ${BillingFormat.date(s.graceEndsAt!)}'}.',
+    'cancelled' =>
+      s.benefitsEndAt == null
+          ? 'Auto-renew is off. Benefits continue until the paid period ends, then you move to Free. Nothing is deleted.'
+          : 'Auto-renew is off. Benefits continue until ${BillingFormat.date(s.benefitsEndAt!)}, then you move to Free. Nothing is deleted.',
+    'grace_period' =>
+      'The store could not take the last payment. Update your payment method in the store${s.graceEndsAt == null ? '' : ' before ${BillingFormat.date(s.graceEndsAt!)}'}.',
     'payment_failed' => 'Payment failed. Paid benefits are paused until the payment method is fixed in the store. Your photos are safe.',
     'suspended' => 'Paused. Your photos and memories are untouched.',
     'pending' => 'Waiting for the store to confirm the payment.',
@@ -175,13 +204,16 @@ class _Error extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.cloud_off_rounded, size: 48),
-            const SizedBox(height: AppSpacing.md),
-            Text(message, textAlign: TextAlign.center),
-          ]),
-        ),
-      );
+    child: Padding(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.cloud_off_rounded, size: 48),
+          const SizedBox(height: AppSpacing.md),
+          Text(message, textAlign: TextAlign.center),
+        ],
+      ),
+    ),
+  );
 }

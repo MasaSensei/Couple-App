@@ -65,6 +65,43 @@ class AuthRepository {
     }
   }
 
+  /// Exchanges the current token for a fresh one (the old one stops working).
+  Future<AuthTokenModel> refreshToken() async {
+    try {
+      final response = await _apiClient.dio.post('/auth/refresh');
+      return AuthTokenModel.fromJson(
+        response.data['data'] as Map<String, dynamic>,
+      );
+    } on DioException catch (error) {
+      throw ApiErrorHandler.handle(error);
+    }
+  }
+
+  /// Permanently deletes the account. Requires the current password.
+  /// Returns what happened to the couple space: none | kept_by_partner | dissolved.
+  Future<String> deleteAccount({required String password}) async {
+    try {
+      final response = await _apiClient.dio.delete(
+        '/me',
+        data: {'password': password},
+      );
+      final data = response.data['data'] as Map<String, dynamic>;
+      return data['couple'] as String;
+    } on DioException catch (error) {
+      throw ApiErrorHandler.handle(error);
+    }
+  }
+
+  /// Machine-readable copy of the account's data (JSON).
+  Future<Map<String, dynamic>> exportData() async {
+    try {
+      final response = await _apiClient.dio.get('/me/export');
+      return response.data['data'] as Map<String, dynamic>;
+    } on DioException catch (error) {
+      throw ApiErrorHandler.handle(error);
+    }
+  }
+
   Future<void> logout() async {
     try {
       await _apiClient.dio.post('/auth/logout');

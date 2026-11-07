@@ -15,7 +15,8 @@ class DateModel {
 
   final int id;
   final int coupleId;
-  final int createdBy;
+  // Null once the author deleted their account (content stays with the partner).
+  final int? createdBy;
 
   final String title;
   final String? description;
@@ -33,7 +34,7 @@ class DateModel {
     return DateModel(
       id: json['id'] as int,
       coupleId: json['couple_id'] as int,
-      createdBy: json['created_by'] as int,
+      createdBy: json['created_by'] as int?,
       title: json['title'] as String,
       description: json['description'] as String?,
       location: json['location'] as String?,

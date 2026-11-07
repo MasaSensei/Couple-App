@@ -25,9 +25,7 @@ void main() {
   });
 
   test('strips EXIF metadata including GPS', () async {
-    final prepared = await service.prepare(
-      _jpegWithGps(width: 32, height: 32),
-    );
+    final prepared = await service.prepare(_jpegWithGps(width: 32, height: 32));
 
     final decoded = img.decodeJpg(prepared.bytes)!;
 
@@ -48,9 +46,7 @@ void main() {
   });
 
   test('keeps small photos at their size and outputs JPEG', () async {
-    final prepared = await service.prepare(
-      _jpegWithGps(width: 40, height: 20),
-    );
+    final prepared = await service.prepare(_jpegWithGps(width: 40, height: 20));
 
     expect(prepared.width, 40);
     expect(prepared.height, 20);

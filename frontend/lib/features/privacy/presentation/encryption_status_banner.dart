@@ -43,9 +43,8 @@ class EncryptionStatusBanner extends ConsumerWidget {
         title: Text(text!),
         trailing: const Icon(Icons.chevron_right_rounded),
         onTap: () async {
-          await Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => screen));
+          await Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => screen));
           ref.invalidate(encryptionStatusProvider);
         },
       ),

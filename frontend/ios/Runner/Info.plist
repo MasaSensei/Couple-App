@@ -7,7 +7,20 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Frontend</string>
+	<string>Our Little Space</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Take photos for your shared memories and the Photo Booth. Photos are encrypted on your device before upload.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose photos to add to your shared memories. Photos are encrypted on your device before upload.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Save Photo Booth prints to your photo library when you choose to.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- HTTPS everywhere; only the local network is allowed over HTTP (simulator + local dev API). -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

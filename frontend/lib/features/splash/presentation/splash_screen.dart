@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../auth/providers/auth_providers.dart';
+import '../../auth/providers/auth_state.dart';
+
 import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -55,22 +57,47 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             ),
 
             Positioned(
-              left: 0,
-              right: 0,
+              left: AppSpacing.lg,
+              right: AppSpacing.lg,
               bottom: AppSpacing.lg,
-              child: Center(
-                child: SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: context.tokens.primary,
-                  ),
-                ),
-              ),
+              child: Center(child: _buildStatus(context)),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Spinner while checking the session; message + retry when the server
+  /// could not be reached (the saved session is kept).
+  Widget _buildStatus(BuildContext context) {
+    final auth = ref.watch(authNotifierProvider);
+
+    if (auth.status == AuthStatus.error) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            auth.message ?? 'Something went wrong.',
+            style: context.tokens.subtitle,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          TextButton(
+            onPressed: () =>
+                ref.read(authNotifierProvider.notifier).checkAuth(),
+            child: const Text('Try again'),
+          ),
+        ],
+      );
+    }
+
+    return SizedBox(
+      width: 28,
+      height: 28,
+      child: CircularProgressIndicator(
+        strokeWidth: 2.5,
+        color: context.tokens.primary,
       ),
     );
   }
@@ -84,7 +111,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         shape: BoxShape.circle,
       ),
       child: Center(
-        child: Icon(Icons.favorite_rounded, size: 52, color: context.tokens.primary),
+        child: Icon(
+          Icons.favorite_rounded,
+          size: 52,
+          color: context.tokens.primary,
+        ),
       ),
     );
   }

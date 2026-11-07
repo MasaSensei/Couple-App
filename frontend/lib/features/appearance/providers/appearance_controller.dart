@@ -16,15 +16,25 @@ import '../data/appearance_repository.dart';
 /// Overridden in `main()` with the real SharedPreferences instance, so the
 /// cached theme is available synchronously on the very first frame.
 final appearanceLocalStoreProvider = Provider<AppearanceLocalStore>(
-  (ref) => throw UnimplementedError('appearanceLocalStoreProvider must be overridden in main()'),
+  (ref) => throw UnimplementedError(
+    'appearanceLocalStoreProvider must be overridden in main()',
+  ),
 );
 
-final appearanceRepositoryProvider = Provider<AppearanceRepository>((ref) => AppearanceRepository(ApiClient()));
+final appearanceRepositoryProvider = Provider<AppearanceRepository>(
+  (ref) => AppearanceRepository(ApiClient()),
+);
 
-final appearanceControllerProvider = NotifierProvider<AppearanceController, AppearanceState>(AppearanceController.new);
+final appearanceControllerProvider =
+    NotifierProvider<AppearanceController, AppearanceState>(
+      AppearanceController.new,
+    );
 
 /// ThemeData for the active couple theme, per brightness.
-final appThemeDataProvider = Provider.family<ThemeData, Brightness>((ref, brightness) {
+final appThemeDataProvider = Provider.family<ThemeData, Brightness>((
+  ref,
+  brightness,
+) {
   final state = ref.watch(appearanceControllerProvider);
   final theme = AppTheme.build(
     ThemeRegistry.byKey(state.settings.themeKey),
@@ -35,7 +45,9 @@ final appThemeDataProvider = Provider.family<ThemeData, Brightness>((ref, bright
   if (!state.reduceMotion) return theme;
 
   // Personal "reduce motion" switches off theme animation on this device only.
-  final tokens = theme.extension<AppThemeTokens>()!.copyWith(animationsEnabled: false);
+  final tokens = theme.extension<AppThemeTokens>()!.copyWith(
+    animationsEnabled: false,
+  );
   return theme.copyWith(extensions: [tokens]);
 });
 
@@ -73,15 +85,14 @@ class AppearanceState {
     bool? reduceMotion,
     bool? saving,
     bool? partnerChanged,
-  }) =>
-      AppearanceState(
-        settings: settings ?? this.settings,
-        catalog: catalog ?? this.catalog,
-        themeMode: themeMode ?? this.themeMode,
-        reduceMotion: reduceMotion ?? this.reduceMotion,
-        saving: saving ?? this.saving,
-        partnerChanged: partnerChanged ?? this.partnerChanged,
-      );
+  }) => AppearanceState(
+    settings: settings ?? this.settings,
+    catalog: catalog ?? this.catalog,
+    themeMode: themeMode ?? this.themeMode,
+    reduceMotion: reduceMotion ?? this.reduceMotion,
+    saving: saving ?? this.saving,
+    partnerChanged: partnerChanged ?? this.partnerChanged,
+  );
 }
 
 /// Owns the shared couple theme and the personal preferences.
@@ -92,14 +103,17 @@ class AppearanceState {
 /// partner's newer choice is adopted and the user is told.
 class AppearanceController extends Notifier<AppearanceState> {
   AppearanceLocalStore get _store => ref.read(appearanceLocalStoreProvider);
-  AppearanceRepository get _repository => ref.read(appearanceRepositoryProvider);
+  AppearanceRepository get _repository =>
+      ref.read(appearanceRepositoryProvider);
 
   @override
   AppearanceState build() {
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
-      if (next.status == AuthStatus.authenticated && previous?.status != AuthStatus.authenticated) {
+      if (next.status == AuthStatus.authenticated &&
+          previous?.status != AuthStatus.authenticated) {
         refresh();
-      } else if (next.status == AuthStatus.unauthenticated && previous?.status == AuthStatus.authenticated) {
+      } else if (next.status == AuthStatus.unauthenticated &&
+          previous?.status == AuthStatus.authenticated) {
         _forgetCouple();
       }
     });
@@ -119,7 +133,10 @@ class AppearanceController extends Notifier<AppearanceState> {
   /// Pulls the shared theme and catalog. Network errors keep the local copy.
   Future<bool> refresh() async {
     try {
-      final results = await Future.wait([_repository.getCoupleTheme(), _repository.getCatalog()]);
+      final results = await Future.wait([
+        _repository.getCoupleTheme(),
+        _repository.getCatalog(),
+      ]);
       final remote = results[0] as CoupleThemeSettings;
       final catalog = results[1] as AppearanceCatalog;
       final seen = _store.readSeenVersion();
@@ -129,7 +146,11 @@ class AppearanceController extends Notifier<AppearanceState> {
       state = state.copyWith(
         catalog: catalog,
         // A fresh device (seen 0) adopts silently; later partner edits are announced.
-        partnerChanged: seen > 0 && remote.version > seen && remote.updatedBy != null && remote.updatedBy != _me,
+        partnerChanged:
+            seen > 0 &&
+            remote.version > seen &&
+            remote.updatedBy != null &&
+            remote.updatedBy != _me,
       );
       if (seen == 0) await _store.writeSeenVersion(remote.version);
 
@@ -139,15 +160,21 @@ class AppearanceController extends Notifier<AppearanceState> {
     }
   }
 
-  Future<ApplyOutcome> apply(String themeKey, ThemeCustomization customization) =>
-      _write(() => _repository.updateCoupleTheme(
-            themeKey: themeKey,
-            customization: customization,
-            basedOnVersion: state.settings.version,
-          ));
+  Future<ApplyOutcome> apply(
+    String themeKey,
+    ThemeCustomization customization,
+  ) => _write(
+    () => _repository.updateCoupleTheme(
+      themeKey: themeKey,
+      customization: customization,
+      basedOnVersion: state.settings.version,
+    ),
+  );
 
-  Future<ApplyOutcome> resetCustomization() =>
-      _write(() => _repository.resetCustomization(basedOnVersion: state.settings.version));
+  Future<ApplyOutcome> resetCustomization() => _write(
+    () =>
+        _repository.resetCustomization(basedOnVersion: state.settings.version),
+  );
 
   void acknowledgePartnerChange() {
     _store.writeSeenVersion(state.settings.version);
@@ -164,7 +191,9 @@ class AppearanceController extends Notifier<AppearanceState> {
     await _store.writeReduceMotion(value);
   }
 
-  Future<ApplyOutcome> _write(Future<CoupleThemeSettings> Function() request) async {
+  Future<ApplyOutcome> _write(
+    Future<CoupleThemeSettings> Function() request,
+  ) async {
     if (state.saving) return ApplyOutcome.failed;
     state = state.copyWith(saving: true);
 
@@ -185,7 +214,9 @@ class AppearanceController extends Notifier<AppearanceState> {
       state = state.copyWith(saving: false);
       final code = error.data is Map ? (error.data as Map)['code'] : null;
 
-      return error.statusCode == 403 && code == 'entitlement_required' ? ApplyOutcome.locked : ApplyOutcome.failed;
+      return error.statusCode == 403 && code == 'entitlement_required'
+          ? ApplyOutcome.locked
+          : ApplyOutcome.failed;
     } catch (_) {
       // Local settings untouched.
       state = state.copyWith(saving: false);
@@ -201,6 +232,9 @@ class AppearanceController extends Notifier<AppearanceState> {
 
   Future<void> _forgetCouple() async {
     await _store.clearCoupleData();
-    state = state.copyWith(settings: CoupleThemeSettings.initial, partnerChanged: false);
+    state = state.copyWith(
+      settings: CoupleThemeSettings.initial,
+      partnerChanged: false,
+    );
   }
 }

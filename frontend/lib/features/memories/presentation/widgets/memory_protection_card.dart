@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../data/models/memory_protection_summary.dart';
 import '../../providers/memory_providers.dart';
+
 import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 /// "Memory Protection ❤️": what the server has verified about the couple's
@@ -36,27 +37,42 @@ class MemoryProtectionCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Memory Protection ❤️', style: context.tokens.subtitle.copyWith(fontWeight: FontWeight.w700)),
+        Text(
+          'Memory Protection ❤️',
+          style: context.tokens.subtitle.copyWith(fontWeight: FontWeight.w700),
+        ),
         const SizedBox(height: AppSpacing.sm),
         Row(
           children: [
             Icon(
-              summary.isFullyProtected ? Icons.verified_user_outlined : Icons.shield_outlined,
+              summary.isFullyProtected
+                  ? Icons.verified_user_outlined
+                  : Icons.shield_outlined,
               color: color,
               size: 20,
             ),
             const SizedBox(width: AppSpacing.sm),
-            Expanded(child: Text(headline(summary), style: context.tokens.body.copyWith(color: color))),
+            Expanded(
+              child: Text(
+                headline(summary),
+                style: context.tokens.body.copyWith(color: color),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: AppSpacing.md),
         _row(context, 'Photos', summary.photos),
         _row(context, 'Protected', summary.protected),
-        if (summary.backingUp > 0) _row(context, 'Backing up', summary.backingUp),
-        if (summary.uploading > 0) _row(context, 'Uploading', summary.uploading),
-        if (summary.restoring > 0) _row(context, 'Restoring', summary.restoring),
-        if (summary.needsAttention > 0) _row(context, 'Needs attention', summary.needsAttention),
-        if (summary.uploadFailed > 0) _row(context, 'Upload failed', summary.uploadFailed),
+        if (summary.backingUp > 0)
+          _row(context, 'Backing up', summary.backingUp),
+        if (summary.uploading > 0)
+          _row(context, 'Uploading', summary.uploading),
+        if (summary.restoring > 0)
+          _row(context, 'Restoring', summary.restoring),
+        if (summary.needsAttention > 0)
+          _row(context, 'Needs attention', summary.needsAttention),
+        if (summary.uploadFailed > 0)
+          _row(context, 'Upload failed', summary.uploadFailed),
         const SizedBox(height: AppSpacing.md),
         _when(context, 'Last integrity check', summary.lastIntegrityCheckAt),
         _when(context, 'Last verified backup', summary.lastVerifiedBackupAt),
@@ -66,8 +82,10 @@ class MemoryProtectionCard extends StatelessWidget {
             summary.uploadFailed > 0
                 ? 'A failed upload is still on your phone. Open the memory to try again.'
                 : 'We keep two copies of every photo and are working on it. '
-                    'Your photos stay encrypted the whole time.',
-            style: context.tokens.body.copyWith(color: context.tokens.textSecondary),
+                      'Your photos stay encrypted the whole time.',
+            style: context.tokens.body.copyWith(
+              color: context.tokens.textSecondary,
+            ),
           ),
         ],
       ],
@@ -80,7 +98,10 @@ class MemoryProtectionCard extends StatelessWidget {
       child: Row(
         children: [
           Expanded(child: Text(label, style: context.tokens.body)),
-          Text('$value', style: context.tokens.body.copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            '$value',
+            style: context.tokens.body.copyWith(fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );
@@ -91,17 +112,22 @@ class MemoryProtectionCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Text(
         '$label: ${at == null ? 'not yet' : formatWhen(at.toLocal())}',
-        style: context.tokens.body.copyWith(color: context.tokens.textSecondary),
+        style: context.tokens.body.copyWith(
+          color: context.tokens.textSecondary,
+        ),
       ),
     );
   }
 
   static String formatWhen(DateTime at, {DateTime? now}) {
     final today = now ?? DateTime.now();
-    final time = '${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}';
-    final days = DateTime(today.year, today.month, today.day)
-        .difference(DateTime(at.year, at.month, at.day))
-        .inDays;
+    final time =
+        '${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}';
+    final days = DateTime(
+      today.year,
+      today.month,
+      today.day,
+    ).difference(DateTime(at.year, at.month, at.day)).inDays;
 
     return switch (days) {
       0 => 'Today, $time',
@@ -121,10 +147,18 @@ Future<void> showMemoryProtectionSheet(BuildContext context) {
         final summary = ref.watch(memoryProtectionProvider);
 
         return Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xl),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            0,
+            AppSpacing.lg,
+            AppSpacing.xl,
+          ),
           child: summary.when(
             data: (data) => MemoryProtectionCard(summary: data),
-            loading: () => const SizedBox(height: 160, child: Center(child: CircularProgressIndicator())),
+            loading: () => const SizedBox(
+              height: 160,
+              child: Center(child: CircularProgressIndicator()),
+            ),
             // Never fall back to a reassuring default when the status is unknown.
             error: (_, _) => SizedBox(
               height: 160,
@@ -132,7 +166,9 @@ Future<void> showMemoryProtectionSheet(BuildContext context) {
                 child: Text(
                   "We couldn't check your photos' protection right now.",
                   textAlign: TextAlign.center,
-                  style: context.tokens.body.copyWith(color: context.tokens.textSecondary),
+                  style: context.tokens.body.copyWith(
+                    color: context.tokens.textSecondary,
+                  ),
                 ),
               ),
             ),

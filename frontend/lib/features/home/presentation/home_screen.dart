@@ -1,3 +1,5 @@
+import '../../account/presentation/account_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/features/device/data/presentation/screens/device_management_screen.dart';
@@ -11,6 +13,7 @@ import '../../auth/providers/auth_providers.dart';
 import '../providers/couple_providers.dart';
 import '../providers/couple_state.dart';
 import 'date_list_screen.dart';
+
 import 'package:frontend/core/theme/app_theme_tokens.dart';
 import 'package:frontend/core/theme/theme_customization.dart';
 import 'package:frontend/core/theme/theme_decorations.dart';
@@ -52,6 +55,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             icon: const Icon(Icons.palette_outlined),
             tooltip: 'Themes',
+          ),
+          IconButton(
+            onPressed: () => Navigator.of(context)
+                .push(MaterialPageRoute(builder: (_) => const AccountScreen())),
+            icon: const Icon(Icons.manage_accounts_outlined),
+            tooltip: 'Account & data',
           ),
           IconButton(
             onPressed: () {
@@ -197,7 +206,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     builder: (_) => PhotoBoothScreen(
                       // Offline / not loaded yet: all built-in layouts. Premium
                       // layouts outside the couple's plan are not offered.
-                      availableTemplates: catalog?.photoBoothTemplates.where((t) => !t.locked).map((t) => t.key).toSet(),
+                      availableTemplates: catalog?.photoBoothTemplates
+                          .where((t) => !t.locked)
+                          .map((t) => t.key)
+                          .toSet(),
                     ),
                   ),
                 );
@@ -260,26 +272,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return switch (t.coupleSpaceStyle) {
       CoupleSpaceStyle.classic => [
-          Icon(Icons.favorite_rounded, size: 64, color: t.primary),
-          const SizedBox(height: AppSpacing.lg),
-          Text(hello, style: t.title, textAlign: TextAlign.center),
-        ],
+        Icon(Icons.favorite_rounded, size: 64, color: t.primary),
+        const SizedBox(height: AppSpacing.lg),
+        Text(hello, style: t.title, textAlign: TextAlign.center),
+      ],
       CoupleSpaceStyle.cozy => [
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(color: t.secondary.withValues(alpha: 0.35), shape: BoxShape.circle),
-            child: Icon(Icons.favorite_rounded, size: 56, color: t.primary),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: t.secondary.withValues(alpha: 0.35),
+            shape: BoxShape.circle,
           ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            partnerName == null ? hello : '${userName ?? 'You'} & $partnerName',
-            style: t.display.copyWith(fontSize: 30),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          child: Icon(Icons.favorite_rounded, size: 56, color: t.primary),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          partnerName == null ? hello : '${userName ?? 'You'} & $partnerName',
+          style: t.display.copyWith(fontSize: 30),
+          textAlign: TextAlign.center,
+        ),
+      ],
       CoupleSpaceStyle.minimal => [
-          Text(hello, style: t.title, textAlign: TextAlign.center),
-        ],
+        Text(hello, style: t.title, textAlign: TextAlign.center),
+      ],
     };
   }
 

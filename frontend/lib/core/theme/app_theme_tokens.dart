@@ -118,10 +118,14 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
 
   @override
   AppThemeTokens copyWith({bool? decorationsEnabled, bool? animationsEnabled}) {
-    return _with(decorationsEnabled: decorationsEnabled, animationsEnabled: animationsEnabled);
+    return _with(
+      decorationsEnabled: decorationsEnabled,
+      animationsEnabled: animationsEnabled,
+    );
   }
 
-  AppThemeTokens _with({bool? decorationsEnabled, bool? animationsEnabled}) => AppThemeTokens(
+  AppThemeTokens _with({bool? decorationsEnabled, bool? animationsEnabled}) =>
+      AppThemeTokens(
         themeKey: themeKey,
         primary: primary,
         primaryDark: primaryDark,
@@ -196,5 +200,6 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
 }
 
 extension AppThemeTokensContext on BuildContext {
-  AppThemeTokens get tokens => Theme.of(this).extension<AppThemeTokens>() ?? AppThemeTokens.fallback;
+  AppThemeTokens get tokens =>
+      Theme.of(this).extension<AppThemeTokens>() ?? AppThemeTokens.fallback;
 }

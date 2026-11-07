@@ -6,7 +6,13 @@ import 'package:flutter/foundation.dart';
 
 @immutable
 class PlanFeature {
-  const PlanFeature({required this.key, required this.name, this.description, required this.type, required this.value});
+  const PlanFeature({
+    required this.key,
+    required this.name,
+    this.description,
+    required this.type,
+    required this.value,
+  });
 
   final String key;
   final String name;
@@ -16,15 +22,16 @@ class PlanFeature {
   final String type;
   final Object? value;
 
-  bool get included => type == 'boolean' ? value == true : ((value as num?) ?? 0) > 0;
+  bool get included =>
+      type == 'boolean' ? value == true : ((value as num?) ?? 0) > 0;
 
   factory PlanFeature.fromJson(Map<String, dynamic> json) => PlanFeature(
-        key: json['key'] as String,
-        name: json['name'] as String? ?? json['key'] as String,
-        description: json['description'] as String?,
-        type: json['type'] as String? ?? 'boolean',
-        value: json['value'],
-      );
+    key: json['key'] as String,
+    name: json['name'] as String? ?? json['key'] as String,
+    description: json['description'] as String?,
+    type: json['type'] as String? ?? 'boolean',
+    value: json['value'],
+  );
 }
 
 @immutable
@@ -65,7 +72,8 @@ class SubscriptionPlan {
   /// Store product id per enabled provider (e.g. {'mock': 'love_monthly'}).
   final Map<String, String> products;
 
-  factory SubscriptionPlan.fromJson(Map<String, dynamic> json) => SubscriptionPlan(
+  factory SubscriptionPlan.fromJson(Map<String, dynamic> json) =>
+      SubscriptionPlan(
         key: json['key'] as String,
         name: json['name'] as String,
         description: json['description'] as String?,
@@ -75,14 +83,20 @@ class SubscriptionPlan {
         priceAmount: (json['price_amount'] as num?)?.toInt() ?? 0,
         currency: json['currency'] as String? ?? 'IDR',
         billingInterval: json['billing_interval'] as String? ?? 'none',
-        billingIntervalCount: (json['billing_interval_count'] as num?)?.toInt() ?? 1,
+        billingIntervalCount:
+            (json['billing_interval_count'] as num?)?.toInt() ?? 1,
         autoRenews: json['auto_renews'] as bool? ?? false,
         storageLimitBytes: (json['storage_limit_bytes'] as num?)?.toInt() ?? 0,
         features: [
-          for (final f in (json['features'] as List? ?? const [])) PlanFeature.fromJson(Map<String, dynamic>.from(f as Map)),
+          for (final f in (json['features'] as List? ?? const []))
+            PlanFeature.fromJson(Map<String, dynamic>.from(f as Map)),
         ],
         products: (json['products'] is Map)
-            ? Map<String, String>.from((json['products'] as Map).map((k, v) => MapEntry(k as String, v as String)))
+            ? Map<String, String>.from(
+                (json['products'] as Map).map(
+                  (k, v) => MapEntry(k as String, v as String),
+                ),
+              )
             : const {},
       );
 }
@@ -107,19 +121,20 @@ class StorageUsage {
   final bool isFull;
   final int photoCount;
 
-  double get fraction => limitBytes <= 0 ? 1 : (usedBytes / limitBytes).clamp(0, 1).toDouble();
+  double get fraction =>
+      limitBytes <= 0 ? 1 : (usedBytes / limitBytes).clamp(0, 1).toDouble();
 
   bool get isOverLimit => usedBytes > limitBytes;
 
   factory StorageUsage.fromJson(Map<String, dynamic> json) => StorageUsage(
-        usedBytes: (json['used_bytes'] as num?)?.toInt() ?? 0,
-        trashBytes: (json['trash_bytes'] as num?)?.toInt() ?? 0,
-        reservedBytes: (json['reserved_bytes'] as num?)?.toInt() ?? 0,
-        limitBytes: (json['limit_bytes'] as num?)?.toInt() ?? 0,
-        remainingBytes: (json['remaining_bytes'] as num?)?.toInt() ?? 0,
-        isFull: json['is_full'] as bool? ?? false,
-        photoCount: (json['photo_count'] as num?)?.toInt() ?? 0,
-      );
+    usedBytes: (json['used_bytes'] as num?)?.toInt() ?? 0,
+    trashBytes: (json['trash_bytes'] as num?)?.toInt() ?? 0,
+    reservedBytes: (json['reserved_bytes'] as num?)?.toInt() ?? 0,
+    limitBytes: (json['limit_bytes'] as num?)?.toInt() ?? 0,
+    remainingBytes: (json['remaining_bytes'] as num?)?.toInt() ?? 0,
+    isFull: json['is_full'] as bool? ?? false,
+    photoCount: (json['photo_count'] as num?)?.toInt() ?? 0,
+  );
 }
 
 @immutable
@@ -169,7 +184,9 @@ class CoupleSubscription {
 
   factory CoupleSubscription.fromJson(Map<String, dynamic> json) {
     final plan = Map<String, dynamic>.from(json['plan'] as Map? ?? const {});
-    DateTime? date(String key) => json[key] == null ? null : DateTime.tryParse(json[key] as String)?.toLocal();
+    DateTime? date(String key) => json[key] == null
+        ? null
+        : DateTime.tryParse(json[key] as String)?.toLocal();
 
     return CoupleSubscription(
       status: json['status'] as String,
@@ -179,7 +196,8 @@ class CoupleSubscription {
       priceAmount: (json['price_amount'] as num?)?.toInt() ?? 0,
       currency: json['currency'] as String? ?? 'IDR',
       billingInterval: json['billing_interval'] as String? ?? 'none',
-      billingIntervalCount: (json['billing_interval_count'] as num?)?.toInt() ?? 1,
+      billingIntervalCount:
+          (json['billing_interval_count'] as num?)?.toInt() ?? 1,
       provider: json['provider'] as String? ?? '',
       autoRenew: json['auto_renew'] as bool? ?? false,
       currentPeriodEnd: date('current_period_end'),
@@ -211,14 +229,24 @@ class SubscriptionOverview {
 
   bool allows(String key) => entitlements[key] == true;
 
-  factory SubscriptionOverview.fromJson(Map<String, dynamic> json) => SubscriptionOverview(
+  factory SubscriptionOverview.fromJson(Map<String, dynamic> json) =>
+      SubscriptionOverview(
         planKey: json['plan_key'] as String? ?? 'free',
         subscription: json['subscription'] is Map
-            ? CoupleSubscription.fromJson(Map<String, dynamic>.from(json['subscription'] as Map))
+            ? CoupleSubscription.fromJson(
+                Map<String, dynamic>.from(json['subscription'] as Map),
+              )
             : null,
-        entitlements: Map<String, Object?>.from(json['entitlements'] as Map? ?? const {}),
-        storage: StorageUsage.fromJson(Map<String, dynamic>.from(json['storage'] as Map? ?? const {})),
-        availableProviders: [for (final p in (json['available_providers'] as List? ?? const [])) p as String],
+        entitlements: Map<String, Object?>.from(
+          json['entitlements'] as Map? ?? const {},
+        ),
+        storage: StorageUsage.fromJson(
+          Map<String, dynamic>.from(json['storage'] as Map? ?? const {}),
+        ),
+        availableProviders: [
+          for (final p in (json['available_providers'] as List? ?? const []))
+            p as String,
+        ],
       );
 }
 
@@ -244,7 +272,8 @@ class BillingTransaction {
   final String? planName;
   final bool isTest;
 
-  factory BillingTransaction.fromJson(Map<String, dynamic> json) => BillingTransaction(
+  factory BillingTransaction.fromJson(Map<String, dynamic> json) =>
+      BillingTransaction(
         id: (json['id'] as num).toInt(),
         type: json['type'] as String,
         amount: (json['amount'] as num).toInt(),
@@ -273,11 +302,11 @@ class PurchaseIntent {
   final String? replacesSubscriptionId;
 
   factory PurchaseIntent.fromJson(Map<String, dynamic> json) => PurchaseIntent(
-        provider: json['provider'] as String,
-        productId: json['product_id'] as String,
-        accountToken: json['account_token'] as String,
-        replacesSubscriptionId: json['replaces_subscription_id'] as String?,
-      );
+    provider: json['provider'] as String,
+    productId: json['product_id'] as String,
+    accountToken: json['account_token'] as String,
+    replacesSubscriptionId: json['replaces_subscription_id'] as String?,
+  );
 }
 
 /// A refused billing request, with the server's stable code.

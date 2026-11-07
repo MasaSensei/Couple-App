@@ -13,7 +13,8 @@ class PlanComparisonScreen extends ConsumerStatefulWidget {
   const PlanComparisonScreen({super.key});
 
   @override
-  ConsumerState<PlanComparisonScreen> createState() => _PlanComparisonScreenState();
+  ConsumerState<PlanComparisonScreen> createState() =>
+      _PlanComparisonScreenState();
 }
 
 class _PlanComparisonScreenState extends ConsumerState<PlanComparisonScreen> {
@@ -21,7 +22,9 @@ class _PlanComparisonScreenState extends ConsumerState<PlanComparisonScreen> {
   void initState() {
     super.initState();
     if (ref.read(subscriptionControllerProvider).plans.isEmpty) {
-      Future.microtask(() => ref.read(subscriptionControllerProvider.notifier).load());
+      Future.microtask(
+        () => ref.read(subscriptionControllerProvider.notifier).load(),
+      );
     }
   }
 
@@ -37,14 +40,22 @@ class _PlanComparisonScreenState extends ConsumerState<PlanComparisonScreen> {
           'Your partner gets the same benefits at no extra cost.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Not now')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Continue to payment')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Continue to payment'),
+          ),
         ],
       ),
     );
     if (confirmed != true || !mounted) return;
 
-    final outcome = await ref.read(subscriptionControllerProvider.notifier).purchase(plan);
+    final outcome = await ref
+        .read(subscriptionControllerProvider.notifier)
+        .purchase(plan);
     if (!mounted) return;
 
     final message = switch (outcome) {
@@ -52,7 +63,8 @@ class _PlanComparisonScreenState extends ConsumerState<PlanComparisonScreen> {
       BillingDismissed() => 'Purchase cancelled. You were not charged.',
       BillingFailed(:final message) => message,
     };
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
     if (outcome is BillingSucceeded) Navigator.of(context).pop();
   }
 
@@ -66,7 +78,11 @@ class _PlanComparisonScreenState extends ConsumerState<PlanComparisonScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Compare plans')),
       body: state.plans.isEmpty
-          ? Center(child: state.loading ? const CircularProgressIndicator() : Text(state.error ?? 'No plans available.'))
+          ? Center(
+              child: state.loading
+                  ? const CircularProgressIndicator()
+                  : Text(state.error ?? 'No plans available.'),
+            )
           : ListView(
               padding: const EdgeInsets.all(AppSpacing.lg),
               children: [
@@ -80,8 +96,12 @@ class _PlanComparisonScreenState extends ConsumerState<PlanComparisonScreen> {
                     plan: plan,
                     action: plan.isCurrent || plan.isFree
                         ? null
-                        : (canPurchase && !state.busy ? () => _choose(plan) : null),
-                    actionLabel: hasSubscription ? 'Switch to ${plan.name}' : 'Choose ${plan.name}',
+                        : (canPurchase && !state.busy
+                              ? () => _choose(plan)
+                              : null),
+                    actionLabel: hasSubscription
+                        ? 'Switch to ${plan.name}'
+                        : 'Choose ${plan.name}',
                   ),
                 const SizedBox(height: AppSpacing.md),
                 const AlwaysIncludedNote(),
@@ -92,13 +112,20 @@ class _PlanComparisonScreenState extends ConsumerState<PlanComparisonScreen> {
 }
 
 String renewalTerms(SubscriptionPlan plan) {
-  final period = BillingFormat.interval(plan.billingInterval, plan.billingIntervalCount).replaceFirst('per ', 'every ');
+  final period = BillingFormat.interval(
+    plan.billingInterval,
+    plan.billingIntervalCount,
+  ).replaceFirst('per ', 'every ');
   return 'Renews automatically $period at the same price until you cancel. '
       'You can cancel anytime in Manage subscription; benefits continue until the end of the period you paid for.';
 }
 
 class _PlanCard extends StatelessWidget {
-  const _PlanCard({required this.plan, required this.action, required this.actionLabel});
+  const _PlanCard({
+    required this.plan,
+    required this.action,
+    required this.actionLabel,
+  });
 
   final SubscriptionPlan plan;
   final VoidCallback? action;
@@ -111,7 +138,10 @@ class _PlanCard extends StatelessWidget {
 
     return Card(
       shape: plan.isCurrent
-          ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: scheme.primary, width: 2))
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: scheme.primary, width: 2),
+            )
           : null,
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Padding(
@@ -119,12 +149,19 @@ class _PlanCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              Expanded(child: Text(plan.name, style: text.titleLarge)),
-              if (plan.isCurrent) Chip(label: const Text('Current')),
-            ]),
+            Row(
+              children: [
+                Expanded(child: Text(plan.name, style: text.titleLarge)),
+                if (plan.isCurrent) Chip(label: const Text('Current')),
+              ],
+            ),
             Text(
-              BillingFormat.priceWithInterval(plan.priceAmount, plan.currency, plan.billingInterval, plan.billingIntervalCount),
+              BillingFormat.priceWithInterval(
+                plan.priceAmount,
+                plan.currency,
+                plan.billingInterval,
+                plan.billingIntervalCount,
+              ),
               style: text.titleMedium?.copyWith(color: scheme.primary),
             ),
             if (plan.description != null) ...[
@@ -141,7 +178,10 @@ class _PlanCard extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton(onPressed: action, child: Text(actionLabel)),
+                child: FilledButton(
+                  onPressed: action,
+                  child: Text(actionLabel),
+                ),
               ),
             ],
           ],

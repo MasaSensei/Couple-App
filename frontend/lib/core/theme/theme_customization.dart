@@ -55,14 +55,15 @@ class ThemeCustomization {
 
   /// Wire format shared with `PUT /couple/theme` (snake_case, omits defaults).
   Map<String, dynamic> toJson() => {
-        if (accent != null) 'accent': accent,
-        if (background != null) 'background': background,
-        if (font != null) 'font': font,
-        if (!decorations) 'decorations': false,
-        if (!animations) 'animations': false,
-        if (coupleSpaceStyle != CoupleSpaceStyle.classic) 'couple_space_style': coupleSpaceStyle.name,
-        if (memoryStyle != MemoryStyle.soft) 'memory_style': memoryStyle.name,
-      };
+    if (accent != null) 'accent': accent,
+    if (background != null) 'background': background,
+    if (font != null) 'font': font,
+    if (!decorations) 'decorations': false,
+    if (!animations) 'animations': false,
+    if (coupleSpaceStyle != CoupleSpaceStyle.classic)
+      'couple_space_style': coupleSpaceStyle.name,
+    if (memoryStyle != MemoryStyle.soft) 'memory_style': memoryStyle.name,
+  };
 
   factory ThemeCustomization.fromJson(Map<String, dynamic>? json) {
     if (json == null) return defaults;
@@ -76,8 +77,16 @@ class ThemeCustomization {
       font: json['font'] as String?,
       decorations: json['decorations'] as bool? ?? true,
       animations: json['animations'] as bool? ?? true,
-      coupleSpaceStyle: byName(CoupleSpaceStyle.values, json['couple_space_style'], CoupleSpaceStyle.classic),
-      memoryStyle: byName(MemoryStyle.values, json['memory_style'], MemoryStyle.soft),
+      coupleSpaceStyle: byName(
+        CoupleSpaceStyle.values,
+        json['couple_space_style'],
+        CoupleSpaceStyle.classic,
+      ),
+      memoryStyle: byName(
+        MemoryStyle.values,
+        json['memory_style'],
+        MemoryStyle.soft,
+      ),
     );
   }
 
@@ -93,5 +102,13 @@ class ThemeCustomization {
       other.memoryStyle == memoryStyle;
 
   @override
-  int get hashCode => Object.hash(accent, background, font, decorations, animations, coupleSpaceStyle, memoryStyle);
+  int get hashCode => Object.hash(
+    accent,
+    background,
+    font,
+    decorations,
+    animations,
+    coupleSpaceStyle,
+    memoryStyle,
+  );
 }

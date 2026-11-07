@@ -154,7 +154,10 @@ class MemoryPhotoNotifier extends Notifier<AsyncValue<List<MemoryPhotoModel>>> {
 
   /// Same encrypted pipeline for images created on the device (Photo Booth):
   /// the plaintext [bytes] never leave this method unencrypted.
-  Future<void> uploadPhotoBytes({required int memoryId, required Uint8List bytes}) async {
+  Future<void> uploadPhotoBytes({
+    required int memoryId,
+    required Uint8List bytes,
+  }) async {
     final previous = state;
     state = const AsyncLoading();
 
@@ -168,7 +171,10 @@ class MemoryPhotoNotifier extends Notifier<AsyncValue<List<MemoryPhotoModel>>> {
     await loadPhotos(memoryId: memoryId);
   }
 
-  Future<void> _upload({required int memoryId, required Uint8List bytes}) async {
+  Future<void> _upload({
+    required int memoryId,
+    required Uint8List bytes,
+  }) async {
     final PreparedPhoto prepared;
     final CoupleKey coupleKey;
 

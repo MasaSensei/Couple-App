@@ -10,7 +10,9 @@ void main() {
 
   Future<void> pump(WidgetTester tester, MemoryProtectionSummary data) {
     return tester.pumpWidget(
-      MaterialApp(home: Scaffold(body: MemoryProtectionCard(summary: data))),
+      MaterialApp(
+        home: Scaffold(body: MemoryProtectionCard(summary: data)),
+      ),
     );
   }
 
@@ -42,7 +44,12 @@ void main() {
   ) async {
     await pump(
       tester,
-      summary({'photos': 24, 'protected': 22, 'backing_up': 2, 'state': 'backing_up'}),
+      summary({
+        'photos': 24,
+        'protected': 22,
+        'backing_up': 2,
+        'state': 'backing_up',
+      }),
     );
 
     expect(find.text('Memory Protection ❤️'), findsOneWidget);
@@ -54,16 +61,26 @@ void main() {
   });
 
   testWidgets('fully protected only when the server says so', (tester) async {
-    await pump(tester, summary({'photos': 3, 'protected': 3, 'state': 'protected'}));
+    await pump(
+      tester,
+      summary({'photos': 3, 'protected': 3, 'state': 'protected'}),
+    );
 
     expect(find.text('All your photos are safely backed up'), findsOneWidget);
     expect(find.text('Backing up'), findsNothing);
   });
 
-  testWidgets('problems are surfaced without technical details', (tester) async {
+  testWidgets('problems are surfaced without technical details', (
+    tester,
+  ) async {
     await pump(
       tester,
-      summary({'photos': 3, 'protected': 2, 'needs_attention': 1, 'state': 'needs_attention'}),
+      summary({
+        'photos': 3,
+        'protected': 2,
+        'needs_attention': 1,
+        'state': 'needs_attention',
+      }),
     );
 
     expect(find.text('Some photos need attention'), findsOneWidget);
@@ -77,7 +94,12 @@ void main() {
   ) async {
     await pump(
       tester,
-      summary({'photos': 1, 'protected': 1, 'upload_failed': 1, 'state': 'needs_attention'}),
+      summary({
+        'photos': 1,
+        'protected': 1,
+        'upload_failed': 1,
+        'state': 'needs_attention',
+      }),
     );
 
     expect(find.textContaining('still on your phone'), findsOneWidget);
@@ -86,26 +108,38 @@ void main() {
   test('formats check times relative to today', () {
     final now = DateTime(2026, 11, 6, 12);
 
-    expect(MemoryProtectionCard.formatWhen(DateTime(2026, 11, 6, 9, 30), now: now), 'Today, 09:30');
-    expect(MemoryProtectionCard.formatWhen(DateTime(2026, 11, 5, 23, 5), now: now), 'Yesterday, 23:05');
-    expect(MemoryProtectionCard.formatWhen(DateTime(2026, 10, 1, 8, 0), now: now), '1/10/2026, 08:00');
+    expect(
+      MemoryProtectionCard.formatWhen(DateTime(2026, 11, 6, 9, 30), now: now),
+      'Today, 09:30',
+    );
+    expect(
+      MemoryProtectionCard.formatWhen(DateTime(2026, 11, 5, 23, 5), now: now),
+      'Yesterday, 23:05',
+    );
+    expect(
+      MemoryProtectionCard.formatWhen(DateTime(2026, 10, 1, 8, 0), now: now),
+      '1/10/2026, 08:00',
+    );
   });
 
-  test('photo model reads protection fields and tolerates a deleted uploader', () {
-    final photo = MemoryPhotoModel.fromJson({
-      'id': 1,
-      'memory_id': 2,
-      'uploaded_by': null,
-      'mime_type': 'image/jpeg',
-      'file_size': 10,
-      'status': 'verified',
-      'sort_order': 0,
-      'protection_status': 'backing_up',
-      'restorable_until': '2026-12-06T00:00:00.000000Z',
-    });
+  test(
+    'photo model reads protection fields and tolerates a deleted uploader',
+    () {
+      final photo = MemoryPhotoModel.fromJson({
+        'id': 1,
+        'memory_id': 2,
+        'uploaded_by': null,
+        'mime_type': 'image/jpeg',
+        'file_size': 10,
+        'status': 'verified',
+        'sort_order': 0,
+        'protection_status': 'backing_up',
+        'restorable_until': '2026-12-06T00:00:00.000000Z',
+      });
 
-    expect(photo.uploadedBy, isNull);
-    expect(photo.protectionStatus, 'backing_up');
-    expect(photo.restorableUntil, DateTime.utc(2026, 12, 6));
-  });
+      expect(photo.uploadedBy, isNull);
+      expect(photo.protectionStatus, 'backing_up');
+      expect(photo.restorableUntil, DateTime.utc(2026, 12, 6));
+    },
+  );
 }

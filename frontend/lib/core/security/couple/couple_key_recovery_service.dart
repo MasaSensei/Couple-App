@@ -135,7 +135,9 @@ class CoupleKeyRecoveryService {
     for (final char in normalized.split('')) {
       final value = _base32Alphabet.indexOf(char);
       if (value < 0) {
-        throw const FormatException('Recovery Key contains invalid characters.');
+        throw const FormatException(
+          'Recovery Key contains invalid characters.',
+        );
       }
       buffer = ((buffer << 5) | value) & 0xFFF;
       bits += 5;

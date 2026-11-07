@@ -9,7 +9,10 @@ import 'package:frontend/core/theme/theme_registry.dart';
 
 void main() {
   group('default theme keeps the pre-Phase 7 look', () {
-    final tokens = AppTheme.resolveTokens(ThemeRegistry.defaultTheme, Brightness.light);
+    final tokens = AppTheme.resolveTokens(
+      ThemeRegistry.defaultTheme,
+      Brightness.light,
+    );
 
     test('colors are the original constants', () {
       expect(tokens.primary, AppColors.primary);
@@ -37,16 +40,22 @@ void main() {
       }
     });
 
-    test('AppTheme.light carries the tokens and the original scaffold color', () {
-      final theme = AppTheme.light();
+    test(
+      'AppTheme.light carries the tokens and the original scaffold color',
+      () {
+        final theme = AppTheme.light();
 
-      expect(theme.extension<AppThemeTokens>()?.themeKey, 'classic_rose');
-      expect(theme.scaffoldBackgroundColor, AppColors.background);
-    });
+        expect(theme.extension<AppThemeTokens>()?.themeKey, 'classic_rose');
+        expect(theme.scaffoldBackgroundColor, AppColors.background);
+      },
+    );
   });
 
   test('unknown theme keys fall back to the default theme', () {
-    expect(ThemeRegistry.byKey('from-a-newer-server').key, ThemeRegistry.defaultKey);
+    expect(
+      ThemeRegistry.byKey('from-a-newer-server').key,
+      ThemeRegistry.defaultKey,
+    );
     expect(ThemeRegistry.byKey(null).key, ThemeRegistry.defaultKey);
   });
 
@@ -54,7 +63,11 @@ void main() {
     final tokens = AppTheme.resolveTokens(
       ThemeRegistry.defaultTheme,
       Brightness.light,
-      customization: const ThemeCustomization(accent: 'neon', background: 'nope', font: 'comic'),
+      customization: const ThemeCustomization(
+        accent: 'neon',
+        background: 'nope',
+        font: 'comic',
+      ),
     );
 
     expect(tokens.primary, AppColors.primary);
@@ -71,25 +84,37 @@ void main() {
 
     expect(ThemeCustomization.fromJson(custom.toJson()), custom);
     expect(ThemeCustomization.defaults.toJson(), isEmpty);
-    expect(ThemeCustomization.fromJson({'memory_style': 'unknown'}).memoryStyle, MemoryStyle.soft);
+    expect(
+      ThemeCustomization.fromJson({'memory_style': 'unknown'}).memoryStyle,
+      MemoryStyle.soft,
+    );
   });
 
   test('tokens interpolate so theme switches animate', () {
     final a = AppThemeTokens.fallback;
-    final b = AppTheme.resolveTokens(ThemeRegistry.defaultTheme, Brightness.light,
-        customization: const ThemeCustomization(decorations: false));
+    final b = AppTheme.resolveTokens(
+      ThemeRegistry.defaultTheme,
+      Brightness.light,
+      customization: const ThemeCustomization(decorations: false),
+    );
     final dark = a.lerp(b, 0.5);
 
     expect(dark.primary, Color.lerp(a.primary, b.primary, 0.5));
     expect(a.lerp(null, 0.3), same(a));
   });
 
-  testWidgets('context.tokens falls back outside the app theme', (tester) async {
+  testWidgets('context.tokens falls back outside the app theme', (
+    tester,
+  ) async {
     late AppThemeTokens read;
-    await tester.pumpWidget(Builder(builder: (context) {
-      read = context.tokens;
-      return const SizedBox();
-    }));
+    await tester.pumpWidget(
+      Builder(
+        builder: (context) {
+          read = context.tokens;
+          return const SizedBox();
+        },
+      ),
+    );
 
     expect(read.themeKey, 'classic_rose');
   });

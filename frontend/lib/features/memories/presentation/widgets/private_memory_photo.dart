@@ -62,7 +62,9 @@ class _PrivateMemoryPhotoState extends ConsumerState<PrivateMemoryPhoto> {
         final image = LayoutBuilder(
           builder: (context, constraints) {
             final dpr = MediaQuery.devicePixelRatioOf(context);
-            final width = constraints.maxWidth.isFinite ? (constraints.maxWidth * dpr).round() : null;
+            final width = constraints.maxWidth.isFinite
+                ? (constraints.maxWidth * dpr).round()
+                : null;
 
             return Image.memory(
               Uint8List.fromList(bytes),
@@ -75,17 +77,26 @@ class _PrivateMemoryPhotoState extends ConsumerState<PrivateMemoryPhoto> {
         );
 
         return switch (t.memoryStyle) {
-          MemoryStyle.soft => ClipRRect(borderRadius: BorderRadius.circular(16), child: image),
+          MemoryStyle.soft => ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: image,
+          ),
           MemoryStyle.minimal => image,
           MemoryStyle.polaroid => Container(
-              padding: const EdgeInsets.fromLTRB(6, 6, 6, 18),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(3),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 6, offset: const Offset(0, 2))],
-              ),
-              child: image,
+            padding: const EdgeInsets.fromLTRB(6, 6, 6, 18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(3),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
+            child: image,
+          ),
         };
       },
     );
@@ -109,7 +120,9 @@ class PhotoErrorView extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            keyMissing ? Icons.lock_outline_rounded : Icons.broken_image_outlined,
+            keyMissing
+                ? Icons.lock_outline_rounded
+                : Icons.broken_image_outlined,
             size: 36,
             color: color,
           ),
@@ -130,9 +143,8 @@ class PhotoErrorView extends StatelessWidget {
     if (!keyMissing) return Center(child: content);
 
     return InkWell(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const RestoreAccessScreen()),
-      ),
+      onTap: () => Navigator.of(context)
+          .push(MaterialPageRoute(builder: (_) => const RestoreAccessScreen())),
       child: Center(child: content),
     );
   }

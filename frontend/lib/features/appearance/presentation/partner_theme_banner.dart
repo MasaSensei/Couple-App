@@ -36,15 +36,23 @@ class PartnerThemeBanner extends ConsumerWidget {
               ),
               TextButton(
                 onPressed: () {
-                  ref.read(appearanceControllerProvider.notifier).acknowledgePartnerChange();
-                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ThemeGalleryScreen()));
+                  ref
+                      .read(appearanceControllerProvider.notifier)
+                      .acknowledgePartnerChange();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const ThemeGalleryScreen(),
+                    ),
+                  );
                 },
                 child: const Text('See'),
               ),
               IconButton(
                 tooltip: 'Dismiss',
                 icon: const Icon(Icons.close_rounded),
-                onPressed: () => ref.read(appearanceControllerProvider.notifier).acknowledgePartnerChange(),
+                onPressed: () => ref
+                    .read(appearanceControllerProvider.notifier)
+                    .acknowledgePartnerChange(),
               ),
             ],
           ),

@@ -17,7 +17,8 @@ class MemoryModel {
 
   final int id;
   final int coupleId;
-  final int createdBy;
+  // Null once the author deleted their account (content stays with the partner).
+  final int? createdBy;
   final int? dateId;
 
   final String title;
@@ -38,7 +39,7 @@ class MemoryModel {
     return MemoryModel(
       id: json['id'] as int,
       coupleId: json['couple_id'] as int,
-      createdBy: json['created_by'] as int,
+      createdBy: json['created_by'] as int?,
       dateId: json['date_id'] as int?,
       title: json['title'] as String,
       description: json['description'] as String?,

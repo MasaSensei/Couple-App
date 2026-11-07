@@ -206,7 +206,9 @@ class _AccessSection extends ConsumerWidget {
     if (confirmed != true) return;
 
     try {
-      await ref.read(coupleKeyProvisioningServiceProvider).authorizeDevice(device);
+      await ref
+          .read(coupleKeyProvisioningServiceProvider)
+          .authorizeDevice(device);
       ref.invalidate(encryptionStatusProvider);
     } catch (_) {
       if (!context.mounted) return;

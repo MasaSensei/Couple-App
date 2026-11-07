@@ -25,7 +25,10 @@ class FullCatalogRepository extends FakeAppearanceRepository {
     if (slow) await Future<void>.delayed(const Duration(seconds: 1));
     if (offline) throw Exception('offline');
     return AppearanceCatalog(
-      themes: [for (final t in ThemeRegistry.all) CatalogItem(key: t.key, name: t.name, version: t.version)],
+      themes: [
+        for (final t in ThemeRegistry.all)
+          CatalogItem(key: t.key, name: t.name, version: t.version),
+      ],
       photoBoothTemplates: const [],
     );
   }
@@ -34,33 +37,49 @@ class FullCatalogRepository extends FakeAppearanceRepository {
 /// The server offers nothing beyond the default theme.
 class DefaultOnlyRepository extends FakeAppearanceRepository {
   @override
-  Future<AppearanceCatalog> getCatalog() async =>
-      const AppearanceCatalog(themes: [CatalogItem(key: 'classic_rose', name: 'Classic Rose', version: 1)], photoBoothTemplates: []);
+  Future<AppearanceCatalog> getCatalog() async => const AppearanceCatalog(
+    themes: [
+      CatalogItem(key: 'classic_rose', name: 'Classic Rose', version: 1),
+    ],
+    photoBoothTemplates: [],
+  );
 }
 
-Future<ProviderContainer> pumpApp(WidgetTester tester, Widget home, FakeAppearanceRepository repo) async {
+Future<ProviderContainer> pumpApp(
+  WidgetTester tester,
+  Widget home,
+  FakeAppearanceRepository repo,
+) async {
   final prefs = await SharedPreferences.getInstance();
-  final container = ProviderContainer(overrides: [
-    appearanceLocalStoreProvider.overrideWithValue(AppearanceLocalStore(prefs)),
-    appearanceRepositoryProvider.overrideWithValue(repo),
-    authNotifierProvider.overrideWith(() => FakeAuthNotifier(AuthState.authenticated(fakeUser))),
-  ]);
+  final container = ProviderContainer(
+    overrides: [
+      appearanceLocalStoreProvider.overrideWithValue(
+        AppearanceLocalStore(prefs),
+      ),
+      appearanceRepositoryProvider.overrideWithValue(repo),
+      authNotifierProvider.overrideWith(
+        () => FakeAuthNotifier(AuthState.authenticated(fakeUser)),
+      ),
+    ],
+  );
   addTearDown(container.dispose);
 
-  await tester.pumpWidget(UncontrolledProviderScope(
-    container: container,
-    child: Consumer(
-      builder: (context, ref, _) => MaterialApp(
-        theme: ref.watch(appThemeDataProvider(Brightness.light)),
-        // Theme ornaments animate forever; tests run with platform "reduce motion".
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(disableAnimations: true),
-          child: child!,
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: Consumer(
+        builder: (context, ref, _) => MaterialApp(
+          theme: ref.watch(appThemeDataProvider(Brightness.light)),
+          // Theme ornaments animate forever; tests run with platform "reduce motion".
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: child!,
+          ),
+          home: home,
         ),
-        home: home,
       ),
     ),
-  ));
+  );
   await tester.pumpAndSettle();
   return container;
 }
@@ -72,25 +91,33 @@ void bigScreen(WidgetTester tester) {
 }
 
 String activeKey(WidgetTester tester) =>
-    Theme.of(tester.element(find.byType(Scaffold).first)).extension<AppThemeTokens>()!.themeKey;
+    Theme.of(tester.element(find.byType(Scaffold).first))
+        .extension<AppThemeTokens>()!
+        .themeKey;
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('gallery lists every theme and marks the active one', (tester) async {
+  testWidgets('gallery lists every theme and marks the active one', (
+    tester,
+  ) async {
     bigScreen(tester);
     await pumpApp(tester, const ThemeGalleryScreen(), FullCatalogRepository());
 
     for (final theme in ThemeRegistry.all) {
       expect(find.text(theme.name), findsOneWidget, reason: theme.key);
     }
-    expect(find.bySemanticsLabel(RegExp('Classic Rose theme, active')), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(RegExp('Classic Rose theme, active')),
+      findsOneWidget,
+    );
     expect(find.text('Only on this device'), findsOneWidget);
   });
 
-  testWidgets('loading then error state when the catalog cannot be fetched', (tester) async {
-    final repo = FullCatalogRepository()
-      ..offline = true;
+  testWidgets('loading then error state when the catalog cannot be fetched', (
+    tester,
+  ) async {
+    final repo = FullCatalogRepository()..offline = true;
     await pumpApp(tester, const ThemeGalleryScreen(), repo);
 
     expect(find.text("We couldn't load the themes"), findsOneWidget);
@@ -102,7 +129,9 @@ void main() {
     expect(find.text('Sakura'), findsOneWidget);
   });
 
-  testWidgets('empty state when the server offers no extra themes', (tester) async {
+  testWidgets('empty state when the server offers no extra themes', (
+    tester,
+  ) async {
     bigScreen(tester);
     await pumpApp(tester, const ThemeGalleryScreen(), DefaultOnlyRepository());
 
@@ -111,10 +140,16 @@ void main() {
     expect(find.text('No extra themes yet'), findsOneWidget);
   });
 
-  testWidgets('previewing and customizing never changes the active theme', (tester) async {
+  testWidgets('previewing and customizing never changes the active theme', (
+    tester,
+  ) async {
     bigScreen(tester);
     final repo = FullCatalogRepository();
-    await pumpApp(tester, ThemeDetailScreen(definition: ThemeRegistry.byKey('sakura')), repo);
+    await pumpApp(
+      tester,
+      ThemeDetailScreen(definition: ThemeRegistry.byKey('sakura')),
+      repo,
+    );
 
     await tester.tap(find.text('Plum'));
     await tester.tap(find.text('Polaroid'));
@@ -124,10 +159,16 @@ void main() {
     expect(repo.writes, 0);
   });
 
-  testWidgets('apply asks for confirmation, then shares the theme', (tester) async {
+  testWidgets('apply asks for confirmation, then shares the theme', (
+    tester,
+  ) async {
     bigScreen(tester);
     final repo = FullCatalogRepository();
-    final container = await pumpApp(tester, ThemeDetailScreen(definition: ThemeRegistry.byKey('cottage')), repo);
+    final container = await pumpApp(
+      tester,
+      ThemeDetailScreen(definition: ThemeRegistry.byKey('cottage')),
+      repo,
+    );
 
     await tester.tap(find.text('Terracotta'));
     await tester.tap(find.text('Apply theme'));
@@ -145,13 +186,22 @@ void main() {
 
     expect(repo.server.themeKey, 'cottage');
     expect(repo.server.customization.accent, 'terracotta');
-    expect(container.read(appearanceControllerProvider).settings.themeKey, 'cottage');
+    expect(
+      container.read(appearanceControllerProvider).settings.themeKey,
+      'cottage',
+    );
   });
 
-  testWidgets('a conflict tells the user what the partner chose', (tester) async {
+  testWidgets('a conflict tells the user what the partner chose', (
+    tester,
+  ) async {
     bigScreen(tester);
     final repo = FullCatalogRepository();
-    await pumpApp(tester, ThemeDetailScreen(definition: ThemeRegistry.byKey('cafe')), repo);
+    await pumpApp(
+      tester,
+      ThemeDetailScreen(definition: ThemeRegistry.byKey('cafe')),
+      repo,
+    );
     repo.partnerSaves('midnight');
 
     await tester.tap(find.text('Apply theme'));
@@ -159,17 +209,28 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Apply'));
     await tester.pump();
 
-    expect(find.textContaining('Your partner just changed the theme to Midnight'), findsOneWidget);
+    expect(
+      find.textContaining('Your partner just changed the theme to Midnight'),
+      findsOneWidget,
+    );
     expect(repo.server.themeKey, 'midnight');
   });
 
-  testWidgets('reset is offered only for the active theme with changes', (tester) async {
+  testWidgets('reset is offered only for the active theme with changes', (
+    tester,
+  ) async {
     bigScreen(tester);
     final repo = FullCatalogRepository();
-    final container = await pumpApp(tester, ThemeDetailScreen(definition: ThemeRegistry.byKey('sakura')), repo);
+    final container = await pumpApp(
+      tester,
+      ThemeDetailScreen(definition: ThemeRegistry.byKey('sakura')),
+      repo,
+    );
     expect(find.text('Reset to theme defaults'), findsNothing);
 
-    await container.read(appearanceControllerProvider.notifier).apply('sakura', const ThemeCustomization(accent: 'coral'));
+    await container
+        .read(appearanceControllerProvider.notifier)
+        .apply('sakura', const ThemeCustomization(accent: 'coral'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Reset to theme defaults'));
@@ -178,19 +239,29 @@ void main() {
     expect(repo.server.themeKey, 'sakura');
   });
 
-  testWidgets('partner banner appears after a partner change and can be dismissed', (tester) async {
-    final repo = FullCatalogRepository();
-    final container = await pumpApp(tester, const Scaffold(body: PartnerThemeBanner()), repo);
-    final controller = container.read(appearanceControllerProvider.notifier);
-    await controller.apply('sakura', ThemeCustomization.defaults);
+  testWidgets(
+    'partner banner appears after a partner change and can be dismissed',
+    (tester) async {
+      final repo = FullCatalogRepository();
+      final container = await pumpApp(
+        tester,
+        const Scaffold(body: PartnerThemeBanner()),
+        repo,
+      );
+      final controller = container.read(appearanceControllerProvider.notifier);
+      await controller.apply('sakura', ThemeCustomization.defaults);
 
-    repo.partnerSaves('vintage_film');
-    await controller.refresh();
-    await tester.pumpAndSettle();
-    expect(find.text('Your partner changed your theme to Vintage Film.'), findsOneWidget);
+      repo.partnerSaves('vintage_film');
+      await controller.refresh();
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Your partner changed your theme to Vintage Film.'),
+        findsOneWidget,
+      );
 
-    await tester.tap(find.byTooltip('Dismiss'));
-    await tester.pumpAndSettle();
-    expect(find.byType(Card), findsNothing);
-  });
+      await tester.tap(find.byTooltip('Dismiss'));
+      await tester.pumpAndSettle();
+      expect(find.byType(Card), findsNothing);
+    },
+  );
 }

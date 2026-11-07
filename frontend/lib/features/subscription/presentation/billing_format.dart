@@ -27,10 +27,17 @@ abstract final class BillingFormat {
     return count == 1 ? 'per $unit' : 'every $count ${unit}s';
   }
 
-  static String priceWithInterval(int amount, String currency, String interval, int count) {
+  static String priceWithInterval(
+    int amount,
+    String currency,
+    String interval,
+    int count,
+  ) {
     if (interval == 'none' && amount == 0) return 'Free';
     final suffix = BillingFormat.interval(interval, count);
-    return suffix.isEmpty ? price(amount, currency) : '${price(amount, currency)} $suffix';
+    return suffix.isEmpty
+        ? price(amount, currency)
+        : '${price(amount, currency)} $suffix';
   }
 
   static String bytes(int bytes) {
@@ -41,26 +48,41 @@ abstract final class BillingFormat {
       value /= 1024;
       unit++;
     }
-    final text = value >= 100 || unit == 0 ? value.round().toString() : value.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '');
+    final text = value >= 100 || unit == 0
+        ? value.round().toString()
+        : value.toStringAsFixed(1).replaceAll(RegExp(r'\.0$'), '');
     return '$text ${units[unit]}';
   }
 
   static String date(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   /// Human, non-alarming status text.
   static String status(String status) => switch (status) {
-        'active' => 'Active',
-        'cancelled' => 'Cancelled — benefits until the period ends',
-        'grace_period' => 'Payment problem — benefits continue for now',
-        'payment_failed' => 'Payment failed',
-        'suspended' => 'Paused',
-        'pending' => 'Waiting for payment',
-        'expired' => 'Ended',
-        _ => status,
-      };
+    'active' => 'Active',
+    'cancelled' => 'Cancelled — benefits until the period ends',
+    'grace_period' => 'Payment problem — benefits continue for now',
+    'payment_failed' => 'Payment failed',
+    'suspended' => 'Paused',
+    'pending' => 'Waiting for payment',
+    'expired' => 'Ended',
+    _ => status,
+  };
 
   static String _group(String digits, String separator) {
     final buffer = StringBuffer();

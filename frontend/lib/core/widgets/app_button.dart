@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/core/theme/app_theme_tokens.dart';
 
-
 class AppButton extends StatelessWidget {
   const AppButton({
     required this.label,

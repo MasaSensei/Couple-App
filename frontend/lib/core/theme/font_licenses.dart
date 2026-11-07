@@ -16,7 +16,9 @@ void registerFontLicenses() {
 
   LicenseRegistry.addLicense(() async* {
     for (final entry in fonts.entries) {
-      final text = await rootBundle.loadString('assets/fonts/licenses/OFL-${entry.key}.txt');
+      final text = await rootBundle.loadString(
+        'assets/fonts/licenses/OFL-${entry.key}.txt',
+      );
       yield LicenseEntryWithLineBreaks([entry.value], text);
     }
   });

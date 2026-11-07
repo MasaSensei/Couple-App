@@ -14,15 +14,18 @@ void main() {
   setUp(() {
     repository = FakeSubscriptionRepository();
     gateway = FakePurchaseGateway();
-    container = ProviderContainer(overrides: [
-      subscriptionRepositoryProvider.overrideWithValue(repository),
-      purchaseGatewayProvider.overrideWithValue(gateway),
-    ]);
+    container = ProviderContainer(
+      overrides: [
+        subscriptionRepositoryProvider.overrideWithValue(repository),
+        purchaseGatewayProvider.overrideWithValue(gateway),
+      ],
+    );
   });
 
   tearDown(() => container.dispose());
 
-  SubscriptionController controller() => container.read(subscriptionControllerProvider.notifier);
+  SubscriptionController controller() =>
+      container.read(subscriptionControllerProvider.notifier);
 
   test('load fetches overview and plans', () async {
     await controller().load();
@@ -40,8 +43,14 @@ void main() {
     final outcome = await controller().purchase(plan);
 
     expect(outcome, isA<BillingSucceeded>());
-    expect(repository.calls, ['intent:love:mock', 'verify:love_monthly:tok_123']);
-    expect(container.read(subscriptionControllerProvider).overview!.planKey, 'love');
+    expect(repository.calls, [
+      'intent:love:mock',
+      'verify:love_monthly:tok_123',
+    ]);
+    expect(
+      container.read(subscriptionControllerProvider).overview!.planKey,
+      'love',
+    );
     expect(container.read(subscriptionControllerProvider).busy, isFalse);
   });
 
@@ -49,21 +58,37 @@ void main() {
     await controller().load();
     gateway.dismiss = true;
 
-    final outcome = await controller().purchase(container.read(subscriptionControllerProvider).plans[1]);
+    final outcome = await controller().purchase(
+      container.read(subscriptionControllerProvider).plans[1],
+    );
 
     expect(outcome, isA<BillingDismissed>());
     expect(repository.calls, ['intent:love:mock']);
-    expect(container.read(subscriptionControllerProvider).overview!.planKey, 'free');
+    expect(
+      container.read(subscriptionControllerProvider).overview!.planKey,
+      'free',
+    );
   });
 
   test('a rejected verification is reported, never shown as success', () async {
     await controller().load();
-    repository.failVerify = const BillingFailure('The store could not confirm this purchase.', code: 'purchase_invalid');
+    repository.failVerify = const BillingFailure(
+      'The store could not confirm this purchase.',
+      code: 'purchase_invalid',
+    );
 
-    final outcome = await controller().purchase(container.read(subscriptionControllerProvider).plans[1]);
+    final outcome = await controller().purchase(
+      container.read(subscriptionControllerProvider).plans[1],
+    );
 
-    expect(outcome, isA<BillingFailed>().having((f) => f.code, 'code', 'purchase_invalid'));
-    expect(container.read(subscriptionControllerProvider).overview!.planKey, 'free');
+    expect(
+      outcome,
+      isA<BillingFailed>().having((f) => f.code, 'code', 'purchase_invalid'),
+    );
+    expect(
+      container.read(subscriptionControllerProvider).overview!.planKey,
+      'free',
+    );
   });
 
   test('builds without a store integration cannot purchase', () async {
@@ -71,30 +96,57 @@ void main() {
     await controller().load();
 
     expect(controller().canPurchase, isFalse);
-    final outcome = await controller().purchase(container.read(subscriptionControllerProvider).plans[1]);
-    expect(outcome, isA<BillingFailed>().having((f) => f.message, 'message', UnavailablePurchaseGateway.message));
+    final outcome = await controller().purchase(
+      container.read(subscriptionControllerProvider).plans[1],
+    );
+    expect(
+      outcome,
+      isA<BillingFailed>().having(
+        (f) => f.message,
+        'message',
+        UnavailablePurchaseGateway.message,
+      ),
+    );
     expect(repository.calls, isEmpty);
   });
 
   test('cancel renewal keeps the plan until period end', () async {
-    repository.current = overview(planKey: 'love', subscription: subscriptionJson());
+    repository.current = overview(
+      planKey: 'love',
+      subscription: subscriptionJson(),
+    );
     await controller().load();
 
     final outcome = await controller().cancelRenewal();
 
     expect(outcome, isA<BillingSucceeded>());
-    final subscription = container.read(subscriptionControllerProvider).overview!.subscription!;
+    final subscription = container
+        .read(subscriptionControllerProvider)
+        .overview!
+        .subscription!;
     expect(subscription.status, 'cancelled');
-    expect(container.read(subscriptionControllerProvider).overview!.planKey, 'love');
+    expect(
+      container.read(subscriptionControllerProvider).overview!.planKey,
+      'love',
+    );
   });
 
   test('partner cancel refusal is surfaced with its reason', () async {
-    repository.current = overview(planKey: 'love', subscription: subscriptionJson(startedBy: 'partner', canManage: false));
-    repository.failCancel = const BillingFailure('Only the partner who started the subscription can cancel it.', code: 'not_purchaser');
+    repository.current = overview(
+      planKey: 'love',
+      subscription: subscriptionJson(startedBy: 'partner', canManage: false),
+    );
+    repository.failCancel = const BillingFailure(
+      'Only the partner who started the subscription can cancel it.',
+      code: 'not_purchaser',
+    );
     await controller().load();
 
     final outcome = await controller().cancelRenewal();
 
-    expect(outcome, isA<BillingFailed>().having((f) => f.code, 'code', 'not_purchaser'));
+    expect(
+      outcome,
+      isA<BillingFailed>().having((f) => f.code, 'code', 'not_purchaser'),
+    );
   });
 }

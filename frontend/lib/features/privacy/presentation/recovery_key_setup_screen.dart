@@ -286,9 +286,6 @@ class _RecoveryKeySetupScreenState
       style: context.tokens.body,
     ),
     const SizedBox(height: AppSpacing.xl),
-    AppButton(
-      label: 'Done',
-      onPressed: () => Navigator.of(context).pop(true),
-    ),
+    AppButton(label: 'Done', onPressed: () => Navigator.of(context).pop(true)),
   ];
 }

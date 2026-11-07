@@ -111,10 +111,9 @@ void main() {
     final formatted = recoveryService.formatRecoveryKey(recoveryKey);
 
     expect(
-      () => recoveryService.parseRecoveryKey(formatted.replaceFirst(
-        RegExp(r'[A-Z2-7]'),
-        '1',
-      )),
+      () => recoveryService.parseRecoveryKey(
+        formatted.replaceFirst(RegExp(r'[A-Z2-7]'), '1'),
+      ),
       throwsFormatException,
     );
     expect(

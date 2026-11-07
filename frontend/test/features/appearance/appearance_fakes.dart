@@ -35,13 +35,18 @@ class FakeAppearanceRepository extends AppearanceRepository {
   }
 
   void _check() {
-    if (offline) throw const ApiException(message: 'Unable to connect to the server.');
+    if (offline) {
+      throw const ApiException(message: 'Unable to connect to the server.');
+    }
   }
 
   @override
   Future<AppearanceCatalog> getCatalog() async {
     _check();
-    return const AppearanceCatalog(themes: [CatalogItem(key: 'sakura', name: 'Sakura', version: 1)], photoBoothTemplates: []);
+    return const AppearanceCatalog(
+      themes: [CatalogItem(key: 'sakura', name: 'Sakura', version: 1)],
+      photoBoothTemplates: [],
+    );
   }
 
   @override
@@ -68,8 +73,13 @@ class FakeAppearanceRepository extends AppearanceRepository {
   }
 
   @override
-  Future<CoupleThemeSettings> resetCustomization({required int basedOnVersion}) =>
-      updateCoupleTheme(themeKey: server.themeKey, customization: ThemeCustomization.defaults, basedOnVersion: basedOnVersion);
+  Future<CoupleThemeSettings> resetCustomization({
+    required int basedOnVersion,
+  }) => updateCoupleTheme(
+    themeKey: server.themeKey,
+    customization: ThemeCustomization.defaults,
+    basedOnVersion: basedOnVersion,
+  );
 }
 
 class FakeAuthNotifier extends AuthNotifier {
@@ -83,16 +93,28 @@ class FakeAuthNotifier extends AuthNotifier {
   void set(AuthState value) => state = value;
 }
 
-final fakeUser = UserModel.fromJson({'id': me, 'name': 'Me', 'email': 'me@example.test'});
+final fakeUser = UserModel.fromJson({
+  'id': me,
+  'name': 'Me',
+  'email': 'me@example.test',
+});
 
-Future<ProviderContainer> container(FakeAppearanceRepository repository, {AuthState? auth}) async {
+Future<ProviderContainer> container(
+  FakeAppearanceRepository repository, {
+  AuthState? auth,
+}) async {
   final prefs = await SharedPreferences.getInstance();
-  final c = ProviderContainer(overrides: [
-    appearanceLocalStoreProvider.overrideWithValue(AppearanceLocalStore(prefs)),
-    appearanceRepositoryProvider.overrideWithValue(repository),
-    authNotifierProvider.overrideWith(() => FakeAuthNotifier(auth ?? AuthState.authenticated(fakeUser))),
-  ]);
+  final c = ProviderContainer(
+    overrides: [
+      appearanceLocalStoreProvider.overrideWithValue(
+        AppearanceLocalStore(prefs),
+      ),
+      appearanceRepositoryProvider.overrideWithValue(repository),
+      authNotifierProvider.overrideWith(
+        () => FakeAuthNotifier(auth ?? AuthState.authenticated(fakeUser)),
+      ),
+    ],
+  );
   addTearDown(c.dispose);
   return c;
 }
-

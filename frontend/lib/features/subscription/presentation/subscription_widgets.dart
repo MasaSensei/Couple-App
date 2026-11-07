@@ -13,7 +13,9 @@ class StorageUsageBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    final color = storage.isFull ? scheme.error : (storage.fraction > 0.85 ? Colors.orange : scheme.primary);
+    final color = storage.isFull
+        ? scheme.error
+        : (storage.fraction > 0.85 ? Colors.orange : scheme.primary);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -22,7 +24,12 @@ class StorageUsageBar extends StatelessWidget {
           label: 'Storage used: ${(storage.fraction * 100).round()} percent',
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(value: storage.fraction, minHeight: 10, color: color, backgroundColor: scheme.surfaceContainerHighest),
+            child: LinearProgressIndicator(
+              value: storage.fraction,
+              minHeight: 10,
+              color: color,
+              backgroundColor: scheme.surfaceContainerHighest,
+            ),
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -31,8 +38,12 @@ class StorageUsageBar extends StatelessWidget {
           style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         Text(
-          storage.isFull ? 'Storage is full' : '${BillingFormat.bytes(storage.remainingBytes)} left',
-          style: text.bodySmall?.copyWith(color: storage.isFull ? scheme.error : null),
+          storage.isFull
+              ? 'Storage is full'
+              : '${BillingFormat.bytes(storage.remainingBytes)} left',
+          style: text.bodySmall?.copyWith(
+            color: storage.isFull ? scheme.error : null,
+          ),
         ),
       ],
     );
@@ -57,7 +68,9 @@ class FeatureRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            feature.included ? Icons.check_circle_rounded : Icons.remove_circle_outline_rounded,
+            feature.included
+                ? Icons.check_circle_rounded
+                : Icons.remove_circle_outline_rounded,
             size: 18,
             color: feature.included ? scheme.primary : scheme.outline,
             semanticLabel: feature.included ? 'Included' : 'Not included',

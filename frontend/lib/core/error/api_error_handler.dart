@@ -37,7 +37,11 @@ class ApiErrorHandler {
       }
 
       if (message is String && message.isNotEmpty) {
-        return ApiException(message: message, statusCode: statusCode, data: payload);
+        return ApiException(
+          message: message,
+          statusCode: statusCode,
+          data: payload,
+        );
       }
     }
 

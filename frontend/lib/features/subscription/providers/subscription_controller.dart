@@ -6,15 +6,22 @@ import '../data/purchase_gateway.dart';
 import '../data/subscription_models.dart';
 import '../data/subscription_repository.dart';
 
-final subscriptionRepositoryProvider = Provider<SubscriptionRepository>((ref) => SubscriptionRepository(ApiClient()));
+final subscriptionRepositoryProvider = Provider<SubscriptionRepository>(
+  (ref) => SubscriptionRepository(ApiClient()),
+);
 
 /// Debug builds use the server's mock store; release builds have no real
 /// store integration yet and say so instead of faking a purchase.
 final purchaseGatewayProvider = Provider<PurchaseGateway>(
-  (ref) => kDebugMode ? MockPurchaseGateway(ApiClient()) : const UnavailablePurchaseGateway(),
+  (ref) => kDebugMode
+      ? MockPurchaseGateway(ApiClient())
+      : const UnavailablePurchaseGateway(),
 );
 
-final subscriptionControllerProvider = NotifierProvider<SubscriptionController, SubscriptionState>(SubscriptionController.new);
+final subscriptionControllerProvider =
+    NotifierProvider<SubscriptionController, SubscriptionState>(
+      SubscriptionController.new,
+    );
 
 @immutable
 class SubscriptionState {
@@ -52,15 +59,14 @@ class SubscriptionState {
     bool? busy,
     String? error,
     bool clearError = false,
-  }) =>
-      SubscriptionState(
-        overview: overview ?? this.overview,
-        plans: plans ?? this.plans,
-        transactions: transactions ?? this.transactions,
-        loading: loading ?? this.loading,
-        busy: busy ?? this.busy,
-        error: clearError ? null : (error ?? this.error),
-      );
+  }) => SubscriptionState(
+    overview: overview ?? this.overview,
+    plans: plans ?? this.plans,
+    transactions: transactions ?? this.transactions,
+    loading: loading ?? this.loading,
+    busy: busy ?? this.busy,
+    error: clearError ? null : (error ?? this.error),
+  );
 }
 
 sealed class BillingOutcome {
@@ -85,7 +91,8 @@ class BillingFailed extends BillingOutcome {
 }
 
 class SubscriptionController extends Notifier<SubscriptionState> {
-  SubscriptionRepository get _repository => ref.read(subscriptionRepositoryProvider);
+  SubscriptionRepository get _repository =>
+      ref.read(subscriptionRepositoryProvider);
   PurchaseGateway get _gateway => ref.read(purchaseGatewayProvider);
 
   @override
@@ -94,13 +101,17 @@ class SubscriptionController extends Notifier<SubscriptionState> {
   /// Purchases work only when this build has a store AND the server accepts it.
   bool get canPurchase {
     final provider = _gateway.provider;
-    return provider != null && (state.overview?.availableProviders.contains(provider) ?? false);
+    return provider != null &&
+        (state.overview?.availableProviders.contains(provider) ?? false);
   }
 
   Future<void> load() async {
     state = state.copyWith(loading: true, clearError: true);
     try {
-      final results = await Future.wait([_repository.getOverview(), _repository.getPlans()]);
+      final results = await Future.wait([
+        _repository.getOverview(),
+        _repository.getPlans(),
+      ]);
       state = state.copyWith(
         overview: results[0] as SubscriptionOverview,
         plans: results[1] as List<SubscriptionPlan>,
@@ -109,7 +120,10 @@ class SubscriptionController extends Notifier<SubscriptionState> {
     } on BillingFailure catch (failure) {
       state = state.copyWith(loading: false, error: failure.message);
     } catch (_) {
-      state = state.copyWith(loading: false, error: 'Unable to load your plan right now.');
+      state = state.copyWith(
+        loading: false,
+        error: 'Unable to load your plan right now.',
+      );
     }
   }
 
@@ -123,45 +137,59 @@ class SubscriptionController extends Notifier<SubscriptionState> {
 
   /// intent (server) → store sheet → server-side verification.
   Future<BillingOutcome> purchase(SubscriptionPlan plan) => _run(() async {
-        final provider = _gateway.provider;
-        if (provider == null || !canPurchase) {
-          return const BillingFailed(UnavailablePurchaseGateway.message, code: 'provider_unavailable');
-        }
+    final provider = _gateway.provider;
+    if (provider == null || !canPurchase) {
+      return const BillingFailed(
+        UnavailablePurchaseGateway.message,
+        code: 'provider_unavailable',
+      );
+    }
 
-        final intent = await _repository.createIntent(planKey: plan.key, provider: provider);
-        final purchase = await _gateway.buy(intent);
-        if (purchase == null) return const BillingDismissed();
+    final intent = await _repository.createIntent(
+      planKey: plan.key,
+      provider: provider,
+    );
+    final purchase = await _gateway.buy(intent);
+    if (purchase == null) return const BillingDismissed();
 
-        final overview = await _repository.verifyPurchase(
-          provider: provider,
-          productId: purchase.productId,
-          purchaseToken: purchase.purchaseToken,
-        );
-        await _refreshAfter(overview);
-        return BillingSucceeded('${plan.name} is now active for both of you ♡');
-      });
+    final overview = await _repository.verifyPurchase(
+      provider: provider,
+      productId: purchase.productId,
+      purchaseToken: purchase.purchaseToken,
+    );
+    await _refreshAfter(overview);
+    return BillingSucceeded('${plan.name} is now active for both of you ♡');
+  });
 
   Future<BillingOutcome> cancelRenewal() => _run(() async {
-        final overview = await _repository.cancelRenewal();
-        await _refreshAfter(overview);
-        final end = overview.subscription?.benefitsEndAt;
-        return BillingSucceeded(end == null
-            ? 'Auto-renew is off.'
-            : 'Auto-renew is off. Your benefits continue until the end of the paid period.');
-      });
+    final overview = await _repository.cancelRenewal();
+    await _refreshAfter(overview);
+    final end = overview.subscription?.benefitsEndAt;
+    return BillingSucceeded(
+      end == null ? 'Auto-renew is off.' : 'Auto-renew is off. Your benefits continue until the end of the paid period.',
+    );
+  });
 
   Future<BillingOutcome> restore() => _run(() async {
-        final provider = _gateway.provider;
-        if (provider == null) {
-          return const BillingFailed(UnavailablePurchaseGateway.message, code: 'provider_unavailable');
-        }
-        final purchases = await _gateway.restorable();
-        if (purchases.isEmpty) return const BillingSucceeded('No purchases to restore on this device.');
+    final provider = _gateway.provider;
+    if (provider == null) {
+      return const BillingFailed(
+        UnavailablePurchaseGateway.message,
+        code: 'provider_unavailable',
+      );
+    }
+    final purchases = await _gateway.restorable();
+    if (purchases.isEmpty) {
+      return const BillingSucceeded('No purchases to restore on this device.');
+    }
 
-        final overview = await _repository.restore(provider: provider, purchases: purchases);
-        await _refreshAfter(overview);
-        return const BillingSucceeded('Purchases checked with the store.');
-      });
+    final overview = await _repository.restore(
+      provider: provider,
+      purchases: purchases,
+    );
+    await _refreshAfter(overview);
+    return const BillingSucceeded('Purchases checked with the store.');
+  });
 
   Future<void> _refreshAfter(SubscriptionOverview overview) async {
     state = state.copyWith(overview: overview);
@@ -173,14 +201,24 @@ class SubscriptionController extends Notifier<SubscriptionState> {
   }
 
   Future<BillingOutcome> _run(Future<BillingOutcome> Function() action) async {
-    if (state.busy) return const BillingFailed('Please wait for the current request to finish.');
+    if (state.busy) {
+      return const BillingFailed(
+        'Please wait for the current request to finish.',
+      );
+    }
     state = state.copyWith(busy: true);
     try {
       return await action();
     } on BillingFailure catch (failure) {
-      return BillingFailed(failure.message, code: failure.code, managementUrl: failure.data?['management_url'] as String?);
+      return BillingFailed(
+        failure.message,
+        code: failure.code,
+        managementUrl: failure.data?['management_url'] as String?,
+      );
     } catch (_) {
-      return const BillingFailed('Something went wrong. Please try again. If the store charged you, use "Restore purchases".');
+      return const BillingFailed(
+        'Something went wrong. Please try again. If the store charged you, use "Restore purchases".',
+      );
     } finally {
       state = state.copyWith(busy: false);
     }
