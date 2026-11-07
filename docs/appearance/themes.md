@@ -56,7 +56,7 @@ On logout, the cached couple setting and the seen version are cleared. Device pr
 
 ## 7. Admin (Filament)
 
-The Themes and Photo Booth Templates resources can rename, activate or deactivate, mark premium, and reorder items, with no delete. Keys and option lists come from the catalog file and are not editable in the panel. The list shows only an aggregate count of couples using each theme, never which couples. There is no photo data anywhere in these resources.
+The Themes and Photo Booth Templates resources can rename, activate or deactivate, mark premium, and reorder items, with no delete. Since Phase 8 the premium flag is enforced: a premium theme needs the `premium_themes` entitlement to be newly chosen (a couple keeps the one it already uses), and premium Photo Booth layouts are hidden in the app without `premium_photo_booth` — see [../billing/subscriptions.md](../billing/subscriptions.md) §6. Keys and option lists come from the catalog file and are not editable in the panel. The list shows only an aggregate count of couples using each theme, never which couples. There is no photo data anywhere in these resources.
 
 The panel requires `is_admin === true`.
 

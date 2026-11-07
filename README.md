@@ -494,6 +494,16 @@ These features are planned for future phases and are **not implemented yet**.
 
 ---
 
+# Documentation
+
+- Encryption: [docs/security/encryption.md](docs/security/encryption.md)
+- Storage reliability & DR: [docs/storage/reliability.md](docs/storage/reliability.md), [docs/storage/disaster-recovery.md](docs/storage/disaster-recovery.md)
+- Themes & Photo Booth: [docs/appearance/themes.md](docs/appearance/themes.md), [docs/appearance/photo-booth.md](docs/appearance/photo-booth.md)
+- Subscriptions, entitlements & storage quota: [docs/billing/subscriptions.md](docs/billing/subscriptions.md)
+- Phase 8 report & Phase 9 recommendations: [docs/reports/phase-8-report.md](docs/reports/phase-8-report.md)
+
+---
+
 # Roadmap
 
 ## Phase 1 — Backend Foundation
