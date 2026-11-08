@@ -49,4 +49,22 @@ class CoupleRepository {
 
     return CoupleModel.fromJson(coupleData);
   }
+
+  /// Sets (or clears, with null) the couple's anniversary.
+  Future<CoupleModel> updateRelationshipStart(DateTime? date) async {
+    final response = await _apiClient.patch(
+      '/couple',
+      data: {
+        'relationship_started_at': date == null
+            ? null
+            : '${date.year.toString().padLeft(4, '0')}-'
+                  '${date.month.toString().padLeft(2, '0')}-'
+                  '${date.day.toString().padLeft(2, '0')}',
+      },
+    );
+
+    final data = response.data['data'] as Map<String, dynamic>;
+
+    return CoupleModel.fromJson(data['couple'] as Map<String, dynamic>);
+  }
 }

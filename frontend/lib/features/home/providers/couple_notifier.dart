@@ -40,6 +40,20 @@ class CoupleNotifier extends Notifier<CoupleState> {
     }
   }
 
+  /// Returns null on success, or a message to show. Keeps the loaded couple
+  /// on failure (no full-screen error for a small edit).
+  Future<String?> updateRelationshipStart(DateTime? date) async {
+    try {
+      final couple = await _repository.updateRelationshipStart(date);
+      state = CoupleState(status: CoupleStatus.loaded, couple: couple);
+      return null;
+    } on ApiException catch (error) {
+      return error.message;
+    } catch (_) {
+      return 'Could not save the date. Please try again.';
+    }
+  }
+
   Future<void> createCouple() async {
     state = state.copyWith(status: CoupleStatus.loading, clearError: true);
 

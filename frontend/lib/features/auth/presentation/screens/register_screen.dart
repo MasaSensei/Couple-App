@@ -2,13 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '/core/theme/app_spacing.dart';
-import '/core/widgets/app_button.dart';
-import '/core/widgets/app_text_field.dart';
+import '/core/widgets/app_widgets.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/auth_state.dart';
-
-import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -67,7 +63,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final state = ref.read(authNotifierProvider);
 
     if (state.status == AuthStatus.authenticated) {
-      _showMessage('Welcome, ${state.user!.name} ♡');
+      _showMessage('Welcome, ${state.user!.name}.');
       return;
     }
 
@@ -87,20 +83,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState.status == AuthStatus.loading;
 
-    return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
+    return AppScaffold(
+      decorated: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        title: const BrandMark(size: 18),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            0,
-            AppSpacing.lg,
-            AppSpacing.xl,
-          ),
+          padding: const EdgeInsets.only(bottom: AppSpacing.xl),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Create your space ♡', style: context.tokens.display),
+              const SizedBox(height: AppSpacing.md),
+              Text('Create your space', style: context.tokens.display),
 
               const SizedBox(height: AppSpacing.sm),
 
@@ -109,7 +105,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 style: context.tokens.subtitle,
               ),
 
-              const SizedBox(height: AppSpacing.xxl),
+              const SizedBox(height: AppSpacing.xl),
 
               AppTextField(
                 controller: _nameController,
@@ -135,6 +131,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               AppTextField(
                 controller: _passwordController,
                 label: 'Password',
+                helper: 'At least 8 characters.',
                 obscureText: true,
                 textInputAction: TextInputAction.next,
                 prefixIcon: Icons.lock_outline_rounded,

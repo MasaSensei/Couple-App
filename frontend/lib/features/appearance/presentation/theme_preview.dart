@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/core/theme/app_theme.dart';
-import 'package:frontend/core/theme/app_theme_tokens.dart';
 import 'package:frontend/core/theme/theme_customization.dart';
+import 'package:frontend/core/widgets/app_widgets.dart';
 import 'package:frontend/core/theme/theme_decorations.dart';
 import 'package:frontend/core/theme/theme_definition.dart';
 
@@ -43,126 +43,147 @@ class ThemeScope extends StatelessWidget {
   }
 }
 
-/// A miniature Couple Space + memory card, drawn with the surrounding theme.
+/// A miniature Couple Space drawn with the real components and the
+/// surrounding theme (so what you see is what the theme does). Laid out at a
+/// fixed phone-like size and scaled to fit, so it never overflows a card.
 class ThemePreview extends StatelessWidget {
   const ThemePreview({super.key, this.compact = false});
 
   final bool compact;
 
+  static final _sample = DateTime(2026, 11, 14, 19);
+
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    final scale = compact ? 0.62 : 1.0;
 
-    return Material(
-      color: t.background,
-      child: ThemedBackground(
-        child: Padding(
-          padding: EdgeInsets.all(16 * scale),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Our Little Space',
-                style: t.title.copyWith(fontSize: t.title.fontSize! * scale),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              SizedBox(height: 4 * scale),
-              Text(
-                'Hello, love ♡',
-                style: t.subtitle.copyWith(
-                  fontSize: t.subtitle.fontSize! * scale,
+    final page = SizedBox(
+      width: 240,
+      height: compact ? 340 : 380,
+      child: Material(
+        color: t.background,
+        child: ThemedBackground(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const CoupleAvatars(
+                      firstName: 'A',
+                      secondName: 'B',
+                      size: 30,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Good evening',
+                            style: t.handwriting.copyWith(fontSize: 14),
+                            maxLines: 1,
+                          ),
+                          Text(
+                            'Our little space',
+                            style: t.title.copyWith(fontSize: 18),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                maxLines: 1,
-              ),
-              SizedBox(height: 12 * scale),
-              _MemoryPreviewCard(scale: scale),
-              const Spacer(),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16 * scale,
-                    vertical: 8 * scale,
+                const SizedBox(height: 12),
+                JournalCard(
+                  ornament: true,
+                  padding: const EdgeInsets.all(10),
+                  child: Row(
+                    children: [
+                      DateBadge(date: _sample, width: 44),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Dinner date',
+                              style: t.heading.copyWith(fontSize: 14),
+                              maxLines: 1,
+                            ),
+                            const SizedBox(height: 4),
+                            const StatusChip(
+                              label: 'Planned',
+                              tone: StatusTone.brand,
+                              dense: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  decoration: BoxDecoration(
-                    color: t.primary,
-                    borderRadius: BorderRadius.circular(t.buttonRadius * scale),
-                  ),
-                  child: Text(
-                    'Add memory',
-                    style: t.button.copyWith(
-                      fontSize: t.button.fontSize! * scale,
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final (seed, a, b) in [
+                      (1, t.secondary, t.primary),
+                      (2, t.accent, t.secondary),
+                    ]) ...[
+                      SizedBox(
+                        width: 84,
+                        child: PolaroidFrame(
+                          seed: seed,
+                          ornament: seed == 1,
+                          caption: seed == 1 ? 'first trip' : 'us',
+                          photo: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [a, b],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (seed == 1) const SizedBox(width: 16),
+                    ],
+                  ],
+                ),
+                const Spacer(),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: t.primary,
+                      borderRadius: BorderRadius.circular(t.buttonRadius),
+                    ),
+                    child: Text(
+                      'New memory',
+                      style: t.button.copyWith(fontSize: 12),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MemoryPreviewCard extends StatelessWidget {
-  const _MemoryPreviewCard({required this.scale});
-
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.tokens;
-    final photo = Container(
-      height: 64 * scale,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [t.secondary, t.accent]),
-        borderRadius: BorderRadius.circular(
-          t.memoryStyle == MemoryStyle.minimal ? 0 : 10 * scale,
-        ),
-      ),
-      child: Icon(
-        Icons.favorite_rounded,
-        color: t.surface.withValues(alpha: 0.85),
-        size: 24 * scale,
-      ),
-    );
-
-    return Container(
-      padding: EdgeInsets.all(
-        (t.memoryStyle == MemoryStyle.polaroid ? 8 : 10) * scale,
-      ),
-      decoration: BoxDecoration(
-        color: t.surface,
-        borderRadius: BorderRadius.circular(
-          (t.memoryStyle == MemoryStyle.polaroid ? 4 : t.cardRadius) * scale,
-        ),
-        border: t.cardBorder ? Border.all(color: t.border) : null,
-        boxShadow: t.cardElevation > 0 || t.memoryStyle == MemoryStyle.polaroid
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.12),
-                  blurRadius: 6 * scale,
-                  offset: Offset(0, 2 * scale),
-                ),
-              ]
-            : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          photo,
-          SizedBox(height: 6 * scale),
-          Text(
-            'Our first date',
-            style: t.body.copyWith(
-              fontSize: t.body.fontSize! * scale,
-              fontWeight: FontWeight.w600,
+              ],
             ),
-            maxLines: 1,
           ),
-        ],
+        ),
+      ),
+    );
+
+    return ClipRect(
+      child: FittedBox(
+        fit: BoxFit.cover,
+        alignment: Alignment.topCenter,
+        child: MediaQuery.withNoTextScaling(child: page),
       ),
     );
   }

@@ -37,11 +37,11 @@ void main() {
 
     await tester.pump();
 
-    expect(find.text('Our Memories'), findsOneWidget);
+    expect(find.text('Our memories'), findsOneWidget);
 
     expect(find.text('Dinner Together'), findsOneWidget);
 
-    expect(find.text('20 Sep 2026'), findsOneWidget);
+    expect(find.textContaining('20 Sep 2026'), findsOneWidget);
   });
 
   testWidgets('MemoryListScreen renders empty state', (tester) async {

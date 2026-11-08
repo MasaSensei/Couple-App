@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/widgets/app_widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/core/theme/app_spacing.dart';
 
 import '../data/subscription_models.dart';
 import '../providers/subscription_controller.dart';
@@ -159,7 +159,7 @@ class _SubscriptionManagementScreenState
           Text('Billing history', style: text.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           switch (state.transactions) {
-            null => const Center(child: CircularProgressIndicator()),
+            null => const Center(child: AppLoading()),
             final List<BillingTransaction> list when list.isEmpty => const Text(
               'No payments yet.',
             ),

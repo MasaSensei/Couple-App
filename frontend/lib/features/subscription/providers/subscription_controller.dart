@@ -158,7 +158,7 @@ class SubscriptionController extends Notifier<SubscriptionState> {
       purchaseToken: purchase.purchaseToken,
     );
     await _refreshAfter(overview);
-    return BillingSucceeded('${plan.name} is now active for both of you ♡');
+    return BillingSucceeded('${plan.name} is now active for both of you');
   });
 
   Future<BillingOutcome> cancelRenewal() => _run(() async {

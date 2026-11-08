@@ -1,18 +1,22 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:frontend/core/widgets/app_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/security/encryption_errors.dart';
-import 'package:frontend/core/theme/app_theme_tokens.dart';
 import 'package:frontend/core/theme/theme_customization.dart';
 import 'package:frontend/features/privacy/presentation/restore_access_screen.dart';
 import 'package:frontend/features/memories/data/models/memory_photo_model.dart';
 import 'package:frontend/features/memories/providers/memory_photo_provider.dart';
 
 class PrivateMemoryPhoto extends ConsumerStatefulWidget {
-  const PrivateMemoryPhoto({super.key, required this.photo});
+  const PrivateMemoryPhoto({super.key, required this.photo, this.bare = false});
 
   final MemoryPhotoModel photo;
+
+  /// Just the decrypted image, filling its box: for callers that frame it
+  /// themselves (e.g. `PolaroidFrame`), so the Memory style is not applied twice.
+  final bool bare;
 
   @override
   ConsumerState<PrivateMemoryPhoto> createState() => _PrivateMemoryPhotoState();
@@ -40,7 +44,9 @@ class _PrivateMemoryPhotoState extends ConsumerState<PrivateMemoryPhoto> {
       future: _photoFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return widget.bare
+              ? ColoredBox(color: context.tokens.surfaceMuted)
+              : const Center(child: AppLoading());
         }
 
         if (snapshot.hasError) {
@@ -76,26 +82,27 @@ class _PrivateMemoryPhotoState extends ConsumerState<PrivateMemoryPhoto> {
           },
         );
 
+        if (widget.bare) {
+          return Semantics(image: true, label: 'Photo', child: image);
+        }
+
         return switch (t.memoryStyle) {
           MemoryStyle.soft => ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(t.photoRadius + 10),
             child: image,
           ),
           MemoryStyle.minimal => image,
           MemoryStyle.polaroid => Container(
             padding: const EdgeInsets.fromLTRB(6, 6, 6, 18),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: t.paper,
               borderRadius: BorderRadius.circular(3),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              boxShadow: t.elevation(2),
             ),
-            child: image,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(t.photoRadius),
+              child: image,
+            ),
           ),
         };
       },

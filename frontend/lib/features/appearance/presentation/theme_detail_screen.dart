@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/widgets/app_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/core/theme/app_spacing.dart';
-import 'package:frontend/core/theme/app_theme_tokens.dart';
 import 'package:frontend/core/theme/theme_customization.dart';
 import 'package:frontend/core/theme/theme_definition.dart';
 import 'package:frontend/core/theme/theme_registry.dart';
@@ -65,7 +64,7 @@ class _ThemeDetailScreenState extends ConsumerState<ThemeDetailScreen> {
 
     final current = ref.read(appearanceControllerProvider).settings;
     final message = switch (outcome) {
-      ApplyOutcome.applied => '${widget.definition.name} is now your theme ♡',
+      ApplyOutcome.applied => '${widget.definition.name} is now your theme',
       ApplyOutcome.conflict =>
         'Your partner just changed the theme to ${ThemeRegistry.byKey(current.themeKey).name}. Review it, then apply again if you like.',
       ApplyOutcome.locked =>

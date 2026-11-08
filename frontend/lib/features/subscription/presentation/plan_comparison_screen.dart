@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/core/theme/app_spacing.dart';
+import 'package:frontend/core/widgets/app_widgets.dart';
 
 import '../data/purchase_gateway.dart';
 import '../data/subscription_models.dart';
@@ -78,18 +78,37 @@ class _PlanComparisonScreenState extends ConsumerState<PlanComparisonScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Compare plans')),
       body: state.plans.isEmpty
-          ? Center(
-              child: state.loading
-                  ? const CircularProgressIndicator()
-                  : Text(state.error ?? 'No plans available.'),
-            )
+          ? (state.loading
+                ? const AppStateView.loading()
+                : AppStateView.error(
+                    title: 'Plans are not available',
+                    message: state.error ?? 'No plans available.',
+                    onAction: () => ref
+                        .read(subscriptionControllerProvider.notifier)
+                        .load(),
+                  ))
           : ListView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.gutter,
+                AppSpacing.sm,
+                AppSpacing.gutter,
+                AppSpacing.xxl,
+              ),
               children: [
+                Text(
+                  'One subscription covers both of you. Prices include everything; there are no hidden fees.',
+                  style: context.tokens.body.copyWith(
+                    color: context.tokens.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
                 if (!canPurchase)
                   const Padding(
                     padding: EdgeInsets.only(bottom: AppSpacing.md),
-                    child: Text(UnavailablePurchaseGateway.message),
+                    child: NoticeBanner(
+                      tone: StatusTone.warning,
+                      message: UnavailablePurchaseGateway.message,
+                    ),
                   ),
                 for (final plan in state.plans)
                   _PlanCard(
@@ -133,58 +152,65 @@ class _PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
+    final t = context.tokens;
 
-    return Card(
-      shape: plan.isCurrent
-          ? RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: scheme.primary, width: 2),
-            )
-          : null,
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(child: Text(plan.name, style: text.titleLarge)),
-                if (plan.isCurrent) Chip(label: const Text('Current')),
-              ],
-            ),
-            Text(
-              BillingFormat.priceWithInterval(
-                plan.priceAmount,
-                plan.currency,
-                plan.billingInterval,
-                plan.billingIntervalCount,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(t.cardRadius + 2),
+          border: plan.isCurrent
+              ? Border.all(color: t.primary, width: 2)
+              : null,
+        ),
+        child: JournalCard(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(child: Text(plan.name, style: t.title)),
+                  if (plan.isCurrent)
+                    const StatusChip(
+                      label: 'Current',
+                      tone: StatusTone.brand,
+                      icon: Icons.check_rounded,
+                    ),
+                ],
               ),
-              style: text.titleMedium?.copyWith(color: scheme.primary),
-            ),
-            if (plan.description != null) ...[
               const SizedBox(height: AppSpacing.xs),
-              Text(plan.description!),
-            ],
-            const SizedBox(height: AppSpacing.sm),
-            for (final feature in plan.features) FeatureRow(feature: feature),
-            if (plan.autoRenews) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(renewalTerms(plan), style: text.bodySmall),
-            ],
-            if (!plan.isFree && !plan.isCurrent) ...[
-              const SizedBox(height: AppSpacing.md),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: action,
-                  child: Text(actionLabel),
+              Text(
+                BillingFormat.priceWithInterval(
+                  plan.priceAmount,
+                  plan.currency,
+                  plan.billingInterval,
+                  plan.billingIntervalCount,
                 ),
+                style: t.heading.copyWith(color: t.primary),
               ),
+              if (plan.description != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(plan.description!, style: t.body),
+              ],
+              const SizedBox(height: AppSpacing.smd),
+              for (final feature in plan.features) FeatureRow(feature: feature),
+              if (plan.autoRenews) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(renewalTerms(plan), style: t.caption),
+              ],
+              if (!plan.isFree && !plan.isCurrent) ...[
+                const SizedBox(height: AppSpacing.md),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: action,
+                    child: Text(actionLabel),
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/core/theme/app_spacing.dart';
+import 'package:frontend/core/widgets/app_widgets.dart';
 
 import '../data/subscription_models.dart';
 import 'billing_format.dart';
@@ -11,11 +11,10 @@ class StorageUsageBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
+    final t = context.tokens;
     final color = storage.isFull
-        ? scheme.error
-        : (storage.fraction > 0.85 ? Colors.orange : scheme.primary);
+        ? t.tone(StatusTone.error)
+        : (storage.fraction > 0.85 ? t.tone(StatusTone.warning) : t.primary);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -28,21 +27,21 @@ class StorageUsageBar extends StatelessWidget {
               value: storage.fraction,
               minHeight: 10,
               color: color,
-              backgroundColor: scheme.surfaceContainerHighest,
+              backgroundColor: t.surfaceMuted,
             ),
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
           '${BillingFormat.bytes(storage.usedBytes)} of ${BillingFormat.bytes(storage.limitBytes)} used',
-          style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+          style: t.heading.copyWith(fontSize: 15),
         ),
         Text(
           storage.isFull
               ? 'Storage is full'
               : '${BillingFormat.bytes(storage.remainingBytes)} left',
-          style: text.bodySmall?.copyWith(
-            color: storage.isFull ? scheme.error : null,
+          style: t.caption.copyWith(
+            color: storage.isFull ? t.onToneContainer(StatusTone.error) : null,
           ),
         ),
       ],
@@ -57,7 +56,7 @@ class FeatureRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final t = context.tokens;
     final label = feature.type == 'bytes'
         ? '${BillingFormat.bytes((feature.value as num?)?.toInt() ?? 0)} ${feature.name.toLowerCase()}'
         : feature.name;
@@ -72,14 +71,22 @@ class FeatureRow extends StatelessWidget {
                 ? Icons.check_circle_rounded
                 : Icons.remove_circle_outline_rounded,
             size: 18,
-            color: feature.included ? scheme.primary : scheme.outline,
+            color: feature.included
+                ? t.tone(StatusTone.success)
+                : t.textSecondary,
             semanticLabel: feature.included ? 'Included' : 'Not included',
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               label,
-              style: TextStyle(color: feature.included ? null : scheme.outline),
+              style: t.body.copyWith(
+                fontSize: 14,
+                color: feature.included ? null : t.textSecondary,
+                decoration: feature.included
+                    ? null
+                    : TextDecoration.lineThrough,
+              ),
             ),
           ),
         ],
@@ -94,11 +101,14 @@ class AlwaysIncludedNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      'Every plan, including Free: end-to-end encrypted photos, private couple space, '
-      'full access to your memories, and your data stays yours. If a paid plan ends, '
-      'nothing is deleted — you just can’t add photos beyond the Free storage.',
-      style: Theme.of(context).textTheme.bodySmall,
+    return const NoticeBanner(
+      tone: StatusTone.success,
+      icon: Icons.shield_outlined,
+      title: 'Always included',
+      message:
+          'Every plan, including Free: end-to-end encrypted photos, private couple space, '
+          'full access to your memories, and your data stays yours. If a paid plan ends, '
+          'nothing is deleted — you just can’t add photos beyond the Free storage.',
     );
   }
 }

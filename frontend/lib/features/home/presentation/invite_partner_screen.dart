@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/widgets/app_widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_spacing.dart';
-import '../../../core/widgets/app_button.dart';
 import '../providers/couple_invitation_providers.dart';
 import '../providers/couple_invitation_state.dart';
-
-import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 class InvitePartnerScreen extends ConsumerStatefulWidget {
   const InvitePartnerScreen({super.key});
@@ -58,7 +55,7 @@ class _InvitePartnerScreenState extends ConsumerState<InvitePartnerScreen> {
                   const SizedBox(height: AppSpacing.lg),
 
                   Text(
-                    'Invite your partner ♡',
+                    'Invite your partner',
                     style: context.tokens.title,
                     textAlign: TextAlign.center,
                   ),

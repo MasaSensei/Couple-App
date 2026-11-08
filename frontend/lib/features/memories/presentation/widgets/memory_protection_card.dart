@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/widgets/app_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_spacing.dart';
 import '../../data/models/memory_protection_summary.dart';
 import '../../providers/memory_providers.dart';
-
-import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 /// "Memory Protection ❤️": what the server has verified about the couple's
 /// photos. Only says "protected" when every stored photo has a verified
@@ -155,10 +153,8 @@ Future<void> showMemoryProtectionSheet(BuildContext context) {
           ),
           child: summary.when(
             data: (data) => MemoryProtectionCard(summary: data),
-            loading: () => const SizedBox(
-              height: 160,
-              child: Center(child: CircularProgressIndicator()),
-            ),
+            loading: () =>
+                const SizedBox(height: 160, child: Center(child: AppLoading())),
             // Never fall back to a reassuring default when the status is unknown.
             error: (_, _) => SizedBox(
               height: 160,

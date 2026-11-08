@@ -2,10 +2,9 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:frontend/core/widgets/app_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/security/encryption_errors.dart';
-import 'package:frontend/core/theme/app_spacing.dart';
-import 'package:frontend/core/theme/app_theme_tokens.dart';
 import 'package:frontend/features/memories/data/models/memory_model.dart';
 import 'package:frontend/features/memories/data/models/memory_photo_model.dart';
 import 'package:frontend/features/memories/presentation/widgets/private_memory_photo.dart';
@@ -84,10 +83,7 @@ class _MemoryList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (snapshot.connectionState != ConnectionState.done) {
-      return const SizedBox(
-        height: 200,
-        child: Center(child: CircularProgressIndicator()),
-      );
+      return const SizedBox(height: 200, child: Center(child: AppLoading()));
     }
 
     final memories = snapshot.data ?? const <MemoryModel>[];
@@ -216,7 +212,7 @@ class _MemoryPhotoPickerState extends ConsumerState<_MemoryPhotoPicker> {
                 .getPhotos(memoryId: memory.id),
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(child: AppLoading());
               }
               final photos = (snapshot.data ?? const <MemoryPhotoModel>[])
                   .where((p) => p.status == 'verified')

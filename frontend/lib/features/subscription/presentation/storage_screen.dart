@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/widgets/app_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/core/theme/app_spacing.dart';
 
 import '../data/subscription_models.dart';
 import '../providers/subscription_controller.dart';
@@ -18,7 +18,7 @@ class StorageScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Photo storage')),
       body: storage == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: AppLoading())
           : RefreshIndicator(
               onRefresh: () =>
                   ref.read(subscriptionControllerProvider.notifier).load(),

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../auth/providers/auth_state.dart';
-
-import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -34,15 +32,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildHeartLogo(),
+                    const SpotIllustration(kind: SpotKind.heart, size: 120),
 
-                    const SizedBox(height: AppSpacing.xl),
+                    const SizedBox(height: AppSpacing.lg),
 
-                    Text(
-                      'Our Little Space',
-                      style: context.tokens.display,
-                      textAlign: TextAlign.center,
-                    ),
+                    const BrandMark(size: 32),
 
                     const SizedBox(height: AppSpacing.sm),
 
@@ -92,31 +86,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       );
     }
 
-    return SizedBox(
-      width: 28,
-      height: 28,
-      child: CircularProgressIndicator(
-        strokeWidth: 2.5,
-        color: context.tokens.primary,
-      ),
-    );
-  }
-
-  Widget _buildHeartLogo() {
-    return Container(
-      width: 104,
-      height: 104,
-      decoration: BoxDecoration(
-        color: context.tokens.secondary.withValues(alpha: 0.22),
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: Icon(
-          Icons.favorite_rounded,
-          size: 52,
-          color: context.tokens.primary,
-        ),
-      ),
-    );
+    return const AppLoading();
   }
 }

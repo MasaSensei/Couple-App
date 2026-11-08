@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_radius.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_widgets.dart';
 import '../../data/models/memory_form_data.dart';
 import '../../data/models/memory_model.dart';
 import '../../providers/memory_providers.dart';
 import '../../providers/memory_state.dart';
-
-import 'package:frontend/core/theme/app_theme_tokens.dart';
 
 class MemoryFormScreen extends ConsumerStatefulWidget {
   const MemoryFormScreen({this.memory, this.initialData, super.key});
@@ -75,67 +70,74 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
     final state = ref.watch(memoryNotifierProvider);
     final isLoading = state.status == MemoryStatus.loading;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isEditing ? 'Edit Memory' : 'New Memory'),
-      ),
+    return AppScaffold(
+      title: widget.isEditing ? 'Edit memory' : 'New memory',
+      padded: false,
       body: SafeArea(
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.gutter,
+              AppSpacing.sm,
+              AppSpacing.gutter,
+              AppSpacing.xl,
+            ),
             children: [
-              _buildIntro(),
-              const SizedBox(height: AppSpacing.xl),
-
+              Text(
+                widget.isEditing
+                    ? 'Keep this memory up to date'
+                    : 'Save a little moment',
+                style: context.tokens.handwriting,
+              ),
+              const SizedBox(height: AppSpacing.lg),
               AppTextField(
                 controller: _titleController,
                 label: 'Title',
                 hint: 'Give this memory a name',
                 validator: _validateTitle,
+                textInputAction: TextInputAction.next,
               ),
-
-              const SizedBox(height: AppSpacing.lg),
-
+              const SizedBox(height: AppSpacing.md),
+              _buildDateField(),
+              const SizedBox(height: AppSpacing.md),
               AppTextField(
                 controller: _descriptionController,
-                label: 'Description',
-                hint: 'Tell the story behind this memory...',
+                label: 'The story (optional)',
+                hint: 'What happened, what you felt',
                 maxLines: 5,
                 validator: _validateDescription,
               ),
-
-              const SizedBox(height: AppSpacing.lg),
-
-              _buildDateField(),
-
-              const SizedBox(height: AppSpacing.lg),
-
+              const SizedBox(height: AppSpacing.md),
               AppTextField(
                 controller: _locationNameController,
-                label: 'Location',
+                label: 'Place (optional)',
                 hint: 'Where did this happen?',
+                prefixIcon: Icons.place_outlined,
+                textInputAction: TextInputAction.next,
               ),
-
-              const SizedBox(height: AppSpacing.lg),
-
+              const SizedBox(height: AppSpacing.md),
               AppTextField(
                 controller: _locationAddressController,
-                label: 'Address',
-                hint: 'Optional address',
+                label: 'Address (optional)',
                 maxLines: 2,
               ),
-
-              const SizedBox(height: AppSpacing.xl),
-
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'You can add photos after saving. They are encrypted on your phone before upload.',
+                style: context.tokens.caption,
+              ),
+              const SizedBox(height: AppSpacing.lg),
               if (state.status == MemoryStatus.error &&
                   state.errorMessage != null) ...[
-                _buildError(state.errorMessage!),
+                NoticeBanner(
+                  tone: StatusTone.error,
+                  message: state.errorMessage!,
+                ),
                 const SizedBox(height: AppSpacing.md),
               ],
-
               AppButton(
-                label: widget.isEditing ? 'Save Changes' : 'Save Memory',
+                label: widget.isEditing ? 'Save changes' : 'Save memory',
                 isLoading: isLoading,
                 onPressed: isLoading ? null : _submit,
               ),
@@ -146,58 +148,26 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
     );
   }
 
-  Widget _buildIntro() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          widget.isEditing
-              ? 'Keep this memory up to date.'
-              : 'Save a little moment you want to remember.',
-          style: context.tokens.subtitle.copyWith(
-            color: context.tokens.textSecondary,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildDateField() {
-    return InkWell(
-      onTap: _pickDate,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: 'Memory date',
-          suffixIcon: const Icon(Icons.calendar_today_outlined),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppRadius.md),
+    return Semantics(
+      button: true,
+      label:
+          'Memory date, ${AppFormatters.dayMonthYear(_memoryDate)}. Tap to change.',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: _pickDate,
+        borderRadius: BorderRadius.circular(context.tokens.buttonRadius),
+        child: InputDecorator(
+          decoration: const InputDecoration(
+            labelText: 'When',
+            prefixIcon: Icon(Icons.event_outlined),
+            suffixIcon: Icon(Icons.chevron_right_rounded),
+          ),
+          child: Text(
+            AppFormatters.dayMonthYear(_memoryDate),
+            style: context.tokens.body,
           ),
         ),
-        child: Text(_formatDate(_memoryDate), style: context.tokens.body),
-      ),
-    );
-  }
-
-  Widget _buildError(String message) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: context.tokens.error.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.error_outline, color: context.tokens.error),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              message,
-              style: context.tokens.body.copyWith(color: context.tokens.error),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -282,24 +252,5 @@ class _MemoryFormScreenState extends ConsumerState<MemoryFormScreen> {
     final text = value.trim();
 
     return text.isEmpty ? null : text;
-  }
-
-  String _formatDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 }

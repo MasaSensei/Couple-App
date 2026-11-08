@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:frontend/core/widgets/app_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/error/api_exception.dart';
-import '../../../core/theme/app_spacing.dart';
 import '../../auth/providers/auth_dependencies.dart';
 import '../../auth/providers/auth_providers.dart';
 
@@ -72,42 +72,44 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Account & data')),
+    return AppScaffold(
+      title: 'Account & data',
+      padded: false,
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gutter,
+          AppSpacing.sm,
+          AppSpacing.gutter,
+          AppSpacing.xxl,
+        ),
         children: [
-          ListTile(
-            leading: const Icon(Icons.download_outlined),
-            title: const Text('Export my data'),
-            subtitle: const Text(
-              'Your profile, dates, memories, comments and devices as a JSON file. '
-              'Photos stay encrypted on our servers; open a photo and save it to keep a decrypted copy.',
-            ),
-            trailing: _exporting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : null,
-            onTap: _exporting ? null : _export,
+          SettingsGroup(
+            title: 'Your data',
+            footer:
+                'Your profile, dates, memories, comments and devices as a JSON file. '
+                'Photos stay encrypted on our servers; open a photo and save it to keep a decrypted copy.',
+            children: [
+              SettingsTile(
+                icon: Icons.download_outlined,
+                title: 'Export my data',
+                trailing: _exporting ? const AppLoading(size: 20) : null,
+                onTap: _exporting ? null : _export,
+              ),
+            ],
           ),
-          const Divider(height: AppSpacing.xl),
-          ListTile(
-            key: const Key('delete-account'),
-            leading: Icon(
-              Icons.delete_forever_outlined,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            title: Text(
-              'Delete account',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-            subtitle: const Text(
-              'Permanently delete your account and personal data.',
-            ),
-            onTap: _delete,
+          const SizedBox(height: AppSpacing.lg),
+          SettingsGroup(
+            title: 'Danger zone',
+            footer: 'Permanently delete your account and personal data.',
+            children: [
+              SettingsTile(
+                key: const Key('delete-account'),
+                icon: Icons.delete_forever_outlined,
+                title: 'Delete account',
+                destructive: true,
+                onTap: _delete,
+              ),
+            ],
           ),
         ],
       ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/core/theme/app_spacing.dart';
-import 'package:frontend/core/theme/app_theme_tokens.dart';
+import 'package:frontend/core/widgets/app_widgets.dart';
 import 'package:frontend/core/theme/theme_definition.dart';
 import 'package:frontend/core/theme/theme_registry.dart';
 
@@ -51,7 +50,7 @@ class _ThemeGalleryScreenState extends ConsumerState<ThemeGalleryScreen> {
       appBar: AppBar(title: const Text('Themes')),
       body: SafeArea(
         child: switch ((catalog, _loading, _failed)) {
-          (null, true, _) => const Center(child: CircularProgressIndicator()),
+          (null, true, _) => const AppStateView.loading(),
           (null, _, true) => _Message(
             icon: Icons.cloud_off_rounded,
             title: "We couldn't load the themes",
@@ -96,26 +95,35 @@ class _ThemeGalleryScreenState extends ConsumerState<ThemeGalleryScreen> {
             ),
             sliver: SliverToBoxAdapter(
               child: Text(
-                'Choose a look for your space. Your partner sees the same theme.',
-                style: context.tokens.subtitle,
+                'Choose a look for your space. Your partner sees the same theme, and it changes instantly for both of you.',
+                style: context.tokens.body.copyWith(
+                  color: context.tokens.textSecondary,
+                ),
               ),
             ),
           ),
           if (_failed)
             const SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Text('Offline: showing the themes we know about.'),
+                padding: EdgeInsets.symmetric(horizontal: AppSpacing.gutter),
+                child: NoticeBanner(
+                  tone: StatusTone.warning,
+                  icon: Icons.cloud_off_rounded,
+                  message: 'Offline: showing the themes we know about.',
+                ),
               ),
             ),
           SliverPadding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: 220,
                 mainAxisSpacing: AppSpacing.md,
                 crossAxisSpacing: AppSpacing.md,
-                childAspectRatio: 0.66,
+                // Taller cards as text grows, so name + tagline never clip.
+                childAspectRatio:
+                    0.62 /
+                    MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.4),
               ),
               delegate: SliverChildBuilderDelegate((context, index) {
                 final theme = offered[index];
@@ -180,11 +188,13 @@ class _ThemeCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(t.cardRadius),
         child: Container(
           decoration: BoxDecoration(
+            color: t.surface,
             borderRadius: BorderRadius.circular(t.cardRadius),
             border: Border.all(
               color: active ? t.primary : t.border,
               width: active ? 2.5 : 1,
             ),
+            boxShadow: active ? t.elevation(2) : t.elevation(1),
           ),
           clipBehavior: Clip.antiAlias,
           child: Column(
@@ -199,31 +209,54 @@ class _ThemeCard extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                child: Row(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.smd,
+                  AppSpacing.sm,
+                  AppSpacing.smd,
+                  AppSpacing.smd,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        definition.name,
-                        style: t.body.copyWith(fontWeight: FontWeight.w600),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            definition.name,
+                            style: t.heading.copyWith(fontSize: 15),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (active)
+                          Icon(
+                            Icons.check_circle_rounded,
+                            color: t.primary,
+                            size: 20,
+                          )
+                        else if (locked)
+                          Icon(
+                            Icons.lock_outline_rounded,
+                            color: t.textSecondary,
+                            size: 18,
+                          ),
+                      ],
                     ),
-                    if (active)
-                      Icon(
-                        Icons.check_circle_rounded,
-                        color: t.primary,
-                        size: 20,
-                        semanticLabel: 'Active',
+                    const SizedBox(height: 2),
+                    Text(
+                      definition.tagline,
+                      style: t.caption,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (active || locked) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      StatusChip(
+                        label: active ? 'Applied' : 'Paid plan',
+                        tone: active ? StatusTone.brand : StatusTone.neutral,
+                        dense: true,
                       ),
-                    if (locked && !active)
-                      Icon(
-                        Icons.lock_outline_rounded,
-                        color: t.primary,
-                        size: 18,
-                        semanticLabel: 'Paid plan',
-                      ),
+                    ],
                   ],
                 ),
               ),
@@ -246,18 +279,15 @@ class _PersonalPreferences extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        0,
-        AppSpacing.lg,
+        AppSpacing.gutter,
+        AppSpacing.sm,
+        AppSpacing.gutter,
         AppSpacing.xl,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Only on this device',
-            style: context.tokens.title.copyWith(fontSize: 18),
-          ),
+          Text('Only on this device', style: context.tokens.heading),
           const SizedBox(height: AppSpacing.xs),
           Text(
             'These do not change what your partner sees.',
@@ -289,7 +319,7 @@ class _PersonalPreferences extends ConsumerWidget {
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Reduce motion'),
-            subtitle: const Text('Keep theme decorations still'),
+            subtitle: const Text('Keep decorations still and skip animations'),
             value: state.reduceMotion,
             onChanged: controller.setReduceMotion,
           ),

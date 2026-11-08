@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/widgets/app_widgets.dart';
 import '../../data/models/memory_comment_model.dart';
 import '../../providers/memory_comment_provider.dart';
 import '../../../auth/providers/auth_providers.dart';
@@ -65,9 +66,9 @@ class _MemoryCommentSectionState extends ConsumerState<MemoryCommentSection> {
     });
 
     if (!success) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Komentar gagal dikirim.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not send the note. Try again.')),
+      );
 
       return;
     }
@@ -78,66 +79,78 @@ class _MemoryCommentSectionState extends ConsumerState<MemoryCommentSection> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.tokens;
     final commentState = ref.watch(memoryCommentNotifierProvider);
+    final myId = ref.watch(authNotifierProvider.select((s) => s.user?.id));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Comments',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 12),
+        const SectionHeader(title: 'Notes to each other'),
+        const SizedBox(height: AppSpacing.smd),
+        commentState.when(
+          loading: () => const Padding(
+            padding: EdgeInsets.all(AppSpacing.md),
+            child: Center(child: AppLoading(size: 22)),
+          ),
+          error: (error, stackTrace) => Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'We could not load the notes.',
+                  style: t.body.copyWith(
+                    color: t.onToneContainer(StatusTone.error),
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => ref
+                    .read(memoryCommentNotifierProvider.notifier)
+                    .loadComments(memoryId: widget.memoryId),
+                child: const Text('Try again'),
+              ),
+            ],
+          ),
+          data: (comments) {
+            if (comments.isEmpty) {
+              return Text(
+                'No notes yet. Tell each other what you loved about it.',
+                style: t.body.copyWith(color: t.textSecondary),
+              );
+            }
 
+            // Oldest first reads like a conversation.
+            final ordered = [...comments]
+              ..sort(
+                (a, b) => (a.createdAt ?? DateTime(0)).compareTo(
+                  b.createdAt ?? DateTime(0),
+                ),
+              );
+            return Column(
+              children: [
+                for (final c in ordered)
+                  CommentBubble(
+                    author: c.userName,
+                    body: c.body,
+                    createdAt: c.createdAt,
+                    isMine: c.userId == myId,
+                    edited:
+                        c.updatedAt != null &&
+                        c.createdAt != null &&
+                        c.updatedAt!.difference(c.createdAt!).inSeconds > 1,
+                    trailing: c.userId == myId
+                        ? _CommentMenu(comment: c, memoryId: widget.memoryId)
+                        : null,
+                  ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: AppSpacing.md),
         _CommentInput(
           controller: _commentController,
           onSubmit: _submitComment,
           isSubmitting: _isSubmitting,
-        ),
-
-        const SizedBox(height: 16),
-
-        commentState.when(
-          loading: () => const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: CircularProgressIndicator(),
-            ),
-          ),
-          error: (error, stackTrace) => _CommentError(
-            onRetry: () {
-              ref
-                  .read(memoryCommentNotifierProvider.notifier)
-                  .loadComments(memoryId: widget.memoryId);
-            },
-          ),
-          data: (comments) {
-            if (comments.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Center(
-                  child: Text(
-                    'Belum ada komentar.',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-              );
-            }
-
-            return Column(
-              children: comments
-                  .map(
-                    (comment) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _CommentItem(
-                        comment: comment,
-                        memoryId: widget.memoryId,
-                      ),
-                    ),
-                  )
-                  .toList(),
-            );
-          },
         ),
       ],
     );
@@ -167,78 +180,21 @@ class _CommentInput extends StatelessWidget {
             minLines: 1,
             maxLines: 4,
             textInputAction: TextInputAction.newline,
-            decoration: InputDecoration(
-              hintText: 'Tulis komentar...',
-              filled: true,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-            ),
+            decoration: const InputDecoration(labelText: 'Write a note'),
           ),
         ),
-        const SizedBox(width: 8),
-        IconButton(
-          onPressed: isSubmitting ? null : onSubmit,
-          icon: isSubmitting
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.send_rounded),
+        const SizedBox(width: AppSpacing.sm),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: IconButton.filled(
+            onPressed: isSubmitting ? null : onSubmit,
+            tooltip: 'Send note',
+            icon: isSubmitting
+                ? const AppLoading(size: 18)
+                : const Icon(Icons.send_rounded),
+          ),
         ),
       ],
-    );
-  }
-}
-
-class _CommentItem extends StatelessWidget {
-  const _CommentItem({required this.comment, required this.memoryId});
-
-  final MemoryCommentModel comment;
-  final int memoryId;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 18,
-                child: Text(
-                  comment.userName.isNotEmpty
-                      ? comment.userName[0].toUpperCase()
-                      : '?',
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  comment.userName,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-              _CommentMenu(comment: comment, memoryId: memoryId),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(comment.body, style: const TextStyle(fontSize: 14, height: 1.4)),
-        ],
-      ),
     );
   }
 }
@@ -261,6 +217,8 @@ class _CommentMenu extends ConsumerWidget {
     }
 
     return PopupMenuButton<String>(
+      tooltip: 'Note options',
+      icon: Icon(Icons.more_horiz_rounded, color: context.tokens.textSecondary),
       onSelected: (value) {
         if (value == 'edit') {
           _editComment(context, ref);
@@ -272,7 +230,7 @@ class _CommentMenu extends ConsumerWidget {
       },
       itemBuilder: (context) => const [
         PopupMenuItem(value: 'edit', child: Text('Edit')),
-        PopupMenuItem(value: 'delete', child: Text('Hapus')),
+        PopupMenuItem(value: 'delete', child: Text('Delete')),
       ],
     );
   }
@@ -299,36 +257,18 @@ class _CommentMenu extends ConsumerWidget {
 
     if (!success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Komentar gagal diperbarui.')),
+        const SnackBar(content: Text('Could not update the note.')),
       );
     }
   }
 
   Future<void> _deleteComment(BuildContext context, WidgetRef ref) async {
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Hapus komentar?'),
-          content: const Text(
-            'Komentar ini akan dihapus dan tidak dapat dikembalikan.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(false);
-              },
-              child: const Text('Batal'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(true);
-              },
-              child: const Text('Hapus'),
-            ),
-          ],
-        );
-      },
+    final shouldDelete = await showConfirmSheet(
+      context,
+      title: 'Delete this note?',
+      message: 'It will be removed for both of you.',
+      confirmLabel: 'Delete note',
+      destructive: true,
     );
 
     if (shouldDelete != true) {
@@ -344,9 +284,9 @@ class _CommentMenu extends ConsumerWidget {
     }
 
     if (!success) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Komentar gagal dihapus.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not delete the note.')),
+      );
     }
   }
 }
@@ -389,44 +329,22 @@ class _EditCommentDialogState extends State<_EditCommentDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Edit komentar'),
+      title: const Text('Edit note'),
       content: TextField(
         controller: _controller,
         autofocus: true,
         maxLines: 4,
-        decoration: const InputDecoration(hintText: 'Komentar'),
+        decoration: const InputDecoration(labelText: 'Note'),
       ),
       actions: [
         TextButton(
           onPressed: () {
             Navigator.of(context).pop();
           },
-          child: const Text('Batal'),
+          child: const Text('Cancel'),
         ),
-        FilledButton(onPressed: _submit, child: const Text('Simpan')),
+        FilledButton(onPressed: _submit, child: const Text('Save')),
       ],
-    );
-  }
-}
-
-class _CommentError extends StatelessWidget {
-  const _CommentError({required this.onRetry});
-
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Center(
-        child: Column(
-          children: [
-            const Text('Komentar gagal dimuat.'),
-            const SizedBox(height: 8),
-            TextButton(onPressed: onRetry, child: const Text('Coba lagi')),
-          ],
-        ),
-      ),
     );
   }
 }

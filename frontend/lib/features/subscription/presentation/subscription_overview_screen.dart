@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/core/theme/app_spacing.dart';
+import 'package:frontend/core/widgets/app_widgets.dart';
 
 import '../data/subscription_models.dart';
 import '../providers/subscription_controller.dart';
@@ -37,50 +37,57 @@ class _SubscriptionOverviewScreenState
     return Scaffold(
       appBar: AppBar(title: const Text('Plan & storage')),
       body: switch ((overview, state.loading, state.error)) {
-        (null, true, _) => const Center(child: CircularProgressIndicator()),
-        (null, _, final String error) => _Error(message: error),
-        (null, _, _) => const Center(child: CircularProgressIndicator()),
+        (null, true, _) => const AppStateView.loading(),
+        (null, _, final String error) => AppStateView.error(
+          message: error,
+          onAction: () =>
+              ref.read(subscriptionControllerProvider.notifier).load(),
+        ),
+        (null, _, _) => const AppStateView.loading(),
         (final SubscriptionOverview overview, _, _) => RefreshIndicator(
           onRefresh: () =>
               ref.read(subscriptionControllerProvider.notifier).load(),
           child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.gutter,
+              AppSpacing.sm,
+              AppSpacing.gutter,
+              AppSpacing.xxl,
+            ),
             children: [
               _CurrentPlanCard(overview: overview, plan: state.currentPlan),
               const SizedBox(height: AppSpacing.md),
-              Card(
-                child: InkWell(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const StorageScreen()),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'Photo storage',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
+              JournalCard(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const StorageScreen()),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Photo storage',
+                              style: Theme.of(context).textTheme.titleMedium,
                             ),
-                            const Icon(Icons.chevron_right_rounded),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        StorageUsageBar(storage: overview.storage),
-                      ],
-                    ),
+                          ),
+                          const Icon(Icons.chevron_right_rounded),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      StorageUsageBar(storage: overview.storage),
+                    ],
                   ),
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
               if (state.currentPlan != null)
-                Card(
+                JournalCard(
                   child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    padding: EdgeInsets.zero,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -133,44 +140,62 @@ class _CurrentPlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
     final subscription = overview.subscription;
     final name = subscription?.planName ?? plan?.name ?? 'Free';
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Current plan', style: text.labelLarge),
-            const SizedBox(height: AppSpacing.xs),
-            Text(name, style: text.headlineSmall),
+    final t = context.tokens;
+    final (tone, statusLabel) = subscription == null
+        ? (StatusTone.neutral, 'No subscription')
+        : (
+            switch (subscription.status) {
+              'active' => StatusTone.success,
+              'cancelled' || 'pending' => StatusTone.info,
+              'grace_period' || 'payment_failed' => StatusTone.warning,
+              'suspended' || 'expired' => StatusTone.error,
+              _ => StatusTone.neutral,
+            },
+            BillingFormat.status(subscription.status),
+          );
+
+    return JournalCard(
+      ornament: true,
+      color: Color.alphaBlend(
+        t.secondary.withValues(alpha: t.isDark ? 0.3 : 0.4),
+        t.surface,
+      ),
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('CURRENT PLAN', style: t.overline),
+          const SizedBox(height: AppSpacing.xs),
+          Text(name, style: t.display.copyWith(fontSize: 30)),
+          const SizedBox(height: AppSpacing.sm),
+          if (subscription == null)
+            Text('Free — no payment, no renewal.', style: t.body)
+          else ...[
+            StatusChip(label: statusLabel, tone: tone),
             const SizedBox(height: AppSpacing.sm),
-            if (subscription == null)
-              const Text('Free — no payment, no renewal.')
-            else ...[
-              Chip(label: Text(BillingFormat.status(subscription.status))),
-              Text(
-                BillingFormat.priceWithInterval(
-                  subscription.priceAmount,
-                  subscription.currency,
-                  subscription.billingInterval,
-                  subscription.billingIntervalCount,
-                ),
+            Text(
+              BillingFormat.priceWithInterval(
+                subscription.priceAmount,
+                subscription.currency,
+                subscription.billingInterval,
+                subscription.billingIntervalCount,
               ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(renewalLine(subscription)),
-              const SizedBox(height: AppSpacing.xs),
-              Text(switch (subscription.startedBy) {
-                'me' => 'You started this subscription; it is billed to your store account.',
-                'support' =>
-                  'Granted by support. It does not renew or charge anyone.',
-                _ => 'Started by your partner. You both get every benefit.',
-              }, style: text.bodySmall),
-            ],
+              style: t.heading,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(renewalLine(subscription), style: t.body),
+            const SizedBox(height: AppSpacing.xs),
+            Text(switch (subscription.startedBy) {
+              'me' => 'You started this subscription; it is billed to your store account.',
+              'support' =>
+                'Granted by support. It does not renew or charge anyone.',
+              _ => 'Started by your partner. You both get every benefit.',
+            }, style: t.caption),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -195,25 +220,4 @@ String renewalLine(CoupleSubscription s) {
     'pending' => 'Waiting for the store to confirm the payment.',
     _ => 'This subscription has ended.',
   };
-}
-
-class _Error extends StatelessWidget {
-  const _Error({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.cloud_off_rounded, size: 48),
-          const SizedBox(height: AppSpacing.md),
-          Text(message, textAlign: TextAlign.center),
-        ],
-      ),
-    ),
-  );
 }

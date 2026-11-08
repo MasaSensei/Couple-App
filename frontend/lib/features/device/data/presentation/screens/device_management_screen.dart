@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/widgets/app_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/core/security/couple/couple_device.dart';
 import 'package:frontend/core/security/device_fingerprint.dart';
@@ -16,7 +17,7 @@ class DeviceManagementScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('My Devices')),
       body: devicesAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: AppLoading()),
         error: (error, stackTrace) => Center(
           child: Text(
             'Failed to load devices.\n$error',

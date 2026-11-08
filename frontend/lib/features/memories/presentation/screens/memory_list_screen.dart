@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/app_widgets.dart';
+import '../../../photo_booth/presentation/open_photo_booth.dart';
+import '../../data/models/memory_model.dart';
 import '../../providers/memory_providers.dart';
 import '../../providers/memory_state.dart';
 import '../widgets/memory_card.dart';
@@ -9,8 +11,6 @@ import '../widgets/memory_protection_card.dart';
 import 'memory_detail_screen.dart';
 
 import 'package:go_router/go_router.dart';
-import 'package:frontend/core/theme/app_theme_tokens.dart';
-import 'package:frontend/core/theme/theme_decorations.dart';
 
 class MemoryListScreen extends ConsumerStatefulWidget {
   const MemoryListScreen({super.key});
@@ -74,15 +74,29 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
     await ref.read(memoryNotifierProvider.notifier).loadTimeline();
   }
 
+  Future<void> _create() async {
+    final result = await context.push('/memories/create');
+    if (!mounted) return;
+    if (result != null) {
+      await ref.read(memoryNotifierProvider.notifier).loadTimeline();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(memoryNotifierProvider);
 
-    return Scaffold(
-      backgroundColor: context.tokens.background,
+    return AppScaffold(
+      decorated: true,
+      padded: false,
       appBar: AppBar(
-        title: const Text('Our Memories'),
+        title: const Text('Our memories'),
         actions: [
+          IconButton(
+            tooltip: 'Photo Booth',
+            icon: const Icon(Icons.photo_camera_back_outlined),
+            onPressed: () => openPhotoBooth(context, ref),
+          ),
           IconButton(
             tooltip: 'Memory protection',
             icon: const Icon(Icons.shield_outlined),
@@ -90,21 +104,12 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await context.push('/memories/create');
-
-          if (!mounted) {
-            return;
-          }
-
-          if (result != null) {
-            await ref.read(memoryNotifierProvider.notifier).loadTimeline();
-          }
-        },
-        child: const Icon(Icons.add),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _create,
+        icon: const Icon(Icons.add_a_photo_outlined),
+        label: const Text('New memory'),
       ),
-      body: ThemedBackground(child: _buildBody(state)),
+      body: _buildBody(state),
     );
   }
 
@@ -112,124 +117,127 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
     switch (state.status) {
       case MemoryStatus.initial:
       case MemoryStatus.loading:
-        if (state.memories.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
+        if (state.memories.isEmpty) return const AppStateView.loading();
         return _buildList(state);
 
       case MemoryStatus.empty:
-        return _buildEmptyState();
+        return RefreshIndicator(
+          onRefresh: _refresh,
+          child: AppStateView.empty(
+            title: 'No memories yet',
+            message: 'Your little moments together will appear here.',
+            actionLabel: 'Add your first memory',
+            onAction: _create,
+            illustration: SpotKind.camera,
+            scrollable: true,
+          ),
+        );
 
       case MemoryStatus.error:
-        return _buildErrorState(state.errorMessage);
+        if (state.memories.isNotEmpty) return _buildList(state);
+        return RefreshIndicator(
+          onRefresh: _refresh,
+          child: AppStateView.error(
+            message: state.errorMessage ?? 'We could not load your memories.',
+            onAction: _refresh,
+            scrollable: true,
+          ),
+        );
 
       case MemoryStatus.loaded:
         return _buildList(state);
     }
   }
 
+  /// Flat item list: month headers interleaved with memories, so the list
+  /// stays lazily built (only visible covers are decrypted).
+  List<Object> _items(List<MemoryModel> memories) {
+    final items = <Object>[];
+    String? month;
+    for (final m in memories) {
+      final label = AppFormatters.monthYear(m.memoryDate);
+      if (label != month) {
+        items.add(label);
+        month = label;
+      }
+      items.add(m);
+    }
+    return items;
+  }
+
   Widget _buildList(MemoryState state) {
+    final t = context.tokens;
+    final items = _items(state.memories);
+
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView.builder(
         controller: _scrollController,
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        itemCount: state.memories.length + (state.hasMore ? 1 : 0),
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.gutter,
+          AppSpacing.sm,
+          AppSpacing.gutter,
+          96,
+        ),
+        itemCount: items.length + (state.hasMore ? 1 : 0),
         itemBuilder: (context, index) {
-          if (index >= state.memories.length) {
+          if (index >= items.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
-              child: Center(
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+              child: Center(child: AppLoading(size: 24)),
+            );
+          }
+
+          final item = items[index];
+          if (item is String) {
+            final parts = item.split(' ');
+            return Padding(
+              padding: EdgeInsets.only(
+                top: index == 0 ? AppSpacing.sm : AppSpacing.xl,
+                bottom: AppSpacing.md,
+              ),
+              child: Semantics(
+                header: true,
+                child: Row(
+                  children: [
+                    Flexible(
+                      flex: 3,
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: parts.first,
+                              style: t.title.copyWith(fontSize: 24),
+                            ),
+                            TextSpan(text: '  ${parts.last}', style: t.caption),
+                          ],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.smd),
+                    Expanded(child: Divider(color: t.border)),
+                  ],
                 ),
               ),
             );
           }
 
-          final memory = state.memories[index];
-
-          return MemoryCard(
-            memory: memory,
-            onTap: () {
-              Navigator.of(context).push(
+          final memory = item as MemoryModel;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+            child: MemoryCard(
+              memory: memory,
+              onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => MemoryDetailScreen(memory: memory),
                 ),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return RefreshIndicator(
-      onRefresh: _refresh,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          SizedBox(
-            height: 400,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xl),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.favorite_border,
-                      size: 56,
-                      color: context.tokens.primary,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Text(
-                      'No memories yet',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      'Your little moments together '
-                      'will appear here.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(color: context.tokens.textSecondary),
-                    ),
-                  ],
-                ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorState(String? message) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.cloud_off_outlined,
-              size: 48,
-              color: context.tokens.error,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              message ?? 'Unable to load memories.',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            ElevatedButton(onPressed: _refresh, child: const Text('Try Again')),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

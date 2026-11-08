@@ -6,13 +6,10 @@ import 'package:frontend/features/memories/data/models/memory_photo_model.dart';
 import 'package:frontend/features/memories/presentation/widgets/private_memory_photo.dart';
 import 'package:frontend/features/memories/providers/memory_photo_provider.dart';
 
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/app_widgets.dart';
 import '../../data/models/memory_model.dart';
 import 'memory_photo_viewer_screen.dart';
 import '../widgets/memory_comment_section.dart';
-
-import 'package:frontend/core/theme/app_theme_tokens.dart';
-import 'package:frontend/core/theme/theme_decorations.dart';
 
 class MemoryDetailScreen extends ConsumerStatefulWidget {
   const MemoryDetailScreen({required this.memory, super.key});
@@ -35,242 +32,220 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
     });
   }
 
+  Future<void> _addPhoto() async {
+    final file = await ref
+        .read(memoryPhotoNotifierProvider.notifier)
+        .pickPhoto();
+    if (file != null) await _upload(file);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final t = context.tokens;
+    final memory = widget.memory;
+
+    return AppScaffold(
+      decorated: true,
+      padded: false,
       appBar: AppBar(
-        title: const Text('Memory'),
+        title: Text(AppFormatters.dayMonthYear(memory.memoryDate)),
         actions: [
           IconButton(
-            tooltip: 'Recently deleted',
+            tooltip: 'Recently deleted photos',
             icon: const Icon(Icons.restore_from_trash_outlined),
             onPressed: _showRecentlyDeleted,
           ),
         ],
       ),
-      body: ThemedBackground(
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        top: false,
+        child: Consumer(
+          builder: (context, ref, _) {
+            final photoState = ref.watch(memoryPhotoNotifierProvider);
+            final photos = (photoState.value ?? const <MemoryPhotoModel>[])
+                .where((p) => p.status == 'verified')
+                .toList();
+
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.gutter,
+                AppSpacing.sm,
+                AppSpacing.gutter,
+                AppSpacing.xxl,
+              ),
               children: [
-                _buildDate(),
-
-                const SizedBox(height: AppSpacing.md),
-
-                Text(
-                  widget.memory.title,
-                  style: context.tokens.display.copyWith(fontSize: 28),
-                ),
-
-                if (widget.memory.locationName != null) ...[
-                  const SizedBox(height: AppSpacing.md),
-                  _buildLocation(),
-                ],
-
-                if (widget.memory.description != null &&
-                    widget.memory.description!.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.xl),
-                  Text(
-                    widget.memory.description!,
-                    style: context.tokens.body.copyWith(
-                      color: context.tokens.textSecondary,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: 24),
-
-                Text(
-                  'Photos',
-                  style: Theme.of(context).textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                ),
-
-                const SizedBox(height: 12),
-
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final file = await ref
-                        .read(memoryPhotoNotifierProvider.notifier)
-                        .pickPhoto();
-
-                    if (file != null) await _upload(file);
-                  },
-                  icon: const Icon(Icons.add_photo_alternate_outlined),
-                  label: const Text('Tambah Foto'),
-                ),
-
-                const SizedBox(height: 12),
-
-                Consumer(
-                  builder: (context, ref, child) {
-                    final photoState = ref.watch(memoryPhotoNotifierProvider);
-
-                    return photoState.when(
-                      loading: () => const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(AppSpacing.lg),
-                          child: CircularProgressIndicator(),
+                if (photos.isNotEmpty) ...[
+                  Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: GestureDetector(
+                        onTap: () =>
+                            _openPhotoViewer(initialIndex: 0, photos: photos),
+                        child: PolaroidFrame(
+                          seed: memory.id,
+                          aspectRatio: 4 / 3,
+                          caption: memory.locationName ?? memory.title,
+                          trailing: AppFormatters.monthShort(memory.memoryDate)
+                              .toUpperCase(),
+                          photo: PrivateMemoryPhoto(
+                            photo: photos.first,
+                            bare: true,
+                          ),
                         ),
                       ),
-
-                      error: (error, stackTrace) {
-                        return Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(AppSpacing.lg),
-                          decoration: BoxDecoration(
-                            color: context.tokens.surface,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: context.tokens.border),
-                          ),
-                          child: Text(
-                            'Gagal memuat foto.',
-                            style: context.tokens.body.copyWith(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                          ),
-                        );
-                      },
-
-                      data: (photos) {
-                        final verifiedPhotos = photos
-                            .where((photo) => photo.status == 'verified')
-                            .toList();
-
-                        if (verifiedPhotos.isEmpty) {
-                          return Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(AppSpacing.lg),
-                            decoration: BoxDecoration(
-                              color: context.tokens.surface,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: context.tokens.border),
-                            ),
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.photo_library_outlined,
-                                  color: context.tokens.primary,
-                                  size: 36,
-                                ),
-
-                                const SizedBox(height: AppSpacing.sm),
-
-                                Text(
-                                  'Belum ada foto',
-                                  style: context.tokens.subtitle.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-
-                                const SizedBox(height: AppSpacing.xs),
-
-                                Text(
-                                  'Tambahkan foto untuk '
-                                  'mengabadikan memory ini.',
-                                  textAlign: TextAlign.center,
-                                  style: context.tokens.body.copyWith(
-                                    color: context.tokens.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-
-                        return GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: verifiedPhotos.length,
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: AppSpacing.sm,
-                                mainAxisSpacing: AppSpacing.sm,
-                                childAspectRatio: 1,
-                              ),
-                          itemBuilder: (context, index) {
-                            final photo = verifiedPhotos[index];
-
-                            return Stack(
-                              children: [
-                                Positioned.fill(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      _openPhotoViewer(
-                                        initialIndex: index,
-                                        photos: verifiedPhotos,
-                                      );
-                                    },
-                                    child: PrivateMemoryPhoto(photo: photo),
-                                  ),
-                                ),
-
-                                if (_protectionBadge(photo) case final badge?)
-                                  Positioned(left: 8, bottom: 8, child: badge),
-
-                                Positioned(
-                                  top: 8,
-                                  right: 8,
-                                  child: Material(
-                                    color: Colors.black54,
-                                    shape: const CircleBorder(),
-                                    child: InkWell(
-                                      customBorder: const CircleBorder(),
-                                      onTap: () => _confirmDeletePhoto(
-                                        photoId: photo.id,
-                                      ),
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(8),
-                                        child: Icon(
-                                          Icons.delete_outline,
-                                          color: Colors.white,
-                                          size: 20,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                    );
-                  },
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+                Text(
+                  AppFormatters.full(memory.memoryDate)
+                      .split(' · ')
+                      .first
+                      .toUpperCase(),
+                  style: t.overline,
                 ),
-
-                const SizedBox(height: 24),
-
-                MemoryCommentSection(memoryId: widget.memory.id),
+                const SizedBox(height: AppSpacing.xs),
+                Semantics(
+                  header: true,
+                  child: Text(
+                    memory.title,
+                    style: t.display.copyWith(fontSize: 30),
+                  ),
+                ),
+                if (memory.locationName != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildLocation(),
+                ],
+                if (memory.description != null &&
+                    memory.description!.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    memory.description!,
+                    style: t.body.copyWith(height: 1.6),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.xl),
+                SectionHeader(
+                  title: photos.isEmpty
+                      ? 'Photos'
+                      : 'Photos · ${photos.length}',
+                  actionLabel: 'Add photo',
+                  onAction: _addPhoto,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                photoState.when(
+                  loading: () => GridView.count(
+                    crossAxisCount: 3,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: AppSpacing.sm,
+                    crossAxisSpacing: AppSpacing.sm,
+                    children: List.generate(
+                      3,
+                      (_) => const SkeletonBox(height: 100),
+                    ),
+                  ),
+                  error: (_, _) => JournalCard(
+                    child: Text(
+                      'We could not load the photos. Pull back and open this memory again.',
+                      style: t.body.copyWith(
+                        color: t.onToneContainer(StatusTone.error),
+                      ),
+                    ),
+                  ),
+                  data: (_) => photos.isEmpty
+                      ? JournalCard(
+                          onTap: _addPhoto,
+                          child: Row(
+                            children: [
+                              const SpotIllustration(
+                                kind: SpotKind.camera,
+                                size: 64,
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('No photos yet', style: t.heading),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Add photos to keep this moment. They are encrypted on your phone first.',
+                                      style: t.caption,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _buildGrid(photos),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                MemoryCommentSection(memoryId: memory.id),
               ],
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildDate() {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: context.tokens.secondary.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        _formatDate(widget.memory.memoryDate),
-        style: context.tokens.body.copyWith(
-          color: context.tokens.primaryDark,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+  Widget _buildGrid(List<MemoryPhotoModel> photos) {
+    final t = context.tokens;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth > 480 ? 4 : 3;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: photos.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: AppSpacing.sm,
+            mainAxisSpacing: AppSpacing.sm,
+          ),
+          itemBuilder: (context, index) {
+            final photo = photos[index];
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(t.photoRadius + 6),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Semantics(
+                    button: true,
+                    label: 'Photo ${index + 1} of ${photos.length}',
+                    excludeSemantics: true,
+                    child: GestureDetector(
+                      onTap: () =>
+                          _openPhotoViewer(initialIndex: index, photos: photos),
+                      child: PrivateMemoryPhoto(photo: photo, bare: true),
+                    ),
+                  ),
+                  if (_protectionBadge(photo) case final badge?)
+                    Positioned(left: 6, bottom: 6, child: badge),
+                  Positioned(
+                    top: 2,
+                    right: 2,
+                    child: IconButton(
+                      tooltip: 'Move photo to recently deleted',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.black.withValues(alpha: 0.45),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(36, 36),
+                        padding: EdgeInsets.zero,
+                      ),
+                      iconSize: 18,
+                      onPressed: () => _confirmDeletePhoto(photoId: photo.id),
+                      icon: const Icon(Icons.delete_outline_rounded),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -301,31 +276,13 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
   }
 
   Future<void> _confirmDeletePhoto({required int photoId}) async {
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Hapus foto?'),
-          content: const Text(
-            'Foto ini dipindahkan ke "Baru dihapus" dan masih bisa '
-            'dipulihkan selama 30 hari.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-              child: const Text('Batal'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-              child: const Text('Hapus'),
-            ),
-          ],
-        );
-      },
+    final shouldDelete = await showConfirmSheet(
+      context,
+      title: 'Delete this photo?',
+      message:
+          'It moves to "Recently deleted" and can be restored for 30 days.',
+      confirmLabel: 'Delete photo',
+      destructive: true,
     );
 
     if (shouldDelete != true || !mounted) {
@@ -340,9 +297,9 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Foto dipindahkan ke Baru dihapus.'),
+        content: const Text('Photo moved to Recently deleted.'),
         action: SnackBarAction(
-          label: 'Urungkan',
+          label: 'Undo',
           onPressed: () => _restorePhoto(photoId),
         ),
       ),
@@ -360,8 +317,8 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
       SnackBar(
         content: Text(
           restored
-              ? 'Foto dipulihkan.'
-              : 'Foto ini sudah tidak bisa dipulihkan.',
+              ? 'Photo restored.'
+              : 'This photo can no longer be restored.',
         ),
       ),
     );
@@ -379,10 +336,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
         future: notifier.loadTrash(memoryId: widget.memory.id),
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const SizedBox(
-              height: 160,
-              child: Center(child: CircularProgressIndicator()),
-            );
+            return const SizedBox(height: 160, child: AppStateView.loading());
           }
 
           final photos = snapshot.data ?? const <MemoryPhotoModel>[];
@@ -393,8 +347,8 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
               child: Center(
                 child: Text(
                   snapshot.hasError
-                      ? 'Tidak bisa memuat foto yang dihapus.'
-                      : 'Tidak ada foto yang baru dihapus.',
+                      ? 'We could not load deleted photos.'
+                      : 'No recently deleted photos.',
                   style: context.tokens.body.copyWith(
                     color: context.tokens.textSecondary,
                   ),
@@ -410,19 +364,19 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
               for (final photo in photos)
                 ListTile(
                   leading: const Icon(Icons.photo_outlined),
-                  title: const Text('Foto'),
+                  title: const Text('Photo'),
                   subtitle: Text(
                     photo.restorableUntil == null
-                        ? 'Bisa dipulihkan'
-                        : 'Bisa dipulihkan sampai '
-                              '${_formatDate(photo.restorableUntil!.toLocal())}',
+                        ? 'Can be restored'
+                        : 'Can be restored until '
+                              '${AppFormatters.dayMonthYear(photo.restorableUntil!)}',
                   ),
                   trailing: TextButton(
                     onPressed: () {
                       Navigator.of(sheetContext).pop();
                       _restorePhoto(photo.id);
                     },
-                    child: const Text('Pulihkan'),
+                    child: const Text('Restore'),
                   ),
                 ),
             ],
@@ -481,7 +435,7 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
     required int initialIndex,
     required List<MemoryPhotoModel> photos,
   }) {
-    Navigator.of(context).push(
+    Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (context) {
           return MemoryPhotoViewerScreen(
@@ -491,26 +445,5 @@ class _MemoryDetailScreenState extends ConsumerState<MemoryDetailScreen> {
         },
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-
-    return '${date.day} '
-        '${months[date.month - 1]} '
-        '${date.year}';
   }
 }

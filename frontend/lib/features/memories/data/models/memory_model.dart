@@ -1,3 +1,5 @@
+import 'memory_photo_model.dart';
+
 class MemoryModel {
   const MemoryModel({
     required this.id,
@@ -13,6 +15,8 @@ class MemoryModel {
     this.longitude,
     this.createdAt,
     this.updatedAt,
+    this.photosCount,
+    this.coverPhoto,
   });
 
   final int id;
@@ -35,6 +39,11 @@ class MemoryModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  /// Timeline/list responses only: visible photos and the first one's
+  /// ciphertext metadata (decrypted on device by `PrivateMemoryPhoto`).
+  final int? photosCount;
+  final MemoryPhotoModel? coverPhoto;
+
   factory MemoryModel.fromJson(Map<String, dynamic> json) {
     return MemoryModel(
       id: json['id'] as int,
@@ -50,6 +59,12 @@ class MemoryModel {
       longitude: _parseDouble(json['longitude']),
       createdAt: _parseDateTime(json['created_at']),
       updatedAt: _parseDateTime(json['updated_at']),
+      photosCount: json['photos_count'] as int?,
+      coverPhoto: json['cover_photo'] is Map<String, dynamic>
+          ? MemoryPhotoModel.fromJson(
+              json['cover_photo'] as Map<String, dynamic>,
+            )
+          : null,
     );
   }
 
