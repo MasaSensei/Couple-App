@@ -44,6 +44,7 @@ const imperialWinterTheme = ThemeDefinition(
     cardRadius: 12,
     navigation: NavigationStyle.elevated,
   ),
+  ornament: OrnamentKind.filigree,
   decoration: ThemeDecoration(
     kind: DecorationKind.ornaments,
     density: 0.8,

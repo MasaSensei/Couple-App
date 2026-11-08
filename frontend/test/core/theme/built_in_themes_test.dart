@@ -95,7 +95,8 @@ void main() {
   });
 
   group('readability (WCAG AA 4.5:1) for every theme, mode and preset', () {
-    for (final theme in newThemes) {
+    // Includes Classic Rose: the brand palette passes AA since the redesign.
+    for (final theme in ThemeRegistry.all) {
       for (final brightness in Brightness.values) {
         final variants = <String, ThemeCustomization>{
           'default': ThemeCustomization.defaults,
@@ -131,19 +132,6 @@ void main() {
         }
       }
     }
-  });
-
-  test('legacy Classic Rose contrast is recorded, not silently changed', () {
-    final t = AppTheme.resolveTokens(
-      ThemeRegistry.defaultTheme,
-      Brightness.light,
-    );
-
-    // Known pre-Phase 7 values: body text passes AA; secondary text and the
-    // white-on-pink button do not. Kept identical on purpose (STEP 2), see docs.
-    expect(contrast(t.textPrimary, t.background), greaterThanOrEqualTo(4.5));
-    expect(contrast(t.textSecondary, t.background), lessThan(4.5));
-    expect(contrast(t.onPrimary, t.primary), lessThan(4.5));
   });
 
   test('dark-only themes stay dark in light mode', () {

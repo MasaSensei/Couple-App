@@ -8,13 +8,13 @@ import 'package:frontend/core/theme/theme_customization.dart';
 import 'package:frontend/core/theme/theme_registry.dart';
 
 void main() {
-  group('default theme keeps the pre-Phase 7 look', () {
+  group('default theme is the brand look (Classic Rose)', () {
     final tokens = AppTheme.resolveTokens(
       ThemeRegistry.defaultTheme,
       Brightness.light,
     );
 
-    test('colors are the original constants', () {
+    test('colors are the brand constants', () {
       expect(tokens.primary, AppColors.primary);
       expect(tokens.secondary, AppColors.secondary);
       expect(tokens.background, AppColors.background);
@@ -25,7 +25,7 @@ void main() {
       expect(tokens.error, AppColors.error);
     });
 
-    test('text styles match the original sizes, weights and colors', () {
+    test('text styles match the brand type scale', () {
       for (final (actual, original) in [
         (tokens.display, AppTextStyles.display),
         (tokens.title, AppTextStyles.title),
@@ -36,19 +36,16 @@ void main() {
         expect(actual.fontSize, original.fontSize);
         expect(actual.fontWeight, original.fontWeight);
         expect(actual.color, original.color);
-        expect(actual.fontFamily, isNull);
+        expect(actual.fontFamily, original.fontFamily);
       }
     });
 
-    test(
-      'AppTheme.light carries the tokens and the original scaffold color',
-      () {
-        final theme = AppTheme.light();
+    test('AppTheme.light carries the tokens and the brand scaffold color', () {
+      final theme = AppTheme.light();
 
-        expect(theme.extension<AppThemeTokens>()?.themeKey, 'classic_rose');
-        expect(theme.scaffoldBackgroundColor, AppColors.background);
-      },
-    );
+      expect(theme.extension<AppThemeTokens>()?.themeKey, 'classic_rose');
+      expect(theme.scaffoldBackgroundColor, AppColors.background);
+    });
   });
 
   test('unknown theme keys fall back to the default theme', () {

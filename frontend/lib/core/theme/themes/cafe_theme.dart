@@ -43,6 +43,7 @@ const cafeTheme = ThemeDefinition(
     cardElevation: 1,
     navigation: NavigationStyle.elevated,
   ),
+  ornament: OrnamentKind.kraftTag,
   decoration: ThemeDecoration(
     kind: DecorationKind.coffee,
     density: 0.8,

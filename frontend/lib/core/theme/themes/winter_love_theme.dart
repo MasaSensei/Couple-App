@@ -44,6 +44,7 @@ const winterLoveTheme = ThemeDefinition(
     cardElevation: 1,
     cardBorder: false,
   ),
+  ornament: OrnamentKind.snowflakeStamp,
   decoration: ThemeDecoration(
     kind: DecorationKind.snowflakes,
     density: 1.0,

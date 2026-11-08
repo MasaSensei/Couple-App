@@ -33,6 +33,7 @@ const starryNightTheme = ThemeDefinition(
     cardRadius: 20,
     navigation: NavigationStyle.tinted,
   ),
+  ornament: OrnamentKind.goldStar,
   decoration: ThemeDecoration(
     kind: DecorationKind.constellations,
     density: 1.0,

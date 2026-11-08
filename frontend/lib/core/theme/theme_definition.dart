@@ -19,6 +19,7 @@ class ThemeDefinition {
     this.components = const ThemeComponentStyle(),
     this.decoration = const ThemeDecoration.none(),
     this.animation = const ThemeAnimation.none(),
+    this.ornament = OrnamentKind.washiTape,
     this.accentPresets = const [],
     this.backgroundPresets = const [],
     this.fontPresets = const [],
@@ -39,6 +40,10 @@ class ThemeDefinition {
   final ThemeComponentStyle components;
   final ThemeDecoration decoration;
   final ThemeAnimation animation;
+
+  /// Small scrapbook touch on memory cards and photo frames (see
+  /// `core/widgets/journal/ornament.dart`). Never drawn over text.
+  final OrnamentKind ornament;
 
   /// Controlled customization: the only values a couple can pick.
   final List<AccentPreset> accentPresets;
@@ -67,8 +72,12 @@ class ThemePalette {
     required this.textPrimary,
     required this.textSecondary,
     required this.border,
-    this.success = const Color(0xFF7BBF9A),
-    this.error = const Color(0xFFD96B76),
+    this.success,
+    this.error,
+    this.warning,
+    this.info,
+    this.surfaceMuted,
+    this.paper,
   });
 
   final Brightness brightness;
@@ -81,8 +90,19 @@ class ThemePalette {
   final Color textPrimary;
   final Color textSecondary;
   final Color border;
-  final Color success;
-  final Color error;
+
+  // Optional: when null, `AppTheme.resolveTokens` derives an accessible value
+  // for the palette's brightness, so older theme files stay valid.
+  final Color? success;
+  final Color? error;
+  final Color? warning;
+  final Color? info;
+
+  /// Grouped settings, inputs, skeletons.
+  final Color? surfaceMuted;
+
+  /// Photo frame "print" colour (stays light in dark mode, like a photo).
+  final Color? paper;
 
   ThemePalette copyWith({
     Color? primary,
@@ -104,6 +124,10 @@ class ThemePalette {
       border: border,
       success: success,
       error: error,
+      warning: warning,
+      info: info,
+      surfaceMuted: surfaceMuted,
+      paper: paper,
     );
   }
 }
@@ -113,6 +137,7 @@ class ThemeTypography {
   const ThemeTypography({
     this.displayFamily,
     this.bodyFamily,
+    this.handwritingFamily = 'DancingScript',
     this.displayWeight = FontWeight.w700,
     this.displayLetterSpacing = 0,
     this.displayScale = 1.0,
@@ -121,6 +146,9 @@ class ThemeTypography {
   /// Bundled font family names (see pubspec `fonts:`); null = platform default.
   final String? displayFamily;
   final String? bodyFamily;
+
+  /// Short captions and greetings only (never body text or buttons).
+  final String handwritingFamily;
   final FontWeight displayWeight;
   final double displayLetterSpacing;
 
@@ -138,6 +166,9 @@ class ThemeComponentStyle {
     this.cardElevation = 0,
     this.cardBorder = true,
     this.navigation = NavigationStyle.flat,
+    this.chipRadius = 999,
+    this.sheetRadius = 28,
+    this.photoRadius = 4,
   });
 
   final double buttonRadius;
@@ -145,6 +176,25 @@ class ThemeComponentStyle {
   final double cardElevation;
   final bool cardBorder;
   final NavigationStyle navigation;
+  final double chipRadius;
+  final double sheetRadius;
+
+  /// Corner of a photo inside its frame.
+  final double photoRadius;
+}
+
+/// Scrapbook touch per theme, drawn on the edge of memory cards and frames.
+enum OrnamentKind {
+  none,
+  washiTape,
+  petal,
+  snowflakeStamp,
+  star,
+  filmSprockets,
+  filigree,
+  pressedFlower,
+  kraftTag,
+  goldStar,
 }
 
 /// Background ornament painted behind content (see `theme_decorations.dart`).

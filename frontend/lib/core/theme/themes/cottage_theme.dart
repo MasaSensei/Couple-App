@@ -42,6 +42,7 @@ const cottageTheme = ThemeDefinition(
     cardRadius: 22,
     navigation: NavigationStyle.tinted,
   ),
+  ornament: OrnamentKind.pressedFlower,
   decoration: ThemeDecoration(
     kind: DecorationKind.leaves,
     density: 0.9,

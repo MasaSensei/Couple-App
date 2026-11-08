@@ -42,6 +42,7 @@ const sakuraTheme = ThemeDefinition(
     cardRadius: 24,
     navigation: NavigationStyle.tinted,
   ),
+  ornament: OrnamentKind.petal,
   decoration: ThemeDecoration(
     kind: DecorationKind.petals,
     density: 1.0,

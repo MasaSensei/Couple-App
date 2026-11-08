@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
+import 'app_text_styles.dart';
 import 'theme_definition.dart';
 import 'themes/built_in_themes.dart';
 
@@ -10,18 +11,19 @@ import 'themes/built_in_themes.dart';
 abstract final class ThemeRegistry {
   static const defaultKey = 'classic_rose';
 
-  /// The original look of the app, kept identical so existing couples see no change.
+  /// The brand look ("paper, ink and rosewood"). The key is unchanged so
+  /// couples who never picked a theme keep the default after the redesign.
   static const defaultTheme = ThemeDefinition(
     key: defaultKey,
     name: 'Classic Rose',
-    tagline: 'The original soft rose look.',
+    tagline: 'Warm paper, rosewood ink and washi tape on your memories.',
     version: 1,
     light: ThemePalette(
       brightness: Brightness.light,
       primary: AppColors.primary,
       onPrimary: Color(0xFFFFFFFF),
       secondary: AppColors.secondary,
-      accent: AppColors.secondary,
+      accent: AppColors.accent,
       background: AppColors.background,
       surface: AppColors.surface,
       textPrimary: AppColors.textPrimary,
@@ -29,8 +31,40 @@ abstract final class ThemeRegistry {
       border: AppColors.border,
       success: AppColors.success,
       error: AppColors.error,
+      warning: AppColors.warning,
+      info: AppColors.info,
+      surfaceMuted: AppColors.surfaceMuted,
+      paper: AppColors.paper,
     ),
-    typography: ThemeTypography(),
+    dark: ThemePalette(
+      brightness: Brightness.dark,
+      primary: AppColors.primaryOnDark,
+      onPrimary: AppColors.onPrimaryDark,
+      secondary: AppColors.secondaryDark,
+      accent: AppColors.accentDark,
+      background: AppColors.backgroundDark,
+      surface: AppColors.surfaceDark,
+      textPrimary: AppColors.textPrimaryDark,
+      textSecondary: AppColors.textSecondaryDark,
+      border: AppColors.borderDark,
+      success: AppColors.successDark,
+      error: AppColors.errorDark,
+      warning: AppColors.warningDark,
+      info: AppColors.infoDark,
+      surfaceMuted: AppColors.surfaceMutedDark,
+      paper: AppColors.paperDark,
+    ),
+    typography: ThemeTypography(
+      displayFamily: AppTextStyles.displayFamily,
+      bodyFamily: AppTextStyles.bodyFamily,
+      displayWeight: FontWeight.w600,
+    ),
+    components: ThemeComponentStyle(
+      buttonRadius: 16,
+      cardRadius: 20,
+      navigation: NavigationStyle.tinted,
+    ),
+    ornament: OrnamentKind.washiTape,
     photoBoothTemplates: {'classic_2', 'classic_3', 'classic_4', 'polaroid'},
   );
 

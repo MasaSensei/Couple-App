@@ -47,6 +47,7 @@ final appThemeDataProvider = Provider.family<ThemeData, Brightness>((
   // Personal "reduce motion" switches off theme animation on this device only.
   final tokens = theme.extension<AppThemeTokens>()!.copyWith(
     animationsEnabled: false,
+    reduceMotion: true,
   );
   return theme.copyWith(extensions: [tokens]);
 });

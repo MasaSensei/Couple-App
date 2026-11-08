@@ -35,15 +35,18 @@ const vintageFilmTheme = ThemeDefinition(
   typography: ThemeTypography(
     displayFamily: 'CourierPrime',
     bodyFamily: 'Lora',
+    handwritingFamily: 'CourierPrime',
     displayWeight: FontWeight.w700,
   ),
   components: ThemeComponentStyle(
     buttonRadius: 8,
     cardRadius: 6,
+    photoRadius: 0,
     cardElevation: 2,
     cardBorder: false,
     navigation: NavigationStyle.elevated,
   ),
+  ornament: OrnamentKind.filmSprockets,
   decoration: ThemeDecoration(
     kind: DecorationKind.filmGrain,
     density: 1.0,

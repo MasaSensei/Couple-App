@@ -32,6 +32,7 @@ const midnightTheme = ThemeDefinition(
     cardRadius: 16,
     navigation: NavigationStyle.flat,
   ),
+  ornament: OrnamentKind.star,
   decoration: ThemeDecoration(
     kind: DecorationKind.stars,
     density: 0.6,
