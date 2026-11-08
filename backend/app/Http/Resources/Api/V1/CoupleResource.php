@@ -25,6 +25,9 @@ class CoupleResource extends JsonResource
                 ->values()
                 ->all(),
 
+            // Optional, set by the couple (PATCH /couple).
+            'relationship_started_at' => $this->relationship_started_at?->format('Y-m-d'),
+
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

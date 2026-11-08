@@ -91,6 +91,7 @@ class AccountService
             'devices' => $user->devices()->get(['id', 'device_name', 'platform', 'created_at', 'last_seen_at', 'revoked_at']),
             'couple' => $couple === null ? null : [
                 'id' => $couple->id,
+                'relationship_started_at' => $couple->relationship_started_at?->format('Y-m-d'),
                 'created_at' => $couple->created_at,
                 'members' => $couple->members()->with('user:id,name')->get()->map(fn ($member) => [
                     'user_id' => $member->user_id,

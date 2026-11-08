@@ -38,6 +38,7 @@ class MemoryService
             ->where('couple_id', $couple->id)
             ->orderByDesc('memory_date')
             ->orderByDesc('created_at')
+            ->withTimelineSummary()
             ->get();
     }
 
@@ -131,6 +132,7 @@ class MemoryService
             ->where('couple_id', $couple->id)
             ->orderByDesc('memory_date')
             ->orderByDesc('created_at')
+            ->withTimelineSummary()
             ->paginate($perPage);
     }
 }

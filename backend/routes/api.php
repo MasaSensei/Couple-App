@@ -85,6 +85,7 @@ Route::prefix('v1')->group(function () {
 
         Route::post('/couple', [CoupleController::class, 'store']);
         Route::get('/couple', [CoupleController::class, 'show']);
+        Route::patch('/couple', [CoupleController::class, 'update']);
         Route::post('/couple/join', [CoupleController::class, 'join']);
         Route::post(
             '/couple/invite',

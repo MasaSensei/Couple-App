@@ -13,7 +13,15 @@ class Couple extends Model
 
     protected $fillable = [
         'invite_code',
+        'relationship_started_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'relationship_started_at' => 'date',
+        ];
+    }
 
     public function members(): HasMany
     {
