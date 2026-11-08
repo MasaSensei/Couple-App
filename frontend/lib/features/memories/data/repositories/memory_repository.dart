@@ -3,6 +3,7 @@ import 'package:frontend/core/network/api_client.dart';
 import '../models/memory_comment_model.dart';
 import '../models/memory_model.dart';
 import '../models/memory_photo_model.dart';
+import '../models/memory_protection_summary.dart';
 import '../models/memory_form_data.dart';
 
 class MemoryRepository {
@@ -20,6 +21,16 @@ class MemoryRepository {
     return memories
         .map((item) => MemoryModel.fromJson(item as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<MemoryProtectionSummary> getProtection() async {
+    final response = await _apiClient.get('/memories/protection');
+
+    final data = response.data['data'] as Map<String, dynamic>;
+
+    return MemoryProtectionSummary.fromJson(
+      data['protection'] as Map<String, dynamic>,
+    );
   }
 
   Future<MemoryModel> getMemoryById(int memoryId) async {

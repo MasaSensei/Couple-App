@@ -1,0 +1,39 @@
+{
+	email {$ACME_EMAIL}
+	servers {
+		# Only the edge network talks to Caddy; trust nothing upstream of it.
+		trusted_proxies static private_ranges
+	}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	# Admin panel only from operator networks (VPN/office). 404 for everyone else.
+	@admin_blocked {
+		path /admin /admin/* /livewire/*
+		not remote_ip {$ADMIN_ALLOWED_CIDRS}
+	}
+	respond @admin_blocked 404
+
+	# Readiness details are for the uptime monitor only (bearer token checked by the app).
+	reverse_proxy web:8080 {
+		header_up X-Request-Id {http.request.uuid}
+		health_uri /nginx-health
+		health_interval 10s
+	}
+
+	request_body {
+		max_size 30MB
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

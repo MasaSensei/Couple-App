@@ -30,7 +30,8 @@ class FakeSecureStorage implements SecureStorage {
 /// In-memory stand-in for the Laravel API. It only ever sees what the
 /// clients send: public keys and encrypted packages.
 class FakeServer {
-  final devices = <({int id, String user, String identifier, String publicKey})>[];
+  final devices =
+      <({int id, String user, String identifier, String publicKey})>[];
   final packages = <CoupleKeyPackage>[];
   final recoveryPackages = <String, Map<String, dynamic>>{};
 
@@ -39,7 +40,8 @@ class FakeServer {
   void createPackage(Map<String, dynamic> data) {
     final keyIds = packages.map((p) => p.keyId).toSet();
 
-    if (conflictOnCreate || keyIds.isNotEmpty && !keyIds.contains(data['key_id'])) {
+    if (conflictOnCreate ||
+        keyIds.isNotEmpty && !keyIds.contains(data['key_id'])) {
       throw const ApiException(message: 'conflict', statusCode: 409);
     }
 
@@ -309,28 +311,38 @@ void main() {
     test('server stores only an encrypted recovery package', () async {
       final stored = server.recoveryPackages['A']!;
 
-      expect(stored.keys, containsAll(['key_id', 'nonce', 'ciphertext', 'mac']));
+      expect(
+        stored.keys,
+        containsAll(['key_id', 'nonce', 'ciphertext', 'mac']),
+      );
       expect(stored.values.join(), isNot(contains(recoveryKey)));
     });
 
-    test('scenario A: device lost, Recovery Key available -> access restored', () async {
-      final newPhone = await SimulatedDevice.register(server, 'A', 'phone-a2');
+    test(
+      'scenario A: device lost, Recovery Key available -> access restored',
+      () async {
+        final newPhone = await SimulatedDevice.register(
+          server,
+          'A',
+          'phone-a2',
+        );
 
-      await expectLater(
-        newPhone.coupleKeyBytes(),
-        throwsA(isA<CoupleKeyUnavailableException>()),
-      );
+        await expectLater(
+          newPhone.coupleKeyBytes(),
+          throwsA(isA<CoupleKeyUnavailableException>()),
+        );
 
-      final restored = await newPhone.service.restoreWithRecoveryKey(
-        deviceIdentifier: 'phone-a2',
-        recoveryKeyText: recoveryKey.toLowerCase(),
-      );
+        final restored = await newPhone.service.restoreWithRecoveryKey(
+          deviceIdentifier: 'phone-a2',
+          recoveryKeyText: recoveryKey.toLowerCase(),
+        );
 
-      expect(await restored.secretKey.extractBytes(), originalKey);
-      // The new device now has its own package, so it works without recovery next time.
-      expect(server.packages.map((p) => p.deviceId), contains(2));
-      expect(await newPhone.coupleKeyBytes(), originalKey);
-    });
+        expect(await restored.secretKey.extractBytes(), originalKey);
+        // The new device now has its own package, so it works without recovery next time.
+        expect(server.packages.map((p) => p.deviceId), contains(2));
+        expect(await newPhone.coupleKeyBytes(), originalKey);
+      },
+    );
 
     test('scenario B: Recovery Key unavailable -> no access', () async {
       final newPhone = await SimulatedDevice.register(server, 'A', 'phone-a2');
@@ -350,17 +362,20 @@ void main() {
       );
     });
 
-    test('partner without a recovery package gets RecoveryUnavailable', () async {
-      final phoneB = await SimulatedDevice.register(server, 'B', 'phone-b');
+    test(
+      'partner without a recovery package gets RecoveryUnavailable',
+      () async {
+        final phoneB = await SimulatedDevice.register(server, 'B', 'phone-b');
 
-      await expectLater(
-        phoneB.service.restoreWithRecoveryKey(
-          deviceIdentifier: 'phone-b',
-          recoveryKeyText: recoveryKey,
-        ),
-        throwsA(isA<RecoveryUnavailableException>()),
-      );
-    });
+        await expectLater(
+          phoneB.service.restoreWithRecoveryKey(
+            deviceIdentifier: 'phone-b',
+            recoveryKeyText: recoveryKey,
+          ),
+          throwsA(isA<RecoveryUnavailableException>()),
+        );
+      },
+    );
 
     test('scenario C: an active device approves a new device', () async {
       final tablet = await SimulatedDevice.register(server, 'A', 'tablet-a');

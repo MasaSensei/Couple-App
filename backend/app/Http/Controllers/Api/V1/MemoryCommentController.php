@@ -31,8 +31,7 @@ class MemoryCommentController extends Controller
         return ApiResponse::success(
             'Memory comments retrieved successfully.',
             [
-                'comments' =>
-                MemoryCommentResource::collection(
+                'comments' => MemoryCommentResource::collection(
                     $comments,
                 ),
             ],
@@ -56,8 +55,7 @@ class MemoryCommentController extends Controller
         return ApiResponse::success(
             'Memory comment created successfully.',
             [
-                'comment' =>
-                new MemoryCommentResource($comment),
+                'comment' => new MemoryCommentResource($comment),
             ],
             201,
         );
@@ -79,8 +77,7 @@ class MemoryCommentController extends Controller
         return ApiResponse::success(
             'Memory comment updated successfully.',
             [
-                'comment' =>
-                new MemoryCommentResource($comment),
+                'comment' => new MemoryCommentResource($comment),
             ],
         );
     }

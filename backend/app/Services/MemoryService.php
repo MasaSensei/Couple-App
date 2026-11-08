@@ -3,11 +3,13 @@
 namespace App\Services;
 
 use App\Models\Couple;
+use App\Models\Date;
 use App\Models\Memory;
+use App\Models\PhotoStorageAudit;
 use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use RuntimeException;
 
 class MemoryService
@@ -36,6 +38,7 @@ class MemoryService
             ->where('couple_id', $couple->id)
             ->orderByDesc('memory_date')
             ->orderByDesc('created_at')
+            ->withTimelineSummary()
             ->get();
     }
 
@@ -84,9 +87,19 @@ class MemoryService
         return $memory->refresh();
     }
 
-    public function delete(Memory $memory): void
+    /** Soft delete; its photos go to the trash with the same retention as a single photo delete. */
+    public function delete(Memory $memory, ?User $user = null): void
     {
-        $memory->delete();
+        DB::transaction(function () use ($memory, $user): void {
+            $actor = $user ? "user:{$user->id}" : 'system';
+
+            $memory->photos()->get()->each(function ($photo) use ($actor): void {
+                $photo->delete();
+                PhotoStorageAudit::record($photo->id, 'trash', 'succeeded', $actor, 'Memory deleted.');
+            });
+
+            $memory->delete();
+        });
     }
 
     private function validateDateBelongsToCouple(
@@ -97,7 +110,7 @@ class MemoryService
             return;
         }
 
-        $exists = \App\Models\Date::query()
+        $exists = Date::query()
             ->where('id', $dateId)
             ->where('couple_id', $coupleId)
             ->exists();
@@ -119,6 +132,7 @@ class MemoryService
             ->where('couple_id', $couple->id)
             ->orderByDesc('memory_date')
             ->orderByDesc('created_at')
+            ->withTimelineSummary()
             ->paginate($perPage);
     }
 }

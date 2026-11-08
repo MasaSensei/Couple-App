@@ -227,7 +227,6 @@ class CoupleKeyPackageTest extends TestCase
             );
     }
 
-
     public function test_partner_can_list_key_packages_from_both_devices(): void
     {
         $userA = User::factory()->create();
@@ -281,7 +280,6 @@ class CoupleKeyPackageTest extends TestCase
             ->assertJsonFragment(['id' => $packageA->id])
             ->assertJsonFragment(['id' => $packageB->id]);
     }
-
 
     private function validPayload(int $deviceId): array
     {

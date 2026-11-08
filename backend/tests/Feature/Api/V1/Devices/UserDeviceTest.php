@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Api\V1\Devices;
 
+use App\Models\Couple;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class UserDeviceTest extends TestCase
@@ -100,8 +102,8 @@ class UserDeviceTest extends TestCase
         ]);
 
         $keyPackage = $device->coupleKeyPackages()->create([
-            'couple_id' => \App\Models\Couple::factory()->create()->id,
-            'key_id' => (string) \Illuminate\Support\Str::uuid(),
+            'couple_id' => Couple::factory()->create()->id,
+            'key_id' => (string) Str::uuid(),
             'encryption_version' => 1,
             'ephemeral_public_key' => base64_encode(random_bytes(32)),
             'nonce' => base64_encode(random_bytes(12)),
@@ -327,7 +329,7 @@ class UserDeviceTest extends TestCase
             )
             ->assertJsonPath(
                 'data.devices.0.revoked_at',
-                fn($value) => $value !== null,
+                fn ($value) => $value !== null,
             );
     }
 

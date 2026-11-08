@@ -2,12 +2,12 @@
 
 namespace App\Http\Resources\Api\V1\Memory;
 
+use App\Services\Memory\MemoryProtectionService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class MemoryPhotoResource extends JsonResource
 {
-
     public function toArray(Request $request): array
     {
         return [
@@ -24,6 +24,8 @@ class MemoryPhotoResource extends JsonResource
             'checksum' => $this->checksum,
             'sort_order' => $this->sort_order,
             'status' => $this->status,
+            // Server-derived; see MemoryProtectionService::USER_STATUS.
+            'protection_status' => MemoryProtectionService::userStatus($this->resource),
 
             'encryption_version' => $this->encryption_version,
             'encryption_algorithm' => $this->encryption_algorithm,
@@ -35,6 +37,7 @@ class MemoryPhotoResource extends JsonResource
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
             'deleted_at' => $this->deleted_at?->toISOString(),
+            'restorable_until' => $this->deleted_at ? $this->restorableUntil()->toISOString() : null,
         ];
     }
 }

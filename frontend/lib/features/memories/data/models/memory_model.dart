@@ -1,3 +1,5 @@
+import 'memory_photo_model.dart';
+
 class MemoryModel {
   const MemoryModel({
     required this.id,
@@ -13,11 +15,14 @@ class MemoryModel {
     this.longitude,
     this.createdAt,
     this.updatedAt,
+    this.photosCount,
+    this.coverPhoto,
   });
 
   final int id;
   final int coupleId;
-  final int createdBy;
+  // Null once the author deleted their account (content stays with the partner).
+  final int? createdBy;
   final int? dateId;
 
   final String title;
@@ -34,11 +39,16 @@ class MemoryModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  /// Timeline/list responses only: visible photos and the first one's
+  /// ciphertext metadata (decrypted on device by `PrivateMemoryPhoto`).
+  final int? photosCount;
+  final MemoryPhotoModel? coverPhoto;
+
   factory MemoryModel.fromJson(Map<String, dynamic> json) {
     return MemoryModel(
       id: json['id'] as int,
       coupleId: json['couple_id'] as int,
-      createdBy: json['created_by'] as int,
+      createdBy: json['created_by'] as int?,
       dateId: json['date_id'] as int?,
       title: json['title'] as String,
       description: json['description'] as String?,
@@ -49,6 +59,12 @@ class MemoryModel {
       longitude: _parseDouble(json['longitude']),
       createdAt: _parseDateTime(json['created_at']),
       updatedAt: _parseDateTime(json['updated_at']),
+      photosCount: json['photos_count'] as int?,
+      coverPhoto: json['cover_photo'] is Map<String, dynamic>
+          ? MemoryPhotoModel.fromJson(
+              json['cover_photo'] as Map<String, dynamic>,
+            )
+          : null,
     );
   }
 

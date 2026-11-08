@@ -1,0 +1,152 @@
+name: Backend
+
+on:
+  push:
+    branches: [main, master]
+    paths: ["backend/**", "deploy/**", ".github/workflows/backend.yml"]
+  pull_request:
+    paths: ["backend/**", "deploy/**", ".github/workflows/backend.yml"]
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  quality:
+    name: Lint, audit & tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: couples_test
+          POSTGRES_USER: couples
+          POSTGRES_PASSWORD: couples_dev_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U couples -d couples_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    env:
+      # phpunit.xml forces DB_HOST=postgres; map that name to the service.
+      DB_HOST: postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Map postgres hostname
+        run: echo "127.0.0.1 postgres" | sudo tee -a /etc/hosts
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          extensions: pdo_pgsql, intl, zip, gd, redis, sodium, pcntl
+          coverage: none
+          tools: composer:v2
+
+      - name: Validate composer.json / composer.lock
+        run: composer validate --strict --no-check-publish
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('backend/composer.lock') }}
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Security audit (fails on any advisory)
+        run: composer audit --no-interaction
+
+      - name: Code style (Pint)
+        run: vendor/bin/pint --test
+
+      - name: Install PostgreSQL client (db backup tests use pg_dump)
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client-17 || sudo apt-get install -y postgresql-client
+
+      - name: Migrations apply cleanly and roll back
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:QGamfe8CcF+J15EwMJZyXQEfKE6j4LwQWb1SPpx6KAk=
+          DB_CONNECTION: pgsql
+          DB_DATABASE: couples_test
+          DB_USERNAME: couples
+          DB_PASSWORD: couples_dev_password
+          CACHE_STORE: array
+        run: |
+          php artisan migrate:fresh --force
+          php artisan migrate:rollback --force
+          php artisan migrate --force
+          php artisan migrate:status
+
+      - name: Unit & feature tests
+        run: php artisan test --compact
+
+      - name: Production config sanity
+        env:
+          APP_ENV: production
+          APP_DEBUG: "false"
+          APP_KEY: base64:QGamfe8CcF+J15EwMJZyXQEfKE6j4LwQWb1SPpx6KAk=
+        run: |
+          php artisan config:cache
+          php artisan route:cache
+          php artisan route:list --path=api/v1/billing/mock | grep -q "mock" && { echo "Mock store route registered in production!"; exit 1; } || true
+          php artisan optimize:clear
+
+  image:
+    name: Production images
+    runs-on: ubuntu-24.04
+    needs: quality
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build app image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/docker/production/Dockerfile
+          target: app
+          tags: couples-app:${{ github.sha }}
+          load: true
+          cache-from: type=gha,scope=app
+          cache-to: type=gha,mode=max,scope=app
+
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/docker/production/Dockerfile
+          target: web
+          tags: couples-web:${{ github.sha }}
+          load: true
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+      - name: Image runs as non-root and refuses debug mode
+        working-directory: .
+        run: |
+          test "$(docker run --rm --entrypoint id couples-app:${{ github.sha }} -u)" != "0"
+          ! docker run --rm -e APP_KEY=base64:QGamfe8CcF+J15EwMJZyXQEfKE6j4LwQWb1SPpx6KAk= -e APP_DEBUG=true couples-app:${{ github.sha }} php -v
+          docker run --rm --entrypoint php couples-app:${{ github.sha }} -r 'exit(ini_get("expose_php") ? 1 : 0);'
+
+      - name: Compose files are valid
+        working-directory: .
+        run: |
+          cp deploy/env/staging.env.example /tmp/staging.env
+          APP_ENV_FILE=/tmp/staging.env APP_IMAGE=x WEB_IMAGE=y DOMAIN=d ACME_EMAIL=e DB_DATABASE=a DB_USERNAME=b DB_PASSWORD=c REDIS_PASSWORD=r \
+            docker compose -f deploy/docker-compose.prod.yml config --quiet
+
+      # Pushing to a registry and deploying to staging are added once the
+      # registry and staging host exist (deploy/README.md §CI/CD).

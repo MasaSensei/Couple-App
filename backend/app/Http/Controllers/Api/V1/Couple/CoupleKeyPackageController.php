@@ -8,6 +8,7 @@ use App\Http\Resources\Api\V1\Couple\CoupleKeyPackageResource;
 use App\Http\Responses\ApiResponse;
 use App\Services\CoupleKeyPackageService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class CoupleKeyPackageController extends Controller
 {
@@ -16,7 +17,7 @@ class CoupleKeyPackageController extends Controller
     ) {}
 
     public function index(
-        \Illuminate\Http\Request $request,
+        Request $request,
     ): JsonResponse {
         $packages = $this->service->listForUser(
             $request->user(),
@@ -49,7 +50,7 @@ class CoupleKeyPackageController extends Controller
     }
 
     public function devices(
-        \Illuminate\Http\Request $request,
+        Request $request,
     ): JsonResponse {
         $userId = $request->user()->id;
 

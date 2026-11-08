@@ -1,0 +1,173 @@
+# Production / staging stack for a single Docker host (VPS).
+# The same file serves both; the environment comes from the env file:
+#
+#   docker compose -f deploy/docker-compose.prod.yml --env-file deploy/env/staging.env    -p couples-staging up -d
+#   docker compose -f deploy/docker-compose.prod.yml --env-file deploy/env/production.env -p couples-prod    up -d
+#
+# Staging and production must run on different hosts (or at least different
+# projects, volumes, databases, buckets and credentials). See deploy/README.md.
+#
+# Object storage is NOT part of this stack: primary and backup buckets live at
+# two independent providers/accounts configured in the env file.
+
+name: ${COMPOSE_PROJECT_NAME:-couples}
+
+x-app: &app
+  image: ${APP_IMAGE:?set APP_IMAGE=registry/couples-app:<git-sha>}
+  restart: unless-stopped
+  env_file: ${APP_ENV_FILE:?set APP_ENV_FILE to the app .env for this environment}
+  environment:
+    DB_HOST: postgres
+    REDIS_HOST: redis
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis: { condition: service_healthy }
+  networks: [internal, egress]
+  logging: &logging
+    driver: json-file
+    options: { max-size: "20m", max-file: "5" }
+
+services:
+  # TLS termination with automatic certificates (Let's Encrypt). Only public entry point.
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL}
+      ADMIN_ALLOWED_CIDRS: ${ADMIN_ALLOWED_CIDRS:-0.0.0.0/0 ::/0}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web: { condition: service_healthy }
+    networks: [edge]
+    deploy:
+      resources: { limits: { cpus: "0.50", memory: 128M } }
+    logging: *logging
+
+  web:
+    image: ${WEB_IMAGE:?set WEB_IMAGE=registry/couples-web:<git-sha>}
+    restart: unless-stopped
+    depends_on:
+      app: { condition: service_healthy }
+    networks: [edge, internal]
+    deploy:
+      resources: { limits: { cpus: "0.50", memory: 128M } }
+    logging: *logging
+
+  app:
+    <<: *app
+    environment:
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      CONTAINER_ROLE: web
+      PHP_FPM_MAX_CHILDREN: ${PHP_FPM_MAX_CHILDREN:-10}
+    stop_grace_period: 35s
+    deploy:
+      resources: { limits: { cpus: "${APP_CPUS:-1.50}", memory: "${APP_MEMORY:-768M}" } }
+
+  queue:
+    <<: *app
+    command: ["php", "artisan", "queue:work", "redis", "--sleep=3", "--tries=3", "--timeout=80", "--max-time=3600", "--max-jobs=1000"]
+    environment:
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      CONTAINER_ROLE: queue
+    # Longest job timeout is 80 s: let the current job finish on deploy.
+    stop_signal: SIGTERM
+    stop_grace_period: 95s
+    deploy:
+      resources: { limits: { cpus: "1.00", memory: 512M } }
+
+  scheduler:
+    <<: *app
+    command: ["php", "artisan", "schedule:work"]
+    environment:
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      CONTAINER_ROLE: scheduler
+    stop_grace_period: 60s
+    deploy:
+      # Exactly one scheduler. Commands also use onOneServer() as a safety net.
+      replicas: 1
+      resources: { limits: { cpus: "0.50", memory: 512M } }
+
+  # One-off, explicit deploy step:
+  #   docker compose ... run --rm migrate
+  migrate:
+    <<: *app
+    command: ["php", "artisan", "migrate", "--force", "--isolated"]
+    restart: "no"
+    profiles: ["ops"]
+    environment:
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      CONTAINER_ROLE: ops
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:?set DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME:?set DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+    command:
+      - postgres
+      - -c
+      - max_connections=${PG_MAX_CONNECTIONS:-100}
+      - -c
+      - shared_buffers=${PG_SHARED_BUFFERS:-256MB}
+      - -c
+      - log_min_duration_statement=500
+      - -c
+      - wal_level=replica
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    stop_grace_period: 60s
+    # No published port: reachable only from the internal network.
+    networks: [internal]
+    deploy:
+      resources: { limits: { cpus: "${PG_CPUS:-1.00}", memory: "${PG_MEMORY:-1G}" } }
+    logging: *logging
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Password required; AOF so queued jobs survive a restart; never evict queue keys.
+    command: ["sh", "-c", "exec redis-server --requirepass \"$$REDIS_PASSWORD\" --appendonly yes --maxmemory ${REDIS_MAXMEMORY:-256mb} --maxmemory-policy noeviction --protected-mode yes"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [internal]
+    deploy:
+      resources: { limits: { cpus: "0.50", memory: 384M } }
+    logging: *logging
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  # Public side: Caddy ↔ Nginx only.
+  edge:
+  # Database and Redis: no route to the internet at all.
+  internal:
+    internal: true
+  # Outbound for the app: object storage, store APIs, heartbeat monitors.
+  egress:

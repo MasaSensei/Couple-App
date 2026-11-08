@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use Database\Factories\UserFactory;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthentication;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthenticationRecovery;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,11 +14,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use SensitiveParameter;
 
 #[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements FilamentUser
+#[Hidden(['password', 'remember_token', 'app_authentication_secret', 'app_authentication_recovery_codes'])]
+class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
@@ -32,7 +34,19 @@ class User extends Authenticatable implements FilamentUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'admin_permissions' => 'array',
+            'app_authentication_secret' => 'encrypted',
+            'app_authentication_recovery_codes' => 'encrypted:array',
         ];
+    }
+
+    /** Admin permissions beyond panel access. See docs/billing/subscriptions.md §10. */
+    public const ADMIN_PERMISSIONS = ['billing.view', 'billing.manage', 'plans.manage'];
+
+    public function hasAdminPermission(string $permission): bool
+    {
+        return $this->is_admin === true
+            && in_array($permission, $this->admin_permissions ?? [], true);
     }
 
     public function coupleMemberships(): HasMany
@@ -42,7 +56,8 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->is_admin;
+        // Fail closed: an unloaded/null flag must deny, not error.
+        return $this->is_admin === true;
     }
 
     public function sentCoupleInvitations(): HasMany
@@ -91,8 +106,30 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(UserDevice::class);
     }
 
-    public function couple(): HasOne
+    // ── Admin panel MFA (Filament app authentication) ───────────────────
+
+    public function getAppAuthenticationSecret(): ?string
     {
-        return $this->hasOne(Couple::class);
+        return $this->app_authentication_secret;
+    }
+
+    public function saveAppAuthenticationSecret(#[SensitiveParameter] ?string $secret): void
+    {
+        $this->forceFill(['app_authentication_secret' => $secret])->save();
+    }
+
+    public function getAppAuthenticationHolderName(): string
+    {
+        return $this->email;
+    }
+
+    public function getAppAuthenticationRecoveryCodes(): ?array
+    {
+        return $this->app_authentication_recovery_codes;
+    }
+
+    public function saveAppAuthenticationRecoveryCodes(#[SensitiveParameter] ?array $codes): void
+    {
+        $this->forceFill(['app_authentication_recovery_codes' => $codes])->save();
     }
 }

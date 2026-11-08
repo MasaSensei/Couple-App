@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Http\Resources\Api\V1\Memory\MemoryPhotoResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -35,6 +36,17 @@ class MemoryResource extends JsonResource
             'created_at' => $this->created_at?->toISOString(),
 
             'updated_at' => $this->updated_at?->toISOString(),
+
+            // Timeline/list only (additive): visible photo count and the
+            // cover photo's ciphertext metadata. The app decrypts on device.
+            'photos_count' => $this->whenCounted('photos'),
+
+            'cover_photo' => $this->whenLoaded(
+                'coverPhoto',
+                fn () => $this->coverPhoto === null
+                    ? null
+                    : new MemoryPhotoResource($this->coverPhoto),
+            ),
         ];
     }
 }

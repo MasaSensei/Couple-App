@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\LoginRequest;
 use App\Http\Requests\Api\V1\Auth\RegisterRequest;
-use App\Http\Resources\Api\V1\UserResource;
 use App\Http\Requests\Api\V1\User\UpdateProfileRequest;
-use App\Services\UserService;
+use App\Http\Resources\Api\V1\UserResource;
+use App\Http\Responses\ApiResponse;
 use App\Services\AuthService;
+use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Http\Responses\ApiResponse;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
@@ -31,6 +32,7 @@ class AuthController extends Controller
             [
                 'user' => new UserResource($result['user']),
                 'token' => $result['token'],
+                'token_expires_at' => $result['token_expires_at'],
             ],
             201,
         );
@@ -47,6 +49,7 @@ class AuthController extends Controller
             [
                 'user' => new UserResource($result['user']),
                 'token' => $result['token'],
+                'token_expires_at' => $result['token_expires_at'],
             ],
         );
     }
@@ -61,6 +64,24 @@ class AuthController extends Controller
             'Logged out successfully.',
             null,
         );
+    }
+
+    public function refresh(Request $request): JsonResponse
+    {
+        $current = $request->user()->currentAccessToken();
+
+        abort_unless($current instanceof PersonalAccessToken, 400, 'Only API tokens can be refreshed.');
+
+        $result = $this->authService->refresh($request->user(), $current);
+
+        return ApiResponse::success('Token refreshed.', $result);
+    }
+
+    public function logoutAll(Request $request): JsonResponse
+    {
+        $count = $this->authService->logoutAll($request->user());
+
+        return ApiResponse::success('Signed out of all sessions.', ['revoked' => $count]);
     }
 
     public function me(Request $request): JsonResponse

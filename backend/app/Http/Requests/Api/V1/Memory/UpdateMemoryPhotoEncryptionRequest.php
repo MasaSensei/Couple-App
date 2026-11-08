@@ -51,7 +51,7 @@ class UpdateMemoryPhotoEncryptionRequest extends FormRequest
                 'required',
                 'string',
                 'size:24',
-                'regex:/\A[A-Za-z0-9+\/]{22}==\z/'
+                'regex:/\A[A-Za-z0-9+\/]{22}==\z/',
             ],
         ];
     }

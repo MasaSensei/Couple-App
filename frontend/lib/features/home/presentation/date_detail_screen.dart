@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/features/memories/data/models/memory_form_data.dart';
 
-import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/app_widgets.dart';
+import 'widgets/date_status_chip.dart';
 import '../data/models/date_model.dart';
 import '../providers/date_providers.dart';
 import 'date_form_screen.dart';
@@ -60,8 +60,8 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
 
   Future<void> _completeDate(DateModel date) async {
     final confirmed = await _showConfirmation(
-      title: 'Complete this date?',
-      message: 'This will mark "${date.title}" as completed.',
+      title: 'Mark as completed?',
+      message: 'You can then save "${date.title}" as a memory with photos.',
       confirmLabel: 'Complete',
     );
 
@@ -90,7 +90,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
         _dateFuture = Future.value(updatedDate);
       });
 
-      _showMessage('Date marked as completed ♡');
+      _showMessage('Marked as completed.');
       return;
     }
 
@@ -103,8 +103,9 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
   Future<void> _cancelDate(DateModel date) async {
     final confirmed = await _showConfirmation(
       title: 'Cancel this date?',
-      message: 'This will cancel "${date.title}".',
+      message: '"${date.title}" will move to your past dates as cancelled.',
       confirmLabel: 'Cancel date',
+      destructive: true,
     );
 
     if (!confirmed || !mounted) {
@@ -146,115 +147,69 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
     required String title,
     required String message,
     required String confirmLabel,
-  }) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(title),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-              child: const Text('Not now'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-              child: Text(confirmLabel),
-            ),
-          ],
-        );
-      },
+    bool destructive = false,
+  }) {
+    return showConfirmSheet(
+      context,
+      title: title,
+      message: message,
+      confirmLabel: confirmLabel,
+      cancelLabel: 'Not now',
+      destructive: destructive,
     );
-
-    return result ?? false;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Date Details')),
+    return AppScaffold(
+      title: 'Date',
+      padded: false,
       body: FutureBuilder<DateModel>(
         future: _dateFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return _buildError();
+            return const AppStateView.loading();
           }
 
           final date = snapshot.data;
-
-          if (date == null) {
-            return _buildError();
+          if (snapshot.hasError || date == null) {
+            return AppStateView.error(
+              message: 'We could not load this date.',
+              onAction: _refresh,
+            );
           }
 
           return RefreshIndicator(
             onRefresh: _refresh,
-            child: SingleChildScrollView(
+            child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(date.title, style: AppTextStyles.title),
-
-                  const SizedBox(height: AppSpacing.sm),
-
-                  _buildStatus(date.status),
-
-                  const SizedBox(height: AppSpacing.xl),
-
-                  _buildInfoCard(
-                    icon: Icons.calendar_month_rounded,
-                    title: 'Date & Time',
-                    value: _formatDateTime(date.scheduledAt),
-                  ),
-
-                  if (date.location != null &&
-                      date.location!.trim().isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    _buildInfoCard(
-                      icon: Icons.location_on_rounded,
-                      title: 'Location',
-                      value: date.location!,
-                    ),
-                  ],
-
-                  if (date.description != null &&
-                      date.description!.trim().isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    _buildDescriptionCard(date.description!),
-                  ],
-
-                  const SizedBox(height: AppSpacing.xl),
-
-                  DateCommentsSection(dateId: date.id),
-
-                  const SizedBox(height: AppSpacing.xl),
-
-                  _buildStatusActions(date),
-
-                  const SizedBox(height: AppSpacing.xl),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        _editDate(date);
-                      },
-                      icon: const Icon(Icons.edit_rounded),
-                      label: const Text('Edit date'),
-                    ),
-                  ),
-                ],
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.gutter,
+                AppSpacing.sm,
+                AppSpacing.gutter,
+                AppSpacing.xxl,
               ),
+              children: [
+                _buildHero(date),
+                const SizedBox(height: AppSpacing.lg),
+                _buildStatusActions(date),
+                if (date.description != null &&
+                    date.description!.trim().isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  const SectionHeader(title: 'Notes'),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(date.description!, style: context.tokens.body),
+                ],
+                const SizedBox(height: AppSpacing.xl),
+                DateCommentsSection(dateId: date.id),
+                const SizedBox(height: AppSpacing.xl),
+                AppButton(
+                  label: 'Edit date',
+                  icon: Icons.edit_outlined,
+                  variant: AppButtonVariant.ghost,
+                  onPressed: () => _editDate(date),
+                ),
+              ],
             ),
           );
         },
@@ -262,149 +217,130 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
     );
   }
 
-  Widget _buildStatus(String status) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
+  Widget _buildHero(DateModel date) {
+    final t = context.tokens;
+    final upcoming = DateStatusStyle.isUpcoming(date);
+
+    Widget info(IconData icon, String text) => Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: t.textSecondary),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(child: Text(text, style: t.body)),
+        ],
       ),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-      ),
-      child: Text(status.toUpperCase(), style: AppTextStyles.body),
     );
-  }
 
-  Widget _buildInfoCard({
-    required IconData icon,
-    required String title,
-    required String value,
-  }) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon),
-
-            const SizedBox(width: AppSpacing.md),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: AppTextStyles.subtitle),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(value, style: AppTextStyles.body),
-                ],
+    return JournalCard(
+      ornament: true,
+      ornamentSeed: date.id,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DateBadge(
+                date: date.scheduledAt,
+                width: 64,
+                emphasis: date.status == 'cancelled'
+                    ? DateBadgeEmphasis.muted
+                    : upcoming
+                    ? DateBadgeEmphasis.strong
+                    : DateBadgeEmphasis.soft,
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDescriptionCard(String description) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Description', style: AppTextStyles.subtitle),
-            const SizedBox(height: AppSpacing.sm),
-            Text(description, style: AppTextStyles.body),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildError() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline_rounded, size: 48),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Unable to load this date.',
-              style: AppTextStyles.subtitle,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            OutlinedButton(onPressed: _refresh, child: const Text('Try again')),
-          ],
-        ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Semantics(
+                      header: true,
+                      child: Text(date.title, style: t.title),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Wrap(
+                      spacing: AppSpacing.xs,
+                      runSpacing: AppSpacing.xs,
+                      children: [
+                        DateStatusChip(status: date.status, dense: false),
+                        if (upcoming)
+                          StatusChip(
+                            label: AppFormatters.relativeDays(date.scheduledAt),
+                            tone: StatusTone.neutral,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          info(Icons.schedule_rounded, AppFormatters.full(date.scheduledAt)),
+          if (date.location != null && date.location!.trim().isNotEmpty)
+            info(Icons.place_outlined, date.location!),
+        ],
       ),
     );
   }
 
   Widget _buildStatusActions(DateModel date) {
-    if (_isUpdatingStatus) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    final t = context.tokens;
+    if (_isUpdatingStatus) return const AppStateView.loading();
 
     switch (date.status) {
       case 'planned':
-        return Column(
+        return Row(
           children: [
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () {
-                  _completeDate(date);
-                },
-                icon: const Icon(Icons.check_rounded),
-                label: const Text('Mark as completed'),
+            Expanded(
+              child: AppButton(
+                label: 'Completed',
+                icon: Icons.check_rounded,
+                onPressed: () => _completeDate(date),
               ),
             ),
-
-            const SizedBox(height: AppSpacing.sm),
-
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  _cancelDate(date);
-                },
-                icon: const Icon(Icons.close_rounded),
-                label: const Text('Cancel date'),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: AppButton(
+                label: 'Cancel date',
+                icon: Icons.close_rounded,
+                variant: AppButtonVariant.secondary,
+                onPressed: () => _cancelDate(date),
               ),
             ),
           ],
         );
 
       case 'completed':
-        return Column(
-          children: [
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () {
-                  _createMemoryFromDate(date);
-                },
-                icon: const Icon(Icons.favorite_rounded),
-                label: const Text('Save this moment'),
+        return JournalCard(
+          color: t.toneContainer(StatusTone.success),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'You went on this date. Keep it in your journal?',
+                style: t.body.copyWith(
+                  color: t.onToneContainer(StatusTone.success),
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            const Text(
-              'This date has been completed ♡',
-              textAlign: TextAlign.center,
-            ),
-          ],
+              const SizedBox(height: AppSpacing.smd),
+              AppButton(
+                label: 'Save this moment',
+                icon: Icons.favorite_border_rounded,
+                onPressed: () => _createMemoryFromDate(date),
+              ),
+            ],
+          ),
         );
 
       case 'cancelled':
-        return const Text(
+        return Text(
           'This date was cancelled.',
-          textAlign: TextAlign.center,
+          style: t.body.copyWith(color: t.textSecondary),
         );
 
       default:
@@ -442,27 +378,7 @@ class _DateDetailScreenState extends ConsumerState<DateDetailScreen> {
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
-        ),
+        SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
       );
-  }
-
-  String _formatDateTime(DateTime date) {
-    final localDate = date.toLocal();
-
-    final day = localDate.day.toString().padLeft(2, '0');
-
-    final month = localDate.month.toString().padLeft(2, '0');
-
-    final year = localDate.year;
-
-    final hour = localDate.hour.toString().padLeft(2, '0');
-
-    final minute = localDate.minute.toString().padLeft(2, '0');
-
-    return '$day/$month/$year • $hour:$minute';
   }
 }

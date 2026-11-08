@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/widgets/app_widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../../core/widgets/app_button.dart';
-import '../../../core/widgets/app_text_field.dart';
 import '../providers/couple_invitation_providers.dart';
 import '../providers/couple_invitation_state.dart';
 
@@ -74,13 +71,13 @@ class _AcceptInvitationScreenState
             children: [
               const SizedBox(height: AppSpacing.lg),
 
-              Text('Join your little space ♡', style: AppTextStyles.title),
+              Text('Join your little space', style: context.tokens.title),
 
               const SizedBox(height: AppSpacing.sm),
 
               Text(
                 'Enter the invitation token shared by your partner.',
-                style: AppTextStyles.subtitle,
+                style: context.tokens.subtitle,
               ),
 
               const SizedBox(height: AppSpacing.xl),

@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Devices\RegisterDeviceRequest;
+use App\Http\Resources\Api\V1\Devices\DeviceResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\UserDevice;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Http\Resources\Api\V1\Devices\DeviceResource;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\PersonalAccessToken;
 

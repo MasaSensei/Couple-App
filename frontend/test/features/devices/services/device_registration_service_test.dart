@@ -94,34 +94,40 @@ void main() {
     expect(repository.deviceName, 'My Device');
   });
 
-  test('revoked device forgets its keys and registers as a new device', () async {
-    final storage = _MemorySecureStorage();
-    final deviceKeyStorage = DeviceKeyStorage(storage: storage);
-    final coupleKeyStorage = CoupleKeyStorage(storage: storage);
+  test(
+    'revoked device forgets its keys and registers as a new device',
+    () async {
+      final storage = _MemorySecureStorage();
+      final deviceKeyStorage = DeviceKeyStorage(storage: storage);
+      final coupleKeyStorage = CoupleKeyStorage(storage: storage);
 
-    await coupleKeyStorage.save(keyId: 'k', secretKeyBytes: List.filled(32, 1));
+      await coupleKeyStorage.save(
+        keyId: 'k',
+        secretKeyBytes: List.filled(32, 1),
+      );
 
-    final identityService = DeviceIdentityService(storage: deviceKeyStorage);
-    final firstIdentifier = await identityService.getOrCreateDeviceId();
-    final keyService = DeviceKeyService(storage: deviceKeyStorage);
-    final firstPublicKey = await keyService.initialize();
+      final identityService = DeviceIdentityService(storage: deviceKeyStorage);
+      final firstIdentifier = await identityService.getOrCreateDeviceId();
+      final keyService = DeviceKeyService(storage: deviceKeyStorage);
+      final firstPublicKey = await keyService.initialize();
 
-    final repository = _RevokingDeviceRepository(firstIdentifier);
+      final repository = _RevokingDeviceRepository(firstIdentifier);
 
-    await DeviceRegistrationService(
-      identityService: identityService,
-      keyService: keyService,
-      repository: repository,
-      deviceKeyStorage: deviceKeyStorage,
-      coupleKeyStorage: coupleKeyStorage,
-      platform: 'android',
-    ).registerCurrentDevice();
+      await DeviceRegistrationService(
+        identityService: identityService,
+        keyService: keyService,
+        repository: repository,
+        deviceKeyStorage: deviceKeyStorage,
+        coupleKeyStorage: coupleKeyStorage,
+        platform: 'android',
+      ).registerCurrentDevice();
 
-    expect(repository.registered, hasLength(2));
-    expect(repository.registered.last.$1, isNot(firstIdentifier));
-    expect(repository.registered.last.$2, isNot(firstPublicKey));
-    expect(await coupleKeyStorage.readSecretKeyBytes(), isNull);
-  });
+      expect(repository.registered, hasLength(2));
+      expect(repository.registered.last.$1, isNot(firstIdentifier));
+      expect(repository.registered.last.$2, isNot(firstPublicKey));
+      expect(await coupleKeyStorage.readSecretKeyBytes(), isNull);
+    },
+  );
 }
 
 class _MemorySecureStorage implements SecureStorage {

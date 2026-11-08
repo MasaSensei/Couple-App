@@ -1,0 +1,75 @@
+/*
+ * Our Little Space — admin brand layer.
+ * Self-hosted fonts (SIL OFL, see fonts/OFL-*.txt): no request leaves the
+ * admin domain. Loaded by Filament's LocalFontProvider on every panel page.
+ */
+@font-face {
+    font-family: 'Nunito';
+    src: url('fonts/Nunito.ttf') format('truetype');
+    font-weight: 200 1000;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Playfair Display';
+    src: url('fonts/PlayfairDisplay.ttf') format('truetype');
+    font-weight: 400 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Wordmark (brandLogo): the only place the display serif appears in admin. */
+.ols-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 1.3rem;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    color: #34262b;
+    white-space: nowrap;
+}
+
+.ols-brand svg {
+    width: 0.8rem;
+    height: 0.8rem;
+    color: #b4475f;
+    flex: none;
+}
+
+.ols-brand small {
+    font-family: 'Nunito', ui-sans-serif, system-ui, sans-serif;
+    font-style: normal;
+    font-weight: 700;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #78716c;
+    margin-left: 0.35rem;
+    padding: 0.15rem 0.4rem;
+    border: 1px solid #e7e5e4;
+    border-radius: 999px;
+}
+
+.dark .ols-brand {
+    color: #f5f5f4;
+}
+
+.dark .ols-brand svg {
+    color: #f2a0b2;
+}
+
+.dark .ols-brand small {
+    color: #bdb7b3;
+    border-color: #44403c;
+}
+
+/* Tabular figures wherever numbers line up (stats, tables). */
+.fi-wi-stats-overview-stat-value,
+.fi-ta-text-item {
+    font-variant-numeric: tabular-nums;
+}

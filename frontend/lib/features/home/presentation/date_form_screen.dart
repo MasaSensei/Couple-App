@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../../core/widgets/app_button.dart';
-import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../data/models/date_model.dart';
 import '../providers/date_providers.dart';
 
@@ -152,94 +149,52 @@ class _DateFormScreenState extends ConsumerState<DateFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isEditing ? 'Edit Date' : 'Plan a Date'),
-      ),
+    final t = context.tokens;
+    return AppScaffold(
+      title: widget.isEditing ? 'Edit date' : 'Plan a date',
+      padded: false,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.isEditing
-                    ? 'Update your plan ♡'
-                    : 'Plan something special ♡',
-                style: AppTextStyles.title,
-              ),
-
-              const SizedBox(height: AppSpacing.xl),
-
-              AppTextField(
-                controller: _titleController,
-                label: 'Title',
-                hint: 'Dinner, movie, trip...',
-              ),
-
-              const SizedBox(height: AppSpacing.md),
-
-              AppTextField(
-                controller: _descriptionController,
-                label: 'Description',
-                hint: 'Add some details...',
-              ),
-
-              const SizedBox(height: AppSpacing.md),
-
-              AppTextField(
-                controller: _locationController,
-                label: 'Location',
-                hint: 'Where will you go?',
-              ),
-
-              const SizedBox(height: AppSpacing.lg),
-
-              _buildDateTimePicker(),
-
-              const SizedBox(height: AppSpacing.xl),
-
-              AppButton(
-                label: widget.isEditing ? 'Save changes' : 'Create date',
-                onPressed: _isSaving ? null : _save,
-                isLoading: _isSaving,
-              ),
-            ],
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.gutter,
+            AppSpacing.sm,
+            AppSpacing.gutter,
+            AppSpacing.xl,
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDateTimePicker() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Row(
           children: [
-            const Icon(Icons.calendar_month_rounded),
-
-            const SizedBox(width: AppSpacing.md),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Date & Time', style: AppTextStyles.subtitle),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    _scheduledAt == null
-                        ? 'Not selected'
-                        : _formatDateTime(_scheduledAt!),
-                    style: AppTextStyles.body,
-                  ),
-                ],
-              ),
+            Text(
+              widget.isEditing ? 'Update your plan' : 'Plan something special',
+              style: t.handwriting,
             ),
-
-            TextButton(
-              onPressed: _isSaving ? null : _pickDateTime,
-              child: const Text('Choose'),
+            const SizedBox(height: AppSpacing.lg),
+            AppTextField(
+              controller: _titleController,
+              label: 'Title',
+              hint: 'Dinner, movie, a weekend away',
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _buildDateTimePicker(),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              controller: _locationController,
+              label: 'Place (optional)',
+              hint: 'Where will you go?',
+              prefixIcon: Icons.place_outlined,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              controller: _descriptionController,
+              label: 'Notes (optional)',
+              hint: 'Anything to remember or bring',
+              maxLines: 4,
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            AppButton(
+              label: widget.isEditing ? 'Save changes' : 'Plan this date',
+              onPressed: _isSaving ? null : _save,
+              isLoading: _isSaving,
             ),
           ],
         ),
@@ -247,19 +202,47 @@ class _DateFormScreenState extends ConsumerState<DateFormScreen> {
     );
   }
 
-  String _formatDateTime(DateTime date) {
-    final localDate = date.toLocal();
-
-    final day = localDate.day.toString().padLeft(2, '0');
-
-    final month = localDate.month.toString().padLeft(2, '0');
-
-    final year = localDate.year;
-
-    final hour = localDate.hour.toString().padLeft(2, '0');
-
-    final minute = localDate.minute.toString().padLeft(2, '0');
-
-    return '$day/$month/$year • $hour:$minute';
+  Widget _buildDateTimePicker() {
+    final t = context.tokens;
+    final at = _scheduledAt;
+    return JournalCard(
+      onTap: _isSaving ? null : _pickDateTime,
+      semanticLabel: at == null
+          ? 'Choose date and time'
+          : 'Date and time: ${AppFormatters.full(at)}. Tap to change.',
+      child: Row(
+        children: [
+          if (at != null)
+            DateBadge(date: at)
+          else
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: t.surfaceMuted,
+                borderRadius: BorderRadius.circular(t.cardRadius * 0.6),
+              ),
+              child: Icon(Icons.event_outlined, color: t.primary),
+            ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('When', style: t.caption),
+                const SizedBox(height: 2),
+                Text(
+                  at == null ? 'Choose date and time' : AppFormatters.full(at),
+                  style: t.heading.copyWith(
+                    color: at == null ? t.primary : null,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right_rounded, color: t.textSecondary),
+        ],
+      ),
+    );
   }
 }

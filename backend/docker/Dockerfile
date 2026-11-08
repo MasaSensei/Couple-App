@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     git \
     unzip \
     libpq-dev \
+    postgresql-client \
     libicu-dev \
     libzip-dev \
     libfreetype6-dev \

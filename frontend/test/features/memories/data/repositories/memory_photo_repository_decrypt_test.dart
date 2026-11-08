@@ -124,15 +124,18 @@ void main() {
     );
   });
 
-  test('wrong key material with a matching key id fails authentication', () async {
-    final forgedKey = CoupleKey(
-      keyId: 'couple-key',
-      secretKey: SecretKey(List<int>.filled(32, 7)),
-    );
+  test(
+    'wrong key material with a matching key id fails authentication',
+    () async {
+      final forgedKey = CoupleKey(
+        keyId: 'couple-key',
+        secretKey: SecretKey(List<int>.filled(32, 7)),
+      );
 
-    await expectLater(
-      decrypt(encrypted.ciphertext, key: forgedKey),
-      throwsA(isA<PhotoVerificationException>()),
-    );
-  });
+      await expectLater(
+        decrypt(encrypted.ciphertext, key: forgedKey),
+        throwsA(isA<PhotoVerificationException>()),
+      );
+    },
+  );
 }

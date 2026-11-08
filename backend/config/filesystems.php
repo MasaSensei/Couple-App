@@ -76,6 +76,10 @@ return [
             'visibility' => 'private',
             'throw' => true,
             'report' => false,
+            // A slow or dead provider must fail fast (jobs retry with backoff) instead of
+            // holding PHP-FPM workers or queue slots. AWS SDK retries throttling/5xx.
+            'http' => ['connect_timeout' => (float) env('STORAGE_CONNECT_TIMEOUT', 5), 'timeout' => (float) env('STORAGE_TIMEOUT', 60)],
+            'retries' => (int) env('STORAGE_RETRIES', 3),
         ],
 
         'photos_backup' => [
@@ -89,6 +93,28 @@ return [
             'visibility' => 'private',
             'throw' => true,
             'report' => false,
+            // A slow or dead provider must fail fast (jobs retry with backoff) instead of
+            // holding PHP-FPM workers or queue slots. AWS SDK retries throttling/5xx.
+            'http' => ['connect_timeout' => (float) env('STORAGE_CONNECT_TIMEOUT', 5), 'timeout' => (float) env('STORAGE_TIMEOUT', 60)],
+            'retries' => (int) env('STORAGE_RETRIES', 3),
+        ],
+
+        // Encrypted PostgreSQL dumps (db:backup). Own bucket and credential.
+        'db_backups' => [
+            'driver' => 's3',
+            'key' => env('DB_BACKUP_ACCESS_KEY'),
+            'secret' => env('DB_BACKUP_SECRET_KEY'),
+            'region' => env('DB_BACKUP_REGION', 'us-east-1'),
+            'bucket' => env('DB_BACKUP_BUCKET'),
+            'endpoint' => env('DB_BACKUP_ENDPOINT'),
+            'use_path_style_endpoint' => env('DB_BACKUP_PATH_STYLE', false),
+            'visibility' => 'private',
+            'throw' => true,
+            'report' => false,
+            // A slow or dead provider must fail fast (jobs retry with backoff) instead of
+            // holding PHP-FPM workers or queue slots. AWS SDK retries throttling/5xx.
+            'http' => ['connect_timeout' => (float) env('STORAGE_CONNECT_TIMEOUT', 5), 'timeout' => (float) env('STORAGE_TIMEOUT', 60)],
+            'retries' => (int) env('STORAGE_RETRIES', 3),
         ],
 
     ],

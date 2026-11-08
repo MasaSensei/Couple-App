@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Memory extends Model
 {
@@ -60,6 +62,26 @@ class Memory extends Model
     public function photos(): HasMany
     {
         return $this->hasMany(MemoryPhoto::class);
+    }
+
+    /** Cover photo + visible photo count, loaded in two queries per page. */
+    public function scopeWithTimelineSummary(Builder $query): void
+    {
+        $query->with('coverPhoto')->withCount([
+            'photos as photos_count' => fn ($photos) => $photos->where('status', 'verified'),
+        ]);
+    }
+
+    /**
+     * First visible photo (same order the app shows them), used as the
+     * timeline cover. Only ciphertext metadata; the app decrypts it.
+     */
+    public function coverPhoto(): HasOne
+    {
+        return $this->hasOne(MemoryPhoto::class)->ofMany(
+            ['sort_order' => 'min', 'id' => 'min'],
+            fn ($query) => $query->where('status', 'verified'),
+        );
     }
 
     public function comments(): HasMany

@@ -2,13 +2,47 @@
   "identities": [
     {
       "name": "operator",
-      "credentials": [{ "accessKey": "dev-backup-operator", "secretKey": "dev-backup-operator-secret" }],
-      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+      "credentials": [
+        {
+          "accessKey": "dev-backup-operator",
+          "secretKey": "dev-backup-operator-secret"
+        }
+      ],
+      "actions": [
+        "Admin",
+        "Read",
+        "Write",
+        "List",
+        "Tagging"
+      ]
     },
     {
       "name": "app",
-      "credentials": [{ "accessKey": "dev-backup-app", "secretKey": "dev-backup-app-secret" }],
-      "actions": ["Read:photos-backup", "Write:photos-backup", "List:photos-backup"]
+      "credentials": [
+        {
+          "accessKey": "dev-backup-app",
+          "secretKey": "dev-backup-app-secret"
+        }
+      ],
+      "actions": [
+        "Read:photos-backup",
+        "Write:photos-backup",
+        "List:photos-backup"
+      ]
+    },
+    {
+      "name": "db-backup",
+      "credentials": [
+        {
+          "accessKey": "dev-db-backup",
+          "secretKey": "dev-db-backup-secret"
+        }
+      ],
+      "actions": [
+        "Read:db-backups",
+        "Write:db-backups",
+        "List:db-backups"
+      ]
     }
   ]
 }

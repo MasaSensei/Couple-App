@@ -18,6 +18,8 @@ dependencies:
   cryptography_flutter: ^2.3.4
   uuid: ^4.5.1
   image: ^4.12.0
+  shared_preferences: ^2.5.6
+  share_plus: ^13.3.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -26,3 +28,33 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/fonts/licenses/
+
+  # Theme fonts (SIL Open Font License, see assets/fonts/licenses). Bundled,
+  # never fetched at runtime, so no third-party request reveals users' IPs.
+  fonts:
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito.ttf
+    - family: PlayfairDisplay
+      fonts:
+        - asset: assets/fonts/PlayfairDisplay.ttf
+    - family: CormorantGaramond
+      fonts:
+        - asset: assets/fonts/CormorantGaramond.ttf
+    - family: Lora
+      fonts:
+        - asset: assets/fonts/Lora.ttf
+    - family: CourierPrime
+      fonts:
+        - asset: assets/fonts/CourierPrime-Regular.ttf
+        - asset: assets/fonts/CourierPrime-Bold.ttf
+          weight: 700
+    - family: DancingScript
+      fonts:
+        - asset: assets/fonts/DancingScript.ttf
+    - family: Quicksand
+      fonts:
+        - asset: assets/fonts/Quicksand.ttf

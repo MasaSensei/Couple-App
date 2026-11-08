@@ -2,6 +2,8 @@
 
 namespace App\Services\Storage;
 
+use Illuminate\Http\UploadedFile;
+
 interface PhotoStorage
 {
     public function createUploadSession(
@@ -23,6 +25,7 @@ interface PhotoStorage
      * never anything read from the store itself).
      *
      * @return 'ok'|'mismatch'|'missing'
+     *
      * @throws \Throwable when the store cannot be reached; never reported as data loss.
      */
     public function checkIntegrity(
@@ -42,12 +45,21 @@ interface PhotoStorage
         string $storageKey,
     );
 
+    /**
+     * Every stored key under $prefix (current versions only). Used by reconciliation.
+     *
+     * @return list<string>
+     */
+    public function listKeys(
+        string $prefix = '',
+    ): array;
+
     public function deleteObject(
         string $storageKey,
     ): void;
 
     /**
-     * @param \Illuminate\Http\UploadedFile|resource $file Consumed and closed.
+     * @param  UploadedFile|resource  $file  Consumed and closed.
      */
     public function putObject(
         string $storageKey,

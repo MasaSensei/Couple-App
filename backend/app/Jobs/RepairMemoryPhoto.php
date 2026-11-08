@@ -20,7 +20,7 @@ use Throwable;
  * is marked healthy. Both buckets are versioned, so the bad bytes that get
  * replaced remain as a noncurrent version for investigation.
  */
-class RepairMemoryPhoto implements ShouldQueue, ShouldBeUnique
+class RepairMemoryPhoto implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 
@@ -61,7 +61,8 @@ class RepairMemoryPhoto implements ShouldQueue, ShouldBeUnique
     {
         $photo = MemoryPhoto::withTrashed()->find($this->photoId);
 
-        if ($photo === null || $photo->status !== 'verified' || blank($photo->checksum)) {
+        // Never resurrect a copy the retention purge removed.
+        if ($photo === null || $photo->status !== 'verified' || blank($photo->checksum) || $photo->isPurged()) {
             return;
         }
 

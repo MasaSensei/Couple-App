@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_spacing.dart';
-import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/app_widgets.dart';
 import '../../auth/providers/auth_providers.dart';
+import '../../auth/providers/auth_state.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -33,21 +32,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildHeartLogo(),
+                    const SpotIllustration(kind: SpotKind.heart, size: 120),
 
-                    const SizedBox(height: AppSpacing.xl),
+                    const SizedBox(height: AppSpacing.lg),
 
-                    Text(
-                      'Our Little Space',
-                      style: AppTextStyles.display,
-                      textAlign: TextAlign.center,
-                    ),
+                    const BrandMark(size: 32),
 
                     const SizedBox(height: AppSpacing.sm),
 
                     Text(
                       'A private place for the two of you.',
-                      style: AppTextStyles.subtitle,
+                      style: context.tokens.subtitle,
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -56,19 +51,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             ),
 
             Positioned(
-              left: 0,
-              right: 0,
+              left: AppSpacing.lg,
+              right: AppSpacing.lg,
               bottom: AppSpacing.lg,
-              child: const Center(
-                child: SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
+              child: Center(child: _buildStatus(context)),
             ),
           ],
         ),
@@ -76,17 +62,30 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     );
   }
 
-  Widget _buildHeartLogo() {
-    return Container(
-      width: 104,
-      height: 104,
-      decoration: BoxDecoration(
-        color: AppColors.secondary.withValues(alpha: 0.22),
-        shape: BoxShape.circle,
-      ),
-      child: const Center(
-        child: Icon(Icons.favorite_rounded, size: 52, color: AppColors.primary),
-      ),
-    );
+  /// Spinner while checking the session; message + retry when the server
+  /// could not be reached (the saved session is kept).
+  Widget _buildStatus(BuildContext context) {
+    final auth = ref.watch(authNotifierProvider);
+
+    if (auth.status == AuthStatus.error) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            auth.message ?? 'Something went wrong.',
+            style: context.tokens.subtitle,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          TextButton(
+            onPressed: () =>
+                ref.read(authNotifierProvider.notifier).checkAuth(),
+            child: const Text('Try again'),
+          ),
+        ],
+      );
+    }
+
+    return const AppLoading();
   }
 }

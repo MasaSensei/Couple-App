@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api\V1\Couple;
 
+use App\Http\Requests\Api\V1\Couple\StoreCoupleKeyPackageRequest;
 use Tests\TestCase;
 
 class StoreCoupleKeyPackageRequestTest extends TestCase
@@ -10,7 +11,7 @@ class StoreCoupleKeyPackageRequestTest extends TestCase
     {
         $this->assertTrue(
             class_exists(
-                \App\Http\Requests\Api\V1\Couple\StoreCoupleKeyPackageRequest::class,
+                StoreCoupleKeyPackageRequest::class,
             ),
         );
     }

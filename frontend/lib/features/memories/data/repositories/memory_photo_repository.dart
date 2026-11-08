@@ -148,8 +148,30 @@ class MemoryPhotoRepository {
     return MemoryPhotoModel.fromJson(photo);
   }
 
+  /// Moves the photo to the trash; it can be restored until `restorable_until`.
   Future<void> deletePhoto({required int photoId}) async {
     await _apiClient.delete('/memory-photos/$photoId');
+  }
+
+  Future<List<MemoryPhotoModel>> getTrash({required int memoryId}) async {
+    final response = await _apiClient.get('/memories/$memoryId/photos/trash');
+
+    final data = response.data['data'] as Map<String, dynamic>;
+    final photos = data['photos'] as List<dynamic>;
+
+    return photos
+        .map(
+          (photo) => MemoryPhotoModel.fromJson(photo as Map<String, dynamic>),
+        )
+        .toList();
+  }
+
+  Future<MemoryPhotoModel> restorePhoto({required int photoId}) async {
+    final response = await _apiClient.post('/memory-photos/$photoId/restore');
+
+    final data = response.data['data'] as Map<String, dynamic>;
+
+    return MemoryPhotoModel.fromJson(data['photo'] as Map<String, dynamic>);
   }
 
   Future<List<MemoryPhotoModel>> getPhotos({required int memoryId}) async {

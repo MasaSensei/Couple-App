@@ -2,7 +2,7 @@ class MemoryPhotoModel {
   const MemoryPhotoModel({
     required this.id,
     required this.memoryId,
-    required this.uploadedBy,
+    this.uploadedBy,
     this.originalFilename,
     required this.mimeType,
     required this.fileSize,
@@ -17,13 +17,17 @@ class MemoryPhotoModel {
     this.checksum,
     required this.status,
     required this.sortOrder,
+    this.protectionStatus,
+    this.restorableUntil,
     this.createdAt,
     this.updatedAt,
   });
 
   final int id;
   final int memoryId;
-  final int uploadedBy;
+
+  /// Null once the uploader's account has been deleted; the photo stays.
+  final int? uploadedBy;
 
   final String? originalFilename;
 
@@ -44,6 +48,13 @@ class MemoryPhotoModel {
   final String status;
   final int sortOrder;
 
+  /// Server-derived: protected, backing_up, restoring, needs_attention,
+  /// uploading, upload_failed or deleted. Never computed on the device.
+  final String? protectionStatus;
+
+  /// Set for photos in the trash: last moment they can be restored.
+  final DateTime? restorableUntil;
+
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -51,7 +62,7 @@ class MemoryPhotoModel {
     return MemoryPhotoModel(
       id: json['id'] as int,
       memoryId: json['memory_id'] as int,
-      uploadedBy: json['uploaded_by'] as int,
+      uploadedBy: _parseInt(json['uploaded_by']),
       originalFilename: json['original_filename'] as String?,
       mimeType: json['mime_type'] as String,
       fileSize: json['file_size'] as int,
@@ -66,6 +77,8 @@ class MemoryPhotoModel {
       checksum: json['checksum'] as String?,
       status: json['status'] as String,
       sortOrder: json['sort_order'] as int,
+      protectionStatus: json['protection_status'] as String?,
+      restorableUntil: _parseDateTime(json['restorable_until']),
       createdAt: _parseDateTime(json['created_at']),
       updatedAt: _parseDateTime(json['updated_at']),
     );
