@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/error/api_exception.dart';
@@ -99,9 +100,12 @@ class AuthNotifier extends Notifier<AuthState> {
       } else {
         state = AuthState.error(error.message);
       }
-    } catch (error) {
+    } catch (error, stackTrace) {
+      // Network failures arrive as ApiException above; anything here is a
+      // client-side bug (e.g. an unexpected response shape), not connectivity.
+      debugPrint('checkAuth failed: $error\n$stackTrace');
       state = const AuthState.error(
-        'Could not reach the server. Check your connection and try again.',
+        'Something went wrong while restoring your session. Please try again.',
       );
     }
   }

@@ -122,6 +122,17 @@ class PhotoBoothController extends Notifier<PhotoBoothState> {
     _set(_doc.copyWith(photos: photos));
   }
 
+  /// Moves/zooms a photo inside its slot. The framing follows the photo
+  /// through reorders and layout changes.
+  void setFraming(String photoId, PhotoFraming framing) => _set(
+    _doc.copyWith(
+      photos: [
+        for (final p in _doc.photos)
+          p.id == photoId ? p.copyWith(framing: framing) : p,
+      ],
+    ),
+  );
+
   void setCaption(String caption) {
     final trimmed = caption.length > PhotoBoothDocument.maxCaptionLength
         ? caption.substring(0, PhotoBoothDocument.maxCaptionLength)

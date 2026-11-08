@@ -54,6 +54,8 @@ class _DateListScreenState extends ConsumerState<DateListScreen> {
       title: 'Our dates',
       padded: false,
       floatingActionButton: FloatingActionButton.extended(
+        // Tabs stay alive in one shell page: each FAB needs its own hero tag.
+        heroTag: 'fab-dates',
         onPressed: _planDate,
         icon: const Icon(Icons.add_rounded),
         label: const Text('Plan a date'),

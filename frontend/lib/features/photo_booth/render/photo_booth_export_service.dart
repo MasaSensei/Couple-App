@@ -80,7 +80,9 @@ class PhotoBoothExportService {
   }
 
   /// Decodes each slotted photo just large enough to cover its slot at
-  /// [scale] (canvas units → pixels). Unreadable photos become empty slots.
+  /// [scale] (canvas units → pixels), times the photo's zoom so a zoomed-in
+  /// crop stays sharp (never above the photo's own resolution).
+  /// Unreadable photos become empty slots.
   static Future<List<ui.Image?>> decodeForSlots(
     PhotoBoothDocument document,
     double scale,
@@ -91,7 +93,8 @@ class PhotoBoothExportService {
       for (final (i, photo) in document.slotted.indexed)
         _decode(
           photo.bytes,
-          Size(slots[i].width * scale, slots[i].height * scale),
+          Size(slots[i].width, slots[i].height) *
+              (scale * photo.framing.zoom),
         ),
     ]);
   }

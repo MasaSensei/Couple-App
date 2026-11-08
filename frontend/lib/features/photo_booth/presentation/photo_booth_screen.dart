@@ -49,7 +49,8 @@ class PhotoBoothScreen extends ConsumerWidget {
     final status = document.photos.isEmpty
         ? 'Add photos to start. This layout holds ${document.template.photoCount}.'
         : '${document.slotted.length} of ${document.template.photoCount} spots filled'
-              '${document.photos.length > document.template.photoCount ? ' (extra photos are not used)' : ''}.';
+              '${document.photos.length > document.template.photoCount ? ' (extra photos are not used)' : ''}. '
+              'Drag a photo to move it, pinch to zoom, double-tap to re-centre.';
 
     return Scaffold(
       appBar: AppBar(
@@ -96,6 +97,7 @@ class PhotoBoothScreen extends ConsumerWidget {
                         child: PhotoBoothPreview(
                           document: document,
                           renderer: renderer,
+                          onFramingChanged: controller.setFraming,
                         ),
                       ),
                     ),

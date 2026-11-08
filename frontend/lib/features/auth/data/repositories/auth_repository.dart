@@ -57,9 +57,10 @@ class AuthRepository {
     try {
       final response = await _apiClient.dio.get('/me');
 
+      // Backend shape: { data: { user: {...} } }
       final data = response.data['data'] as Map<String, dynamic>;
 
-      return UserModel.fromJson(data);
+      return UserModel.fromJson(data['user'] as Map<String, dynamic>);
     } on DioException catch (error) {
       throw ApiErrorHandler.handle(error);
     }

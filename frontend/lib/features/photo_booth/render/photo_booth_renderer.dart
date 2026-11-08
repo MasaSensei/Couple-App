@@ -31,12 +31,14 @@ class PhotoBoothRenderer {
     canvas.drawRect(bounds, Paint()..color = template.paper);
     _paintFrameBackground(canvas, template);
 
+    final slotted = document.slotted;
     for (var i = 0; i < template.slots.length; i++) {
       _paintSlot(
         canvas,
         template,
         template.slots[i],
         i < images.length ? images[i] : null,
+        i < slotted.length ? slotted[i].framing : PhotoFraming.centered,
       );
     }
 
@@ -46,19 +48,46 @@ class PhotoBoothRenderer {
   }
 
   /// The part of [image] that fills [slot] without distortion (centre crop).
-  static Rect coverSourceRect(Size image, Size slot) {
-    final scale = math.max(
+  static Rect coverSourceRect(Size image, Size slot) =>
+      framedSourceRect(image, slot, PhotoFraming.centered);
+
+  /// The part of [image] shown in [slot] for [framing]: the cover crop shrunk
+  /// by the zoom and centred on the focus, kept inside the photo so the slot
+  /// is always filled.
+  static Rect framedSourceRect(Size image, Size slot, PhotoFraming framing) {
+    final crop = _cropSize(image, slot, framing.zoom);
+    final focus = clampFocus(image, slot, framing);
+
+    return Rect.fromCenter(
+      center: Offset(focus.dx * image.width, focus.dy * image.height),
+      width: crop.width,
+      height: crop.height,
+    );
+  }
+
+  /// [framing]'s focus limited to where the crop still lies inside [image].
+  static Offset clampFocus(Size image, Size slot, PhotoFraming framing) {
+    final crop = _cropSize(image, slot, framing.zoom);
+    final halfX = crop.width / 2 / image.width;
+    final halfY = crop.height / 2 / image.height;
+
+    return Offset(
+      framing.focus.dx.clamp(halfX, 1 - halfX),
+      framing.focus.dy.clamp(halfY, 1 - halfY),
+    );
+  }
+
+  /// Source size of the crop: the cover crop divided by [zoom].
+  static Size _cropSize(Size image, Size slot, double zoom) {
+    final cover = math.max(
       slot.width / image.width,
       slot.height / image.height,
     );
-    final width = slot.width / scale;
-    final height = slot.height / scale;
+    final z = zoom.clamp(PhotoFraming.minZoom, PhotoFraming.maxZoom);
 
-    return Rect.fromLTWH(
-      (image.width - width) / 2,
-      (image.height - height) / 2,
-      width,
-      height,
+    return Size(
+      math.min(image.width, slot.width / cover / z),
+      math.min(image.height, slot.height / cover / z),
     );
   }
 
@@ -67,6 +96,7 @@ class PhotoBoothRenderer {
     PhotoBoothTemplate template,
     Rect slot,
     ui.Image? image,
+    PhotoFraming framing,
   ) {
     final rrect = RRect.fromRectAndRadius(
       slot,
@@ -95,9 +125,10 @@ class PhotoBoothRenderer {
       canvas.drawLine(c - Offset(arm, 0), c + Offset(arm, 0), plus);
       canvas.drawLine(c - Offset(0, arm), c + Offset(0, arm), plus);
     } else {
-      final src = coverSourceRect(
+      final src = framedSourceRect(
         Size(image.width.toDouble(), image.height.toDouble()),
         slot.size,
+        framing,
       );
       canvas.drawImageRect(
         image,

@@ -105,6 +105,8 @@ class _MemoryListScreenState extends ConsumerState<MemoryListScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        // Tabs stay alive in one shell page: each FAB needs its own hero tag.
+        heroTag: 'fab-memories',
         onPressed: _create,
         icon: const Icon(Icons.add_a_photo_outlined),
         label: const Text('New memory'),

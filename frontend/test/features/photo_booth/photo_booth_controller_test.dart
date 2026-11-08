@@ -204,6 +204,29 @@ void main() {
       expect(document().photos, hasLength(PhotoBoothController.maxPhotos - 1));
     });
 
+    test('a photo keeps its framing through reorders and layout changes', () {
+      final c = controller();
+      c.addPhotos([
+        Uint8List.fromList([1]),
+        Uint8List.fromList([2]),
+      ], PhotoSourceKind.gallery);
+      final ids = document().photos.map((p) => p.id).toList();
+      const framing = PhotoFraming(focus: Offset(0.3, 0.2), zoom: 2);
+
+      c.setFraming(ids[1], framing);
+      expect(document().photos[1].framing, framing);
+      expect(document().photos[0].framing, PhotoFraming.centered);
+
+      c.reorder(1, 0);
+      c.setTemplate(PhotoBoothTemplates.polaroid);
+      expect(document().photos.first.id, ids[1]);
+      expect(document().photos.first.framing, framing);
+
+      // Zoom stays within bounds whatever the gesture reports.
+      expect(framing.copyWith(zoom: 99).zoom, PhotoFraming.maxZoom);
+      expect(framing.copyWith(zoom: 0.1).zoom, PhotoFraming.minZoom);
+    });
+
     test('caption is limited and template switches keep the photos', () {
       final c = controller();
       c.setCaption('x' * 100);
