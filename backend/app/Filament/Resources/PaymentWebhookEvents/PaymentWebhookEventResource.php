@@ -4,7 +4,9 @@ namespace App\Filament\Resources\PaymentWebhookEvents;
 
 use App\Filament\BillingAccess;
 use App\Filament\Resources\PaymentWebhookEvents\Pages\ListPaymentWebhookEvents;
+use App\Filament\Support\StatusColors;
 use App\Models\PaymentWebhookEvent;
+use App\Providers\Filament\AdminPanelProvider;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
@@ -21,7 +23,9 @@ class PaymentWebhookEventResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBolt;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Billing';
+    protected static string|UnitEnum|null $navigationGroup = AdminPanelProvider::GROUP_BILLING;
+
+    protected static ?int $navigationSort = 40;
 
     protected static ?string $navigationLabel = 'Payment webhooks';
 
@@ -34,7 +38,7 @@ class PaymentWebhookEventResource extends Resource
                 TextColumn::make('provider'),
                 TextColumn::make('event_type')->label('Type'),
                 TextColumn::make('status')->badge()
-                    ->color(fn (string $state) => ['processed' => 'success', 'failed' => 'danger', 'ignored' => 'gray'][$state] ?? 'warning'),
+                    ->color(fn (?string $state) => StatusColors::for($state))->formatStateUsing(fn (?string $state) => StatusColors::label($state)),
                 TextColumn::make('attempts'),
                 TextColumn::make('error')->limit(60)->placeholder('–'),
                 TextColumn::make('occurred_at')->dateTime()->placeholder('–'),

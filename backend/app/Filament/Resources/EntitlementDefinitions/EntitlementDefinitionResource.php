@@ -6,6 +6,7 @@ use App\Filament\BillingAccess;
 use App\Filament\Resources\EntitlementDefinitions\Pages\EditEntitlementDefinition;
 use App\Filament\Resources\EntitlementDefinitions\Pages\ListEntitlementDefinitions;
 use App\Models\EntitlementDefinition;
+use App\Providers\Filament\AdminPanelProvider;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Textarea;
@@ -29,7 +30,9 @@ class EntitlementDefinitionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedKey;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Billing';
+    protected static string|UnitEnum|null $navigationGroup = AdminPanelProvider::GROUP_BILLING;
+
+    protected static ?int $navigationSort = 30;
 
     protected static ?string $navigationLabel = 'Entitlements';
 

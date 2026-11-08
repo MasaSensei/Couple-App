@@ -4,7 +4,9 @@ namespace App\Filament\Resources\PhotoBoothTemplates;
 
 use App\Filament\Resources\PhotoBoothTemplates\Pages\EditPhotoBoothTemplate;
 use App\Filament\Resources\PhotoBoothTemplates\Pages\ListPhotoBoothTemplates;
+use App\Filament\Support\StatusColors;
 use App\Models\PhotoBoothTemplate;
+use App\Providers\Filament\AdminPanelProvider;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -30,7 +32,9 @@ class PhotoBoothTemplateResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPhoto;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Appearance';
+    protected static string|UnitEnum|null $navigationGroup = AdminPanelProvider::GROUP_APPEARANCE;
+
+    protected static ?int $navigationSort = 20;
 
     protected static ?string $navigationLabel = 'Photo Booth templates';
 
@@ -56,7 +60,7 @@ class PhotoBoothTemplateResource extends Resource
                 TextColumn::make('version'),
                 TextColumn::make('photo_slots')->label('Photos'),
                 TextColumn::make('status')->badge()
-                    ->color(fn (string $state) => ['active' => 'success', 'hidden' => 'warning', 'retired' => 'gray'][$state] ?? 'gray'),
+                    ->color(fn (?string $state) => StatusColors::for($state))->formatStateUsing(fn (?string $state) => StatusColors::label($state)),
                 IconColumn::make('is_premium')->boolean()->label('Premium'),
                 TextColumn::make('sort_order')->sortable(),
                 TextColumn::make('updated_at')->since(),

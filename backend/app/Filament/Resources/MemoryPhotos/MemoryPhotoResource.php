@@ -5,6 +5,7 @@ namespace App\Filament\Resources\MemoryPhotos;
 use App\Filament\Resources\MemoryPhotos\Pages\ListMemoryPhotos;
 use App\Filament\Resources\MemoryPhotos\Tables\MemoryPhotosTable;
 use App\Models\MemoryPhoto;
+use App\Providers\Filament\AdminPanelProvider;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
@@ -23,7 +24,9 @@ class MemoryPhotoResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedServerStack;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Storage';
+    protected static string|UnitEnum|null $navigationGroup = AdminPanelProvider::GROUP_STORAGE;
+
+    protected static ?int $navigationSort = 10;
 
     protected static ?string $navigationLabel = 'Photo storage';
 

@@ -12,6 +12,10 @@ class StorageHealthOverview extends StatsOverviewWidget
 {
     protected static ?int $sort = 1;
 
+    protected ?string $heading = 'Storage & backups';
+
+    protected ?string $description = 'Photos count as protected only after their backup copy is verified.';
+
     protected ?string $pollingInterval = '60s';
 
     public static function canView(): bool

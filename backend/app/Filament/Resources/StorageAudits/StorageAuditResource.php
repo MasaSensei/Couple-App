@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\StorageAudits;
 
 use App\Filament\Resources\StorageAudits\Pages\ListStorageAudits;
+use App\Filament\Support\StatusColors;
 use App\Models\PhotoStorageAudit;
+use App\Providers\Filament\AdminPanelProvider;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
@@ -19,7 +21,9 @@ class StorageAuditResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Storage';
+    protected static string|UnitEnum|null $navigationGroup = AdminPanelProvider::GROUP_STORAGE;
+
+    protected static ?int $navigationSort = 30;
 
     protected static ?string $navigationLabel = 'Storage audit log';
 
@@ -32,7 +36,7 @@ class StorageAuditResource extends Resource
                 TextColumn::make('memory_photo_id')->label('Photo ID')->placeholder('–'),
                 TextColumn::make('action'),
                 TextColumn::make('result')->badge()
-                    ->color(fn (string $state) => ['succeeded' => 'success', 'failed' => 'danger', 'skipped' => 'gray'][$state] ?? 'info'),
+                    ->color(fn (?string $state) => StatusColors::for($state))->formatStateUsing(fn (?string $state) => StatusColors::label($state)),
                 TextColumn::make('actor'),
                 TextColumn::make('detail')->limit(80)->placeholder('–'),
             ])

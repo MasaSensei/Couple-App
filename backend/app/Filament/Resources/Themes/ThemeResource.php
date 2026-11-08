@@ -4,8 +4,10 @@ namespace App\Filament\Resources\Themes;
 
 use App\Filament\Resources\Themes\Pages\EditTheme;
 use App\Filament\Resources\Themes\Pages\ListThemes;
+use App\Filament\Support\StatusColors;
 use App\Models\CoupleThemeSetting;
 use App\Models\Theme;
+use App\Providers\Filament\AdminPanelProvider;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -31,7 +33,9 @@ class ThemeResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSwatch;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Appearance';
+    protected static string|UnitEnum|null $navigationGroup = AdminPanelProvider::GROUP_APPEARANCE;
+
+    protected static ?int $navigationSort = 10;
 
     protected static ?string $navigationLabel = 'Themes';
 
@@ -59,7 +63,7 @@ class ThemeResource extends Resource
                     ->label('Couples using')
                     ->state(fn ($record) => CoupleThemeSetting::where('theme_key', $record->key)->count()),
                 TextColumn::make('status')->badge()
-                    ->color(fn (string $state) => ['active' => 'success', 'hidden' => 'warning', 'retired' => 'gray'][$state] ?? 'gray'),
+                    ->color(fn (?string $state) => StatusColors::for($state))->formatStateUsing(fn (?string $state) => StatusColors::label($state)),
                 IconColumn::make('is_premium')->boolean()->label('Premium'),
                 TextColumn::make('sort_order')->sortable(),
                 TextColumn::make('updated_at')->since(),

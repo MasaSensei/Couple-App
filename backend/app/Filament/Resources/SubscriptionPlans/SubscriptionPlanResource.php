@@ -9,6 +9,7 @@ use App\Filament\Resources\SubscriptionPlans\Pages\ListSubscriptionPlans;
 use App\Filament\Resources\SubscriptionPlans\RelationManagers\VersionsRelationManager;
 use App\Models\CoupleSubscription;
 use App\Models\SubscriptionPlan;
+use App\Providers\Filament\AdminPanelProvider;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -34,7 +35,9 @@ class SubscriptionPlanResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Billing';
+    protected static string|UnitEnum|null $navigationGroup = AdminPanelProvider::GROUP_BILLING;
+
+    protected static ?int $navigationSort = 20;
 
     protected static ?string $navigationLabel = 'Plans';
 

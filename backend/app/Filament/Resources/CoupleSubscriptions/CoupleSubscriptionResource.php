@@ -7,7 +7,9 @@ use App\Filament\Resources\CoupleSubscriptions\Pages\ListCoupleSubscriptions;
 use App\Filament\Resources\CoupleSubscriptions\Pages\ViewCoupleSubscription;
 use App\Filament\Resources\CoupleSubscriptions\RelationManagers\EventsRelationManager;
 use App\Filament\Resources\CoupleSubscriptions\RelationManagers\TransactionsRelationManager;
+use App\Filament\Support\StatusColors;
 use App\Models\CoupleSubscription;
+use App\Providers\Filament\AdminPanelProvider;
 use App\Services\Billing\AdminSubscriptionActions;
 use BackedEnum;
 use Filament\Actions\ViewAction;
@@ -34,14 +36,11 @@ class CoupleSubscriptionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCreditCard;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Billing';
+    protected static string|UnitEnum|null $navigationGroup = AdminPanelProvider::GROUP_BILLING;
+
+    protected static ?int $navigationSort = 10;
 
     protected static ?string $navigationLabel = 'Subscriptions';
-
-    public const STATUS_COLORS = [
-        'active' => 'success', 'cancelled' => 'warning', 'grace_period' => 'warning',
-        'payment_failed' => 'danger', 'suspended' => 'danger', 'pending' => 'gray', 'expired' => 'gray',
-    ];
 
     public static function table(Table $table): Table
     {
@@ -52,7 +51,7 @@ class CoupleSubscriptionResource extends Resource
                 TextColumn::make('couple_id')->label('Couple ID')->searchable(),
                 TextColumn::make('planVersion.plan.name')->label('Plan'),
                 TextColumn::make('planVersion.version')->label('Plan v.'),
-                TextColumn::make('status')->badge()->color(fn (string $state) => self::STATUS_COLORS[$state] ?? 'gray'),
+                TextColumn::make('status')->badge()->color(fn (?string $state) => StatusColors::for($state))->formatStateUsing(fn (?string $state) => StatusColors::label($state)),
                 TextColumn::make('provider'),
                 IconColumn::make('auto_renew')->boolean(),
                 TextColumn::make('current_period_end')->label('Period end')->dateTime()->sortable(),
@@ -73,7 +72,7 @@ class CoupleSubscriptionResource extends Resource
             TextEntry::make('couple_id')->label('Couple ID'),
             TextEntry::make('planVersion.plan.name')->label('Plan'),
             TextEntry::make('planVersion.version')->label('Plan version'),
-            TextEntry::make('status')->badge()->color(fn (string $state) => self::STATUS_COLORS[$state] ?? 'gray'),
+            TextEntry::make('status')->badge()->color(fn (?string $state) => StatusColors::for($state))->formatStateUsing(fn (?string $state) => StatusColors::label($state)),
             TextEntry::make('ended_reason')->placeholder('–'),
             TextEntry::make('provider'),
             TextEntry::make('purchased_by')->label('Purchaser user ID')->placeholder('support grant'),

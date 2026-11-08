@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\SubscriptionPlans\RelationManagers;
 
 use App\Filament\BillingAccess;
+use App\Filament\Support\StatusColors;
 use App\Models\SubscriptionPlanVersion;
 use App\Services\Billing\EntitlementCatalog;
 use App\Services\Billing\PlanManagement;
@@ -40,7 +41,7 @@ class VersionsRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('version'),
                 TextColumn::make('status')->badge()
-                    ->color(fn (string $state) => ['published' => 'success', 'draft' => 'warning'][$state] ?? 'gray'),
+                    ->color(fn (?string $state) => StatusColors::for($state))->formatStateUsing(fn (?string $state) => StatusColors::label($state)),
                 TextColumn::make('price_amount')->label('Price (minor units)')->numeric(),
                 TextColumn::make('currency'),
                 TextColumn::make('billing_interval')->label('Interval')

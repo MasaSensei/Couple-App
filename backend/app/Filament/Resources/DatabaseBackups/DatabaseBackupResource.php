@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\DatabaseBackups;
 
 use App\Filament\Resources\DatabaseBackups\Pages\ListDatabaseBackups;
+use App\Filament\Support\StatusColors;
 use App\Models\DatabaseBackup;
+use App\Providers\Filament\AdminPanelProvider;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
@@ -18,7 +20,9 @@ class DatabaseBackupResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCircleStack;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Storage';
+    protected static string|UnitEnum|null $navigationGroup = AdminPanelProvider::GROUP_STORAGE;
+
+    protected static ?int $navigationSort = 20;
 
     protected static ?string $navigationLabel = 'Database backups';
 
@@ -29,13 +33,13 @@ class DatabaseBackupResource extends Resource
             ->columns([
                 TextColumn::make('id')->sortable(),
                 TextColumn::make('status')->badge()
-                    ->color(fn (string $state) => ['succeeded' => 'success', 'failed' => 'danger'][$state] ?? 'gray'),
+                    ->color(fn (?string $state) => StatusColors::for($state))->formatStateUsing(fn (?string $state) => StatusColors::label($state)),
                 TextColumn::make('started_at')->dateTime(),
                 TextColumn::make('finished_at')->since()->placeholder('–'),
                 TextColumn::make('size_bytes')->label('Size')->numeric()->suffix(' B'),
                 TextColumn::make('sha256')->limit(16)->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('restore_result')->label('Restore check')->badge()->placeholder('never')
-                    ->color(fn (?string $state) => ['passed' => 'success', 'failed' => 'danger'][$state] ?? 'gray'),
+                    ->color(fn (?string $state) => StatusColors::for($state))->formatStateUsing(fn (?string $state) => StatusColors::label($state)),
                 TextColumn::make('restore_checked_at')->since()->placeholder('–'),
                 TextColumn::make('restore_detail')->limit(60)->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('error')->limit(60)->placeholder('–'),
